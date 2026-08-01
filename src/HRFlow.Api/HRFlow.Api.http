@@ -1,0 +1,6 @@
+@HRFlow.Api_HostAddress = http://localhost:5228
+
+GET {{HRFlow.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

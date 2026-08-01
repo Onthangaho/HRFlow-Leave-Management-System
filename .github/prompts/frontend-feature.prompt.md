@@ -1,5 +1,5 @@
 ---
-mode: agent
+model: GPT-4.1
 description: Implement one frontend feature/GitHub Issue in the HRFlow React SPA, following the vertical-slice feature folder structure and commenting standard in copilot-instructions.md
 ---
 
@@ -15,6 +15,9 @@ Do not implement anything beyond what's described below — if something else se
 
 ## What to do
 
+0. **Before touching any files:** confirm you're on an up-to-date `main` (`git checkout main && git pull`),
+   then create and check out a new branch named `feat/<short-description>` (or `fix/…` if this is a bug
+   fix). Do not write or edit any code until the branch exists and is checked out. Never commit to `main`.
 1. State which feature folder this belongs to (`src/features/<feature-name>/`) — create it if it
    doesn't exist yet, following the pattern: `components/`, `hooks/`, `types.ts`, `api.ts` inside the
    feature folder.
@@ -31,11 +34,12 @@ Do not implement anything beyond what's described below — if something else se
 6. Use Tailwind utility classes for styling; keep components reasonably small and single-purpose rather
    than one large page component.
 7. Do NOT write any tests — that phase comes later.
+8. Commit your changes on the branch (do not push or open a PR yet — I'll review the diff first).
 
 ## End your response with
 
+- **Branch created** (name)
 - **Files created / modified** (list)
-- **Suggested commit message** (Conventional Commits format)
-- **Suggested branch name**
+- **Commit message used** (Conventional Commits format)
 - **Suggested PR title**
-- Anything you deliberately left out or assumed, so I can confirm before I commit
+- Anything you deliberately left out or assumed, so I can confirm before I push and open the PR

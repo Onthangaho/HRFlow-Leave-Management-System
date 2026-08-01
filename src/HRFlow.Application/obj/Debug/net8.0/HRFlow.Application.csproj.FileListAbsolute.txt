@@ -1,0 +1,16 @@
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\bin\Debug\net8.0\HRFlow.Application.deps.json
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\bin\Debug\net8.0\HRFlow.Application.dll
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\bin\Debug\net8.0\HRFlow.Application.pdb
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\bin\Debug\net8.0\HRFlow.Domain.dll
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\bin\Debug\net8.0\HRFlow.Domain.pdb
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.Application.csproj.AssemblyReference.cache
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.Application.AssemblyInfoInputs.cache
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.Application.AssemblyInfo.cs
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.Application.csproj.CoreCompileInputs.cache
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.Application.sourcelink.json
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.A.6C4C1773.Up2Date
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.Application.dll
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\refint\HRFlow.Application.dll
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\HRFlow.Application.pdb
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Application\obj\Debug\net8.0\ref\HRFlow.Application.dll
