@@ -1,3 +1,5 @@
+using HRFlow.Domain.Entities;
+using HRFlow.Infrastructure.Configurations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,5 +17,14 @@ public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRo
     public HRFlowDbContext(DbContextOptions<HRFlowDbContext> options)
         : base(options)
     {
+    }
+
+    /// <inheritdoc />
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
+        modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
     }
 }
