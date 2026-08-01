@@ -3,6 +3,7 @@ using System;
 using HRFlow.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRFlow.Infrastructure.Migrations
 {
     [DbContext(typeof(HRFlowDbContext))]
-    partial class HRFlowDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260801155057_AddEmployeeAndDepartmentEntities")]
+    partial class AddEmployeeAndDepartmentEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.23");
