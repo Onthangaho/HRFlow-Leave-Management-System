@@ -57,11 +57,17 @@ HRFlow.Client          -> React + TypeScript SPA
 
 ## Git & commits
 
+- **Never commit or push directly to `main`.** Every change — even a one-line fix — starts with
+  `git checkout -b <type>/<short-description>` from an up-to-date `main`. If you are about to run
+  `git commit` and the current branch is `main`, stop and create a branch first instead.
 - Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`), one logical change per commit.
 - When asked to implement a GitHub Issue, scope your changes to exactly that issue — don't opportunistically
   refactor unrelated code in the same change.
-- After generating a change, always propose: a commit message, a branch name (`feat/…`, `fix/…`, etc.),
-  and a one-line PR title, in that order, at the end of your response.
+- Every change reaches `main` only via a Pull Request (`gh pr create`), even solo — include `Closes #<issue>`
+  in the PR body so the linked issue auto-closes on merge. Do not merge a PR without first showing me the
+  diff/summary to confirm.
+- After generating a change, always propose, in this order: a branch name, a commit message, and a PR
+  title — and create the branch as the *first* step, before writing any code.
 
 ## Response style
 
