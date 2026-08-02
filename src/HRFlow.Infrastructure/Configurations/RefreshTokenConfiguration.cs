@@ -19,6 +19,7 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
             .HasMaxLength(450);
 
         builder.Property(refreshToken => refreshToken.TokenHash)
+            .HasColumnName("Token")
             .IsRequired()
             .HasMaxLength(128);
 
