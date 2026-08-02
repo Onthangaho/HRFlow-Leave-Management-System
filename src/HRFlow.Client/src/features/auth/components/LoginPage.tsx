@@ -97,7 +97,9 @@ export function LoginPage() {
           {isLoggingIn ? 'Signing in...' : 'Sign in'}
         </button>
 
-        <p className="text-xs text-slate-500">Dev credentials: see README.</p>
+        {import.meta.env.DEV ? (
+          <p className="text-xs text-slate-500">Dev credentials: see README.</p>
+        ) : null}
       </form>
     </main>
   );

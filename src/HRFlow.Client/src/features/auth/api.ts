@@ -27,6 +27,7 @@ export const authHttpClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000,
 });
 
 const refreshHttpClient = axios.create({
@@ -34,6 +35,7 @@ const refreshHttpClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000,
 });
 
 /**

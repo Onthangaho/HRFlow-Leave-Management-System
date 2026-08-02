@@ -64,11 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sessionRef = useRef<AuthSession | null>(null);
   const refreshInFlightRef = useRef<Promise<string | null> | null>(null);
 
-  sessionRef.current = session;
+  const updateSession = useCallback((newSession: AuthSession | null) => {
+    sessionRef.current = newSession;
+    setSession(newSession);
+  }, []);
 
   const clearSession = useCallback(() => {
-    setSession(null);
-  }, []);
+    updateSession(null);
+  }, [updateSession]);
 
   const refreshAccessToken = useCallback(async () => {
     if (!sessionRef.current?.refreshToken) {
@@ -85,10 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           refreshToken: sessionRef.current?.refreshToken ?? '',
         });
         const nextSession = createSession(tokenResponse);
-        setSession(nextSession);
+        updateSession(nextSession);
         return nextSession.accessToken;
       } catch {
-        setSession(null);
+        updateSession(null);
         return null;
       } finally {
         refreshInFlightRef.current = null;
@@ -96,12 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
 
     return refreshInFlightRef.current;
-  }, []);
+  }, [updateSession]);
 
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: (tokenResponse) => {
-      setSession(createSession(tokenResponse));
+      updateSession(createSession(tokenResponse));
     },
   });
 

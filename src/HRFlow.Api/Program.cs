@@ -60,7 +60,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("ReactDevServer");
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("ReactDevServer");
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
