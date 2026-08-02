@@ -6,9 +6,13 @@ using HRFlow.Application.Models.Auth;
 using HRFlow.Application.Validators.Auth;
 using HRFlow.Infrastructure.Extensions;
 using HRFlow.Infrastructure.Seeding;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
+const string HrAdministratorRoleName = "HR Administrator";
+const string HrAdministratorOnlyPolicyName = "HrAdministratorOnly";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,7 +53,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build())
+    .AddPolicy(
+        HrAdministratorOnlyPolicyName,
+        policy => policy.RequireRole(HrAdministratorRoleName));
 
 var app = builder.Build();
 
@@ -131,6 +141,11 @@ app.MapPost(
         return Results.Ok(authResult.TokenResponse);
     })
     .AllowAnonymous();
+
+app.MapGet(
+    "/api/v1/hr/authorization-check",
+    () => Results.Ok(new { status = "authorized" }))
+    .RequireAuthorization(HrAdministratorOnlyPolicyName);
 
 using (var scope = app.Services.CreateScope())
 {
