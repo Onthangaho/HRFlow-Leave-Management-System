@@ -28,8 +28,7 @@ This account is development-only and must not exist in any real deployment.
 
 - Email: `employee@hrflow.local`
 - Role: `Employee`
-- Password (default): `HrFlow!Employee2026` (override with `Seeding:EmployeePassword` in configuration)
-
+- Password: configure via `Seeding:EmployeePassword` (user secrets or appsettings.Development.json)
 The seed checks for the employee by email before creating it, so repeated restarts do not create duplicates.
 
 Troubleshooting: if a local `.db` predates the `EnsureCreated` to `MigrateAsync` change and throws a migration error, delete the file and restart.
