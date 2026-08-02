@@ -1,0 +1,15 @@
+# HRFlow
+
+HRFlow is a layered HR and leave management scaffold built with ASP.NET Core, EF Core, SQLite, and React.
+
+## Development-only seeded administrator
+
+When the API starts in `Development`, it creates one HR Administrator account so the system has an initial sign-in path on a clean local database.
+
+This account is development-only and must not exist in any real deployment.
+
+- Email: `hr.administrator@hrflow.local`
+- Role: `HR Administrator`
+- Password: `HrFlow!Dev2026`
+
+The seed checks for the administrator by email before creating it, so repeated restarts do not create duplicates.
