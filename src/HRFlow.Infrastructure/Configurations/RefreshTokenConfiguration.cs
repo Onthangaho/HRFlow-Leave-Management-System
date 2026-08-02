@@ -18,9 +18,9 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
             .IsRequired()
             .HasMaxLength(450);
 
-        builder.Property(refreshToken => refreshToken.Token)
+        builder.Property(refreshToken => refreshToken.TokenHash)
             .IsRequired()
-            .HasMaxLength(512);
+            .HasMaxLength(128);
 
         builder.Property(refreshToken => refreshToken.CreatedAtUtc)
             .IsRequired();
@@ -28,7 +28,7 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         builder.Property(refreshToken => refreshToken.ExpiresAtUtc)
             .IsRequired();
 
-        builder.HasIndex(refreshToken => refreshToken.Token)
+        builder.HasIndex(refreshToken => refreshToken.TokenHash)
             .IsUnique();
 
         builder.HasIndex(refreshToken => refreshToken.UserId);

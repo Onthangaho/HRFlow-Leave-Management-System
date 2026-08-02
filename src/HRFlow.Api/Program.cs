@@ -1,3 +1,4 @@
+using System.Text;
 using FluentValidation;
 using HRFlow.Application.DTOs.Auth;
 using HRFlow.Application.Interfaces.Auth;
@@ -5,7 +6,9 @@ using HRFlow.Application.Models.Auth;
 using HRFlow.Application.Validators.Auth;
 using HRFlow.Infrastructure.Extensions;
 using HRFlow.Infrastructure.Seeding;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,30 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
 builder.Services.AddScoped<IValidator<RefreshTokenRequest>, RefreshTokenRequestValidator>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var signingKey = builder.Configuration["Authentication:Jwt:SigningKey"];
+        if (string.IsNullOrWhiteSpace(signingKey))
+        {
+            throw new InvalidOperationException(
+                "Authentication:Jwt:SigningKey must be configured via appsettings or user secrets.");
+        }
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Authentication:Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Authentication:Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey))
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -24,6 +51,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
@@ -52,7 +82,8 @@ app.MapPost(
         }
 
         return Results.Ok(authResult.TokenResponse);
-    });
+    })
+    .AllowAnonymous();
 
 app.MapPost(
     "/api/v1/auth/refresh",
@@ -83,7 +114,8 @@ app.MapPost(
         }
 
         return Results.Ok(authResult.TokenResponse);
-    });
+    })
+    .AllowAnonymous();
 
 using (var scope = app.Services.CreateScope())
 {

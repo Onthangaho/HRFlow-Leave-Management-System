@@ -24,9 +24,15 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("DefaultConnection") ?? $"Data Source={databasePath}";
 
         services.AddDbContext<HRFlowDbContext>(options => options.UseSqlite(connectionString));
-        services.AddIdentityCore<IdentityUser>()
+        services.AddIdentityCore<IdentityUser>(options =>
+            {
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+            })
             .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<HRFlowDbContext>();
+            .AddEntityFrameworkStores<HRFlowDbContext>()
+            .AddSignInManager<SignInManager<IdentityUser>>();
         services.AddScoped<IAuthService, AuthService>();
 
         return services;

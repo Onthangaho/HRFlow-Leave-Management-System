@@ -79,9 +79,9 @@ namespace HRFlow.Infrastructure.Migrations
                     b.Property<DateTime?>("RevokedAtUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Token")
+                    b.Property<string>("TokenHash")
                         .IsRequired()
-                        .HasMaxLength(512)
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
@@ -91,7 +91,7 @@ namespace HRFlow.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Token")
+                    b.HasIndex("TokenHash")
                         .IsUnique();
 
                     b.HasIndex("UserId");

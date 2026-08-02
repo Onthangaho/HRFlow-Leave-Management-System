@@ -16,9 +16,10 @@ public class RefreshToken
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the opaque refresh token value returned to the client.
+    /// Gets or sets the one-way hash of the refresh token value using server-side pepper.
+    /// The raw token is only held by the client and submitted for redemption; the server stores only the hash.
     /// </summary>
-    public string Token { get; set; } = string.Empty;
+    public string TokenHash { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets when the token was created in UTC.
