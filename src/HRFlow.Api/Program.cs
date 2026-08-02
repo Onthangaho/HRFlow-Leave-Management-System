@@ -26,9 +26,6 @@ using (var scope = app.Services.CreateScope())
     await dbContext.Database.MigrateAsync();
 }
 
-if (app.Environment.IsDevelopment())
-{
-    await app.Services.SeedDevelopmentAdministratorAsync();
-}
+await app.Services.SeedDevelopmentAdministratorAsync();
 
 app.Run();
