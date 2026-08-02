@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace HRFlow.Infrastructure.Seeding;
@@ -11,16 +13,26 @@ public static class DevelopmentIdentitySeeder
 {
     private const string HrAdministratorRoleName = "HR Administrator";
     private const string HrAdministratorEmail = "hr.administrator@hrflow.local";
-    private const string HrAdministratorPassword = "HrFlow!Dev2026";
+    private const string DefaultHrAdministratorPassword = "HrFlow!Dev2026";
 
     /// <summary>
-    /// Creates the development HR Administrator account once, but only when the host is running in Development.
+    /// Creates the development HR Administrator account once and self-guards to no-op outside Development.
     /// </summary>
     public static async Task SeedDevelopmentAdministratorAsync(this IServiceProvider serviceProvider)
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
         using var scope = serviceProvider.CreateScope();
+        var hostEnvironment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+        if (!hostEnvironment.IsDevelopment())
+        {
+            return;
+        }
+
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var hrAdministratorPassword =
+            configuration["Seeding:HrAdministratorPassword"] ?? DefaultHrAdministratorPassword;
+
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
         var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
@@ -38,7 +50,7 @@ public static class DevelopmentIdentitySeeder
                 EmailConfirmed = true
             };
 
-            var createResult = await userManager.CreateAsync(adminUser, HrAdministratorPassword);
+            var createResult = await userManager.CreateAsync(adminUser, hrAdministratorPassword);
             EnsureSucceeded(createResult, "create the development HR Administrator account");
 
             existingAdmin = adminUser;

@@ -10,6 +10,8 @@ This account is development-only and must not exist in any real deployment.
 
 - Email: `hr.administrator@hrflow.local`
 - Role: `HR Administrator`
-- Password: `HrFlow!Dev2026`
+- Password (default): `HrFlow!Dev2026` (override with `Seeding:HrAdministratorPassword` in configuration)
 
 The seed checks for the administrator by email before creating it, so repeated restarts do not create duplicates.
+
+Troubleshooting: if a local `.db` predates the `EnsureCreated` to `MigrateAsync` change and throws a migration error, delete the file and restart.
