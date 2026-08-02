@@ -1,4 +1,6 @@
 using HRFlow.Infrastructure.Extensions;
+using HRFlow.Infrastructure.Seeding;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +23,12 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>();
-    dbContext.Database.EnsureCreated();
+    await dbContext.Database.MigrateAsync();
+}
+
+if (app.Environment.IsDevelopment())
+{
+    await app.Services.SeedDevelopmentAdministratorAsync();
 }
 
 app.Run();
