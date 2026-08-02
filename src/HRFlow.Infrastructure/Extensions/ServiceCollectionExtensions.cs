@@ -1,4 +1,6 @@
+using HRFlow.Application.Interfaces.Auth;
 using HRFlow.Infrastructure.Persistence;
+using HRFlow.Infrastructure.Services.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddIdentityCore<IdentityUser>()
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<HRFlowDbContext>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

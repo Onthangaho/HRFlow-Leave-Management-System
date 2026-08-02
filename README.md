@@ -2,6 +2,12 @@
 
 HRFlow is a layered HR and leave management scaffold built with ASP.NET Core, EF Core, SQLite, and React.
 
+## Local Setup
+
+Configure a local JWT signing key with User Secrets before starting the API:
+
+`dotnet user-secrets set "Authentication:Jwt:SigningKey" "<your-base64-32-byte-key>" --project src/HRFlow.Api`
+
 ## Development-only seeded administrator
 
 When the API starts in `Development`, it creates one HR Administrator account so the system has an initial sign-in path on a clean local database.

@@ -19,6 +19,11 @@ public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRo
     {
     }
 
+    /// <summary>
+    /// Gets refresh token records used for server-side token rotation and invalidation.
+    /// </summary>
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,5 +31,6 @@ public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRo
 
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
         modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
+        modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
     }
 }
