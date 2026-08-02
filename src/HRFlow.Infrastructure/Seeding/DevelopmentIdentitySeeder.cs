@@ -20,6 +20,8 @@ public static class DevelopmentIdentitySeeder
 
     /// <summary>
     /// Creates the development HR Administrator account once and self-guards to no-op outside Development.
+    /// <summary>
+    /// Seeds the development HR Administrator and Employee roles and accounts when running in the Development environment.
     /// </summary>
     public static async Task SeedDevelopmentAdministratorAsync(this IServiceProvider serviceProvider)
     {
@@ -63,6 +65,13 @@ public static class DevelopmentIdentitySeeder
             "Employee");
     }
 
+    /// <summary>
+    /// Ensures that the specified role exists in the identity store.
+    /// </summary>
+    /// <param name="roleManager">The manager used to query and create roles.</param>
+    /// <param name="roleName">The name of the role to ensure exists.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the role cannot be created.</exception>
+    ///
     private static async Task EnsureRoleExistsAsync(RoleManager<IdentityRole> roleManager, string roleName)
     {
         if (await roleManager.RoleExistsAsync(roleName))
@@ -74,6 +83,13 @@ public static class DevelopmentIdentitySeeder
         EnsureSucceeded(createRoleResult, $"create the {roleName} role");
     }
 
+    /// <summary>
+    /// Ensures a development account exists and is assigned to the specified role.
+    /// </summary>
+    /// <param name="email">The email address and username for the account.</param>
+    /// <param name="password">The password used when creating the account.</param>
+    /// <param name="roleName">The role to assign to the account.</param>
+    /// <param name="accountLabel">The label used to identify the account in log messages and errors.</param>
     private static async Task EnsureUserInRoleAsync(
         UserManager<IdentityUser> userManager,
         ILogger logger,
@@ -110,6 +126,12 @@ public static class DevelopmentIdentitySeeder
         }
     }
 
+    /// <summary>
+    /// Ensures an identity operation succeeded.
+    /// </summary>
+    /// <param name="identityResult">The result of the identity operation.</param>
+    /// <param name="actionDescription">A description of the action used in the exception message if the operation fails.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the identity operation fails.</exception>
     private static void EnsureSucceeded(IdentityResult identityResult, string actionDescription)
     {
         if (identityResult.Succeeded)
