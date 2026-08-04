@@ -16,16 +16,16 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.Property(employee => employee.FullName)
             .IsRequired()
-            .HasMaxLength(200);
+            .HasMaxLength(Employee.MaxFullNameLength);
 
         builder.Property(employee => employee.Email)
             .IsRequired()
-            .HasMaxLength(256);
+            .HasMaxLength(Employee.MaxEmailLength);
 
         builder.HasOne(employee => employee.Department)
             .WithMany(department => department.Employees)
             .HasForeignKey(employee => employee.DepartmentId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(employee => employee.Manager)
             .WithMany(employee => employee.DirectReports)
