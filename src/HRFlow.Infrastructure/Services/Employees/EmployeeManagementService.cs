@@ -75,9 +75,9 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         }
         catch
         {
-            // This compensates for handled failures in-process. If the process crashes between
-            // identity creation and this catch block, compensation will not run and a manual or
-            // background reconciliation process is still required.
+            // In the current topology, Identity and Employee writes share the same DbContext and
+            // transaction, so rollback already reverts both sides on handled failures. This
+            // compensation path is defensive in case a future refactor separates Identity storage.
             await transaction.RollbackAsync(cancellationToken);
 
             if (createdIdentityUser is not null)
