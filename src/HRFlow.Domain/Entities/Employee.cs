@@ -8,6 +8,16 @@ namespace HRFlow.Domain.Entities;
 /// </summary>
 public class Employee
 {
+    /// <summary>
+    /// Maximum allowed length for employee full name. Shared with persistence configuration.
+    /// </summary>
+    public const int MaxFullNameLength = 200;
+
+    /// <summary>
+    /// Maximum allowed length for employee email. Shared with persistence configuration.
+    /// </summary>
+    public const int MaxEmailLength = 256;
+
     private static readonly Regex EmailRegex = new(
         "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -53,6 +63,15 @@ public class Employee
     public ICollection<Employee> DirectReports { get; private set; } = new List<Employee>();
 
     /// <summary>
+    /// Parameterless constructor for EF Core materialization only.
+    /// EF Core uses reflection to instantiate entities when loading from the database.
+    /// Not intended for domain-driven construction - use the static Create factory instead.
+    /// </summary>
+    private Employee()
+    {
+    }
+
+    /// <summary>
     /// Creates a new employee with required identity and assignment information.
     /// This protects aggregate integrity before persistence or service-level workflows run.
     /// </summary>
@@ -95,6 +114,11 @@ public class Employee
         string email,
         Guid? departmentId)
     {
+        // Validate all inputs before any mutation to ensure aggregate remains unchanged on validation failure
+        ValidateIdentity(fullName, email);
+        ValidateDepartment(departmentId);
+
+        // All validation passed - now apply mutations
         UpdateIdentity(fullName, email);
         AssignDepartment(departmentId);
     }
@@ -108,11 +132,16 @@ public class Employee
         ManagerId = managerId == Guid.Empty ? null : managerId;
     }
 
-    private void UpdateIdentity(string fullName, string email)
+    private void ValidateIdentity(string fullName, string email)
     {
         if (string.IsNullOrWhiteSpace(fullName))
         {
             throw new InvalidOperationException("Domain validation error: FullName is required.");
+        }
+
+        if (fullName.Trim().Length > MaxFullNameLength)
+        {
+            throw new InvalidOperationException($"Domain validation error: FullName cannot exceed {MaxFullNameLength} characters.");
         }
 
         if (string.IsNullOrWhiteSpace(email))
@@ -120,22 +149,35 @@ public class Employee
             throw new InvalidOperationException("Domain validation error: Email is required.");
         }
 
+        if (email.Trim().Length > MaxEmailLength)
+        {
+            throw new InvalidOperationException($"Domain validation error: Email cannot exceed {MaxEmailLength} characters.");
+        }
+
         if (!EmailRegex.IsMatch(email.Trim()))
         {
             throw new InvalidOperationException("Domain validation error: Email format is invalid.");
         }
+    }
 
+    private void ValidateDepartment(Guid? departmentId)
+    {
+        if (!departmentId.HasValue || departmentId.Value == Guid.Empty)
+        {
+            throw new InvalidOperationException("Domain validation error: DepartmentId is required.");
+        }
+    }
+
+    private void UpdateIdentity(string fullName, string email)
+    {
+        ValidateIdentity(fullName, email);
         FullName = fullName.Trim();
         Email = email.Trim();
     }
 
     private void AssignDepartment(Guid? departmentId)
     {
-        if (!departmentId.HasValue || departmentId.Value == Guid.Empty)
-        {
-            throw new InvalidOperationException("Domain validation error: DepartmentId is required.");
-        }
-
+        ValidateDepartment(departmentId);
         DepartmentId = departmentId.Value;
     }
 

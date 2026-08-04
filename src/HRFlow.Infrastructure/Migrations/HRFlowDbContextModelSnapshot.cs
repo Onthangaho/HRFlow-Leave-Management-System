@@ -296,7 +296,7 @@ namespace HRFlow.Infrastructure.Migrations
                     b.HasOne("HRFlow.Domain.Entities.Department", "Department")
                         .WithMany("Employees")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HRFlow.Domain.Entities.Employee", "Manager")
                         .WithMany("DirectReports")
