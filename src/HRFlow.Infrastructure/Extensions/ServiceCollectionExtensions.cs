@@ -1,6 +1,8 @@
 using HRFlow.Application.Interfaces.Auth;
+using HRFlow.Application.Interfaces.Employees;
 using HRFlow.Infrastructure.Persistence;
 using HRFlow.Infrastructure.Services.Auth;
+using HRFlow.Infrastructure.Services.Employees;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +36,7 @@ public static class ServiceCollectionExtensions
             .AddEntityFrameworkStores<HRFlowDbContext>()
             .AddSignInManager<SignInManager<IdentityUser>>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
 
         return services;
     }

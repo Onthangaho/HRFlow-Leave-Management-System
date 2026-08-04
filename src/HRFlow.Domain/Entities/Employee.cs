@@ -178,7 +178,7 @@ public class Employee
     private void AssignDepartment(Guid? departmentId)
     {
         ValidateDepartment(departmentId);
-        DepartmentId = departmentId.Value;
+        DepartmentId = departmentId!.Value;
     }
 
 }
