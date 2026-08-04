@@ -37,7 +37,6 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         Guid departmentId,
         string roleName,
         Guid? managerId,
-        bool simulateFailureAfterIdentityCreation,
         CancellationToken cancellationToken)
     {
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -60,12 +59,6 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             var addRoleResult = await _userManager.AddToRoleAsync(identityUser, roleName);
             EnsureIdentitySucceeded(addRoleResult, $"assign the '{roleName}' identity role");
 
-            if (simulateFailureAfterIdentityCreation)
-            {
-                throw new InvalidOperationException(
-                    "Simulated employee persistence failure after identity user creation.");
-            }
-
             var employee = Employee.Create(fullName, email, departmentId);
             employee.AssignManager(managerId);
 
@@ -82,6 +75,9 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         }
         catch
         {
+            // This compensates for handled failures in-process. If the process crashes between
+            // identity creation and this catch block, compensation will not run and a manual or
+            // background reconciliation process is still required.
             await transaction.RollbackAsync(cancellationToken);
 
             if (createdIdentityUser is not null)

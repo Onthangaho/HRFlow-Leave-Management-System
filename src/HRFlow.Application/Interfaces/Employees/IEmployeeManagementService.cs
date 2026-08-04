@@ -18,7 +18,6 @@ public interface IEmployeeManagementService
         Guid departmentId,
         string roleName,
         Guid? managerId,
-        bool simulateFailureAfterIdentityCreation,
         CancellationToken cancellationToken);
 
     /// <summary>

@@ -38,9 +38,4 @@ public sealed class CreateEmployeeCommand : IRequest<EmployeeManagementResult>
     /// </summary>
     public string RoleName { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets a development-only switch that forces a failure after identity user creation
-    /// to verify atomic rollback behavior for interview and operational validation.
-    /// </summary>
-    public bool SimulateFailureAfterIdentityCreation { get; set; }
 }

@@ -29,7 +29,6 @@ public sealed class CreateEmployeeCommandHandler : IRequestHandler<CreateEmploye
             request.DepartmentId,
             request.RoleName,
             request.ManagerId,
-            request.SimulateFailureAfterIdentityCreation,
             cancellationToken);
     }
 }
