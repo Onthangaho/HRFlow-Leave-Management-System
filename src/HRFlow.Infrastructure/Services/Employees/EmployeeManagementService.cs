@@ -1,3 +1,4 @@
+using HRFlow.Application.Exceptions;
 using HRFlow.Application.Interfaces.Employees;
 using HRFlow.Application.Models.Employees;
 using HRFlow.Domain.Entities;
@@ -82,7 +83,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
 
             if (createdIdentityUser is not null)
             {
-                await DeleteUserIfPresentAsync(createdIdentityUser.Id);
+                await DeleteUserIfPresentAsync(createdIdentityUser.Id, cancellationToken);
             }
 
             throw;
@@ -103,10 +104,10 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
 
         var employee = await _dbContext.Set<Employee>()
             .SingleOrDefaultAsync(entity => entity.Id == employeeId, cancellationToken)
-            ?? throw new InvalidOperationException($"Employee '{employeeId}' was not found.");
+            ?? throw new NotFoundException($"Employee '{employeeId}' was not found.");
 
         var identityUser = await _userManager.FindByEmailAsync(employee.Email)
-            ?? throw new InvalidOperationException(
+            ?? throw new NotFoundException(
                 $"Linked identity user for employee '{employeeId}' with email '{employee.Email}' was not found.");
 
         employee.Update(fullName, email, departmentId);
@@ -200,7 +201,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         EnsureIdentitySucceeded(addRoleResult, $"assign the '{roleName}' identity role");
     }
 
-    private async Task DeleteUserIfPresentAsync(string userId)
+    private async Task DeleteUserIfPresentAsync(string userId, CancellationToken cancellationToken)
     {
         var trackedEntry = _dbContext.ChangeTracker.Entries<IdentityUser>()
             .SingleOrDefault(entry => entry.Entity.Id == userId);
@@ -212,7 +213,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
 
         var userExists = await _dbContext.Users
             .AsNoTracking()
-            .AnyAsync(user => user.Id == userId);
+            .AnyAsync(user => user.Id == userId, cancellationToken);
 
         if (!userExists)
         {
@@ -233,7 +234,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
 
         var orphanStillExists = await _dbContext.Users
             .AsNoTracking()
-            .AnyAsync(user => user.Id == userId);
+            .AnyAsync(user => user.Id == userId, cancellationToken);
 
         if (orphanStillExists)
         {

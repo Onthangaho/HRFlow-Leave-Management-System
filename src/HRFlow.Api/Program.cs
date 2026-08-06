@@ -2,6 +2,7 @@ using System.Text;
 using FluentValidation;
 using HRFlow.Application.Behaviors;
 using HRFlow.Application.DTOs.Auth;
+using HRFlow.Application.Exceptions;
 using HRFlow.Application.Features.Employees.Commands.CreateEmployee;
 using HRFlow.Application.Features.Employees.Commands.UpdateEmployee;
 using HRFlow.Application.Interfaces.Auth;
@@ -154,7 +155,7 @@ app.MapGet(
     .RequireAuthorization(HrAdministratorOnlyPolicyName);
 
 app.MapPost(
-    "/api/v1/hr/employees",
+    "/api/v1/employees",
     async (
         CreateEmployeeCommand command,
         ISender sender,
@@ -163,7 +164,7 @@ app.MapPost(
         try
         {
             var result = await sender.Send(command, cancellationToken);
-            return Results.Created($"/api/v1/hr/employees/{result.EmployeeId}", result);
+            return Results.Created($"/api/v1/employees/{result.EmployeeId}", result);
         }
         catch (ValidationException validationException)
         {
@@ -185,14 +186,14 @@ app.MapPost(
     .RequireAuthorization(HrAdministratorOnlyPolicyName);
 
 app.MapPut(
-    "/api/v1/hr/employees/{employeeId:guid}",
+    "/api/v1/employees/{id:guid}",
     async (
-        Guid employeeId,
+        Guid id,
         UpdateEmployeeCommand command,
         ISender sender,
         CancellationToken cancellationToken) =>
     {
-        command.EmployeeId = employeeId;
+        command.EmployeeId = id;
 
         try
         {
@@ -206,6 +207,16 @@ app.MapPut(
                 .ToDictionary(
                     grouping => grouping.Key,
                     grouping => grouping.Select(error => error.ErrorMessage).ToArray()));
+        }
+        catch (NotFoundException exception)
+        {
+            // Employee or linked identity user does not exist — 404 so clients can distinguish
+            // "resource missing" from a bad request.
+            return Results.Problem(
+                title: "Employee not found",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status404NotFound,
+                type: "https://www.rfc-editor.org/rfc/rfc7807");
         }
         catch (InvalidOperationException exception)
         {
