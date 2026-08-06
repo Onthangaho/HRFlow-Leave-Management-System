@@ -15,10 +15,7 @@ public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmp
     public UpdateEmployeeCommandValidator(IEmployeeManagementService employeeManagementService)
     {
         RuleFor(command => command.EmployeeId)
-            .NotEmpty()
-            .MustAsync(async (employeeId, cancellationToken) =>
-                await employeeManagementService.EmployeeExistsAsync(employeeId, cancellationToken))
-            .WithMessage("Employee does not exist.");
+            .NotEmpty();
 
         RuleFor(command => command.FullName)
             .NotEmpty()

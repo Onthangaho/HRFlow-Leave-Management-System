@@ -40,6 +40,11 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         Guid? managerId,
         CancellationToken cancellationToken)
     {
+        if (!await IsEmailAvailableAsync(email, null, cancellationToken))
+        {
+            throw new DuplicateEmailException(email);
+        }
+
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         IdentityUser? createdIdentityUser = null;
@@ -103,8 +108,12 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         var employee = await _dbContext.Set<Employee>()
-            .SingleOrDefaultAsync(entity => entity.Id == employeeId, cancellationToken)
-            ?? throw new NotFoundException($"Employee '{employeeId}' was not found.");
+            .SingleOrDefaultAsync(entity => entity.Id == employeeId, cancellationToken);
+
+        if (employee is null)
+        {
+            throw new EmployeeNotFoundException(employeeId);
+        }
 
         var identityUser = await _userManager.FindByEmailAsync(employee.Email)
             ?? throw new NotFoundException(
