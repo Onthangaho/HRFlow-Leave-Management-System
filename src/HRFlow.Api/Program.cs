@@ -1,11 +1,16 @@
 using System.Text;
 using FluentValidation;
+using HRFlow.Application.Behaviors;
 using HRFlow.Application.DTOs.Auth;
+using HRFlow.Application.Exceptions;
+using HRFlow.Application.Features.Employees.Commands.CreateEmployee;
+using HRFlow.Application.Features.Employees.Commands.UpdateEmployee;
 using HRFlow.Application.Interfaces.Auth;
 using HRFlow.Application.Models.Auth;
 using HRFlow.Application.Validators.Auth;
 using HRFlow.Infrastructure.Extensions;
 using HRFlow.Infrastructure.Seeding;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +33,10 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
-builder.Services.AddScoped<IValidator<RefreshTokenRequest>, RefreshTokenRequestValidator>();
+builder.Services.AddMediatR(configuration =>
+    configuration.RegisterServicesFromAssemblyContaining<CreateEmployeeCommand>());
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -145,6 +152,81 @@ app.MapPost(
 app.MapGet(
     "/api/v1/hr/authorization-check",
     () => Results.Ok(new { status = "authorized" }))
+    .RequireAuthorization(HrAdministratorOnlyPolicyName);
+
+app.MapPost(
+    "/api/v1/employees",
+    async (
+        CreateEmployeeCommand command,
+        ISender sender,
+        CancellationToken cancellationToken) =>
+    {
+        try
+        {
+            var result = await sender.Send(command, cancellationToken);
+            return Results.Created($"/api/v1/employees/{result.EmployeeId}", result);
+        }
+        catch (ValidationException validationException)
+        {
+            return Results.ValidationProblem(validationException.Errors
+                .GroupBy(error => error.PropertyName)
+                .ToDictionary(
+                    grouping => grouping.Key,
+                    grouping => grouping.Select(error => error.ErrorMessage).ToArray()));
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Problem(
+                title: "Employee creation failed",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status400BadRequest,
+                type: "https://www.rfc-editor.org/rfc/rfc7807");
+        }
+    })
+    .RequireAuthorization(HrAdministratorOnlyPolicyName);
+
+app.MapPut(
+    "/api/v1/employees/{id:guid}",
+    async (
+        Guid id,
+        UpdateEmployeeCommand command,
+        ISender sender,
+        CancellationToken cancellationToken) =>
+    {
+        command.EmployeeId = id;
+
+        try
+        {
+            var result = await sender.Send(command, cancellationToken);
+            return Results.Ok(result);
+        }
+        catch (ValidationException validationException)
+        {
+            return Results.ValidationProblem(validationException.Errors
+                .GroupBy(error => error.PropertyName)
+                .ToDictionary(
+                    grouping => grouping.Key,
+                    grouping => grouping.Select(error => error.ErrorMessage).ToArray()));
+        }
+        catch (NotFoundException exception)
+        {
+            // Employee or linked identity user does not exist — 404 so clients can distinguish
+            // "resource missing" from a bad request.
+            return Results.Problem(
+                title: "Employee not found",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status404NotFound,
+                type: "https://www.rfc-editor.org/rfc/rfc7807");
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.Problem(
+                title: "Employee update failed",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status400BadRequest,
+                type: "https://www.rfc-editor.org/rfc/rfc7807");
+        }
+    })
     .RequireAuthorization(HrAdministratorOnlyPolicyName);
 
 using (var scope = app.Services.CreateScope())
