@@ -25,6 +25,7 @@ public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmp
             .MaximumLength(Employee.MaxFullNameLength);
 
         RuleFor(command => command.Email)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .EmailAddress()
             .MaximumLength(Employee.MaxEmailLength)
@@ -39,6 +40,7 @@ public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmp
             .WithMessage("Department does not exist.");
 
         RuleFor(command => command.RoleName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .MustAsync(async (roleName, cancellationToken) =>
                 await employeeManagementService.RoleExistsAsync(roleName, cancellationToken))

@@ -32,13 +32,13 @@ public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<
         }
 
         var context = new ValidationContext<TRequest>(request);
-        var validationResults = await Task.WhenAll(
-            _validators.Select(validator => validator.ValidateAsync(context, cancellationToken)));
+        var failures = new List<FluentValidation.Results.ValidationFailure>();
 
-        var failures = validationResults
-            .SelectMany(result => result.Errors)
-            .Where(error => error is not null)
-            .ToList();
+        foreach (var validator in _validators)
+        {
+            var validationResult = await validator.ValidateAsync(context, cancellationToken);
+            failures.AddRange(validationResult.Errors.Where(error => error is not null));
+        }
 
         if (failures.Count != 0)
         {

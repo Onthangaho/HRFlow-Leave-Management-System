@@ -79,11 +79,11 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             // In the current topology, Identity and Employee writes share the same DbContext and
             // transaction, so rollback already reverts both sides on handled failures. This
             // compensation path is defensive in case a future refactor separates Identity storage.
-            await transaction.RollbackAsync(cancellationToken);
+            await transaction.RollbackAsync(CancellationToken.None);
 
             if (createdIdentityUser is not null)
             {
-                await DeleteUserIfPresentAsync(createdIdentityUser.Id, cancellationToken);
+                await DeleteUserIfPresentAsync(createdIdentityUser.Id, CancellationToken.None);
             }
 
             throw;

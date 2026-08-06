@@ -19,6 +19,7 @@ public sealed class CreateEmployeeCommandValidator : AbstractValidator<CreateEmp
             .MaximumLength(Employee.MaxFullNameLength);
 
         RuleFor(command => command.Email)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .EmailAddress()
             .MaximumLength(Employee.MaxEmailLength)
@@ -28,7 +29,12 @@ public sealed class CreateEmployeeCommandValidator : AbstractValidator<CreateEmp
 
         RuleFor(command => command.Password)
             .NotEmpty()
-            .MinimumLength(8);
+            .MinimumLength(8)
+            .Matches(@"[0-9]").WithMessage("Password must contain at least one digit.")
+            .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter.")
+            .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
+            .Matches(@"[^a-zA-Z0-9]").WithMessage("Password must contain at least one non-alphanumeric character.")
+            .Must(password => password.Distinct().Count() >= 1).WithMessage("Password must contain at least 1 unique character.");
 
         RuleFor(command => command.DepartmentId)
             .NotEmpty()
@@ -37,6 +43,7 @@ public sealed class CreateEmployeeCommandValidator : AbstractValidator<CreateEmp
             .WithMessage("Department does not exist.");
 
         RuleFor(command => command.RoleName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .MustAsync(async (roleName, cancellationToken) =>
                 await employeeManagementService.RoleExistsAsync(roleName, cancellationToken))
