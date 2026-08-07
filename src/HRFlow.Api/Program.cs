@@ -174,6 +174,22 @@ app.MapPost(
                     grouping => grouping.Key,
                     grouping => grouping.Select(error => error.ErrorMessage).ToArray()));
         }
+        catch (EmployeeNotFoundException exception)
+        {
+            return Results.Problem(
+                title: "Employee not found",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status404NotFound,
+                type: "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.4");
+        }
+        catch (DuplicateEmailException exception)
+        {
+            return Results.Problem(
+                title: "Email already in use",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status409Conflict,
+                type: "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.8");
+        }
         catch (InvalidOperationException exception)
         {
             return Results.Problem(
@@ -208,15 +224,21 @@ app.MapPut(
                     grouping => grouping.Key,
                     grouping => grouping.Select(error => error.ErrorMessage).ToArray()));
         }
-        catch (NotFoundException exception)
+        catch (EmployeeNotFoundException exception)
         {
-            // Employee or linked identity user does not exist — 404 so clients can distinguish
-            // "resource missing" from a bad request.
             return Results.Problem(
                 title: "Employee not found",
                 detail: exception.Message,
                 statusCode: StatusCodes.Status404NotFound,
-                type: "https://www.rfc-editor.org/rfc/rfc7807");
+                type: "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.4");
+        }
+        catch (DuplicateEmailException exception)
+        {
+            return Results.Problem(
+                title: "Email already in use",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status409Conflict,
+                type: "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.8");
         }
         catch (InvalidOperationException exception)
         {
@@ -233,6 +255,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>();
     await dbContext.Database.MigrateAsync();
+    await app.Services.SeedDepartmentsAsync();
 }
 
 await app.Services.SeedDevelopmentAdministratorAsync();

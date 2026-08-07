@@ -1,3 +1,4 @@
+using HRFlow.Application.Exceptions;
 using HRFlow.Application.Interfaces.Employees;
 using HRFlow.Application.Models.Employees;
 using MediatR;

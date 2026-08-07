@@ -15,10 +15,7 @@ public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmp
     public UpdateEmployeeCommandValidator(IEmployeeManagementService employeeManagementService)
     {
         RuleFor(command => command.EmployeeId)
-            .NotEmpty()
-            .MustAsync(async (employeeId, cancellationToken) =>
-                await employeeManagementService.EmployeeExistsAsync(employeeId, cancellationToken))
-            .WithMessage("Employee does not exist.");
+            .NotEmpty();
 
         RuleFor(command => command.FullName)
             .NotEmpty()
@@ -28,10 +25,7 @@ public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmp
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .EmailAddress()
-            .MaximumLength(Employee.MaxEmailLength)
-            .MustAsync(async (command, email, cancellationToken) =>
-                await employeeManagementService.IsEmailAvailableAsync(email, command.EmployeeId, cancellationToken))
-            .WithMessage("Email is already assigned to another employee account.");
+            .MaximumLength(Employee.MaxEmailLength);
 
         RuleFor(command => command.DepartmentId)
             .NotEmpty()

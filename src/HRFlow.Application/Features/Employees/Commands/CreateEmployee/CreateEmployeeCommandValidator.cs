@@ -22,10 +22,7 @@ public sealed class CreateEmployeeCommandValidator : AbstractValidator<CreateEmp
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .EmailAddress()
-            .MaximumLength(Employee.MaxEmailLength)
-            .MustAsync(async (command, email, cancellationToken) =>
-                await employeeManagementService.IsEmailAvailableAsync(email, null, cancellationToken))
-            .WithMessage("Email is already assigned to another employee account.");
+            .MaximumLength(Employee.MaxEmailLength);
 
         RuleFor(command => command.Password)
             .NotEmpty()
