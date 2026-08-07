@@ -9,8 +9,16 @@ using System.Threading.Tasks;
 
 namespace HRFlow.Infrastructure.Seeding
 {
+    /// <summary>
+    /// Provides database seeding methods for pre-populating departments in development environments.
+    /// </summary>
     public static class DepartmentSeeder
     {
+        /// <summary>
+        /// Seeds initial department data for development purposes. This method only runs in the Development environment.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider used to resolve dependencies such as the database context and environment information.</param>
+        /// <returns>A task representing the asynchronous seeding operation.</returns>
         public static async Task SeedDepartmentsAsync(this IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();

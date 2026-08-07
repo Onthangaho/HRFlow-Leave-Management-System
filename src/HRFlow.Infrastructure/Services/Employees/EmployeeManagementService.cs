@@ -59,7 +59,14 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             };
 
             var createUserResult = await _userManager.CreateAsync(identityUser, password);
-            EnsureIdentitySucceeded(createUserResult, "create the identity user account");
+            if (!createUserResult.Succeeded)
+            {
+                if (createUserResult.Errors.Any(error => error.Code == "DuplicateUserName" || error.Code == "DuplicateEmail"))
+                {
+                    throw new DuplicateEmailException(email);
+                }
+                EnsureIdentitySucceeded(createUserResult, "create the identity user account");
+            }
             createdIdentityUser = identityUser;
 
             var addRoleResult = await _userManager.AddToRoleAsync(identityUser, roleName);
@@ -124,11 +131,23 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
 
         if (!string.Equals(identityUser.Email, email, StringComparison.OrdinalIgnoreCase))
         {
+            if (!await IsEmailAvailableAsync(email, employeeId, cancellationToken))
+            {
+                throw new DuplicateEmailException(email);
+            }
+
             identityUser.Email = email;
             identityUser.UserName = email;
 
             var updateUserResult = await _userManager.UpdateAsync(identityUser);
-            EnsureIdentitySucceeded(updateUserResult, "update the identity user email");
+            if (!updateUserResult.Succeeded)
+            {
+                if (updateUserResult.Errors.Any(error => error.Code == "DuplicateUserName" || error.Code == "DuplicateEmail"))
+                {
+                    throw new DuplicateEmailException(email);
+                }
+                EnsureIdentitySucceeded(updateUserResult, "update the identity user email");
+            }
         }
 
         await EnsureSingleAssignedRoleAsync(identityUser, roleName);
