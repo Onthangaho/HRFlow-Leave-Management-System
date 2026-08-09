@@ -72,7 +72,9 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             var addRoleResult = await _userManager.AddToRoleAsync(identityUser, roleName);
             EnsureIdentitySucceeded(addRoleResult, $"assign the '{roleName}' identity role");
 
-            var employee = Employee.Create(fullName, email, departmentId, identityUser.Id);
+            var employee = new Employee(); // Use the parameterless constructor
+            employee.Update(fullName, email, departmentId); // Use Update to set initial values
+            employee.SetIdentityUser(identityUser.Id); // Set the identity user
             employee.AssignManager(managerId);
 
             _dbContext.Set<Employee>().Add(employee);
@@ -130,7 +132,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         employee.AssignManager(managerId);
         if (string.IsNullOrEmpty(employee.IdentityUserId))
         {
-            employee.IdentityUserId = identityUser.Id;
+            employee.SetIdentityUser(identityUser.Id);
         }
 
         if (!string.Equals(identityUser.Email, email, StringComparison.OrdinalIgnoreCase))

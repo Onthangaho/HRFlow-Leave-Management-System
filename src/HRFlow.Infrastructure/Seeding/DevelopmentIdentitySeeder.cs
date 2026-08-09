@@ -3,6 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using HRFlow.Domain.Entities;
 
 namespace HRFlow.Infrastructure.Seeding;
 
@@ -17,10 +19,18 @@ public static class DevelopmentIdentitySeeder
     private const string EmployeeRoleName = "Employee";
     private const string EmployeeEmail = "employee@hrflow.local";
     private const string DefaultEmployeePassword = "HrFlow!Employee2026";
+    private const string ManagerRoleName = "Manager";
+    private const string ManagerEmail = "manager@hrflow.local";
+    private const string DefaultManagerPassword = "HrFlow!Manager2026";
 
     /// <summary>
-    /// Seeds the development HR Administrator and Employee roles and accounts when running in the Development environment.
+    /// Seeds the development HR Administrator, Manager, and Employee roles and accounts when running in the Development environment.
     /// </summary>
+    /// <remarks>
+    /// The Identity "Manager" role controls ACCESS to approval endpoints (authorization), while
+    /// Employee.ManagerId controls WHICH employees' requests a given manager can see/approve (data scoping).
+    /// These are two different concerns that work together, not interchangeable.
+    /// </remarks>
     public static async Task SeedDevelopmentAdministratorAsync(this IServiceProvider serviceProvider)
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
@@ -37,6 +47,8 @@ public static class DevelopmentIdentitySeeder
             configuration["Seeding:HrAdministratorPassword"] ?? DefaultHrAdministratorPassword;
         var employeePassword =
             configuration["Seeding:EmployeePassword"] ?? DefaultEmployeePassword;
+        var managerPassword =
+            configuration["Seeding:ManagerPassword"] ?? DefaultManagerPassword;
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
@@ -47,6 +59,7 @@ public static class DevelopmentIdentitySeeder
 
         await EnsureRoleExistsAsync(roleManager, HrAdministratorRoleName);
         await EnsureRoleExistsAsync(roleManager, EmployeeRoleName);
+        await EnsureRoleExistsAsync(roleManager, ManagerRoleName);
 
         await EnsureUserInRoleAsync(
             userManager,
@@ -63,6 +76,56 @@ public static class DevelopmentIdentitySeeder
             employeePassword,
             EmployeeRoleName,
             "Employee");
+
+        await EnsureUserInRoleAsync(
+            userManager,
+            logger,
+            ManagerEmail,
+            managerPassword,
+            ManagerRoleName,
+            "Manager");
+
+        await SeedManagerDataAsync(scope.ServiceProvider);
+    }
+
+    private static async Task SeedManagerDataAsync(IServiceProvider serviceProvider)
+    {
+        var context = serviceProvider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger("DevelopmentDataSeeder");
+
+        var managerUser = await userManager.FindByEmailAsync(ManagerEmail);
+        if (managerUser is null)
+        {
+            logger.LogWarning("Manager user not found, skipping manager assignment.");
+            return;
+        }
+
+        var managerEmployee = await context.Employees.FirstOrDefaultAsync(e => e.IdentityUserId == managerUser.Id);
+        if (managerEmployee is null)
+        {
+            var department = await context.Departments.FirstOrDefaultAsync();
+            if(department is null)
+            {
+                logger.LogWarning("No departments found, skipping manager employee creation.");
+                return;
+            }
+            managerEmployee = new Employee();
+            managerEmployee.Update("Manager User", ManagerEmail, department.Id);
+            managerEmployee.SetIdentityUser(managerUser.Id);
+            context.Employees.Add(managerEmployee);
+            await context.SaveChangesAsync();
+        }
+
+        var employeeToManage = await context.Employees.FirstOrDefaultAsync(e => e.Email == EmployeeEmail);
+        if (employeeToManage is not null && employeeToManage.ManagerId is null)
+        {
+            employeeToManage.AssignManager(managerEmployee.Id);
+            logger.LogInformation("Assigned manager to employee.");
+        }
+
+        await context.SaveChangesAsync();
     }
 
     /// <summary>

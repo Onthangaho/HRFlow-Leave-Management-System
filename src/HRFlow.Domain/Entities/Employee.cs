@@ -69,51 +69,11 @@ public class Employee
     public ICollection<Employee> DirectReports { get; private set; } = new List<Employee>();
 
     /// <summary>
-    /// Parameterless constructor for EF Core materialization only.
-    /// EF Core uses reflection to instantiate entities when loading from the database.
+    /// Parameterless constructor for EF Core materialization and service-layer construction.
     /// Not intended for domain-driven construction - use the static Create factory instead.
     /// </summary>
-    private Employee()
+    public Employee()
     {
-    }
-
-    /// <summary>
-    /// Creates a new employee with required identity and assignment information.
-    /// This protects aggregate integrity before persistence or service-level workflows run.
-    /// </summary>
-    /// <param name="fullName">Employee's display name used across HR workflows.</param>
-    /// <param name="email">Employee email used as the primary communication/account identity.</param>
-    /// <param name="departmentId">Department assignment for operational ownership.</param>
-    /// <param name="identityUserId">
-    /// The ASP.NET Core Identity user identifier linking this employee to their authentication account.
-    /// Must not be null or whitespace; will be trimmed and stored in normalized form.
-    /// </param>
-    /// <returns>A validated employee aggregate instance.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when required identity fields are missing, email format is invalid,
-    /// or department assignment is missing.
-    /// </exception>
-    public static Employee Create(
-        string fullName,
-        string email,
-        Guid departmentId,
-        string identityUserId)
-    {
-        if (string.IsNullOrWhiteSpace(identityUserId))
-        {
-            throw new InvalidOperationException("Domain validation error: IdentityUserId is required.");
-        }
-
-        var employee = new Employee
-        {
-            Id = Guid.NewGuid(),
-            IdentityUserId = identityUserId.Trim()
-        };
-
-        employee.UpdateIdentity(fullName, email);
-        employee.AssignDepartment(departmentId);
-
-        return employee;
     }
 
     /// <summary>
@@ -147,6 +107,26 @@ public class Employee
     public void AssignManager(Guid? managerId)
     {
         ManagerId = managerId == Guid.Empty ? null : managerId;
+    }
+
+    /// <summary>
+    /// Links this employee to an ASP.NET Core Identity user account.
+    /// This is a controlled operation to ensure the link is only established once and with a valid ID.
+    /// </summary>
+    /// <param name="identityUserId">The user ID from the identity system.</param>
+    public void SetIdentityUser(string identityUserId)
+    {
+        if (string.IsNullOrWhiteSpace(identityUserId))
+        {
+            throw new InvalidOperationException("Domain validation error: IdentityUserId cannot be null or whitespace.");
+        }
+
+        if (!string.IsNullOrEmpty(IdentityUserId))
+        {
+            throw new InvalidOperationException("Domain integrity error: IdentityUserId has already been set and cannot be changed.");
+        }
+
+        IdentityUserId = identityUserId;
     }
 
     private void ValidateIdentity(string fullName, string email)

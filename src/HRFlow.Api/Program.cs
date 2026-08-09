@@ -95,6 +95,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>();
+
     await dbContext.Database.MigrateAsync();
     await scope.ServiceProvider.SeedDepartmentsAsync();
     await scope.ServiceProvider.SeedDevelopmentAdministratorAsync();

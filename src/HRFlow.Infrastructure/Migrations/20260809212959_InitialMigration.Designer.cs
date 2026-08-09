@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRFlow.Infrastructure.Migrations
 {
     [DbContext(typeof(HRFlowDbContext))]
-    [Migration("20260808153632_Initial")]
-    partial class Initial
+    [Migration("20260809212959_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,6 +53,9 @@ namespace HRFlow.Infrastructure.Migrations
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdentityUserId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ManagerId")
