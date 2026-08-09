@@ -39,7 +39,7 @@ This account is development-only and must not exist in any real deployment.
 
 - Email: `manager@hrflow.local`
 - Role: `Manager`
-- Password: configure via `Seeding:ManagerPassword` (user secrets or appsettings.Development.json)
+- Password (default): `HrFlow!Manager2026` (override with `Seeding:ManagerPassword` in configuration)
 
 The seed checks for the manager by email before creating it, so repeated restarts do not create duplicates.
 

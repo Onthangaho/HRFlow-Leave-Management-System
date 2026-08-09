@@ -70,7 +70,8 @@ public class Employee
 
     /// <summary>
     /// Parameterless constructor for EF Core materialization and service-layer construction.
-    /// Not intended for domain-driven construction - use the static Create factory instead.
+    /// To properly initialize an employee, construct the instance, then call <see cref="Update"/>
+    /// to set identity and assignment details, followed by <see cref="SetIdentityUser"/> to link the ASP.NET Core Identity account.
     /// </summary>
     public Employee()
     {

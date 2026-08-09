@@ -68,8 +68,8 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
   useEffect(() => {
     if (isAxiosError(mutation.error)) {
       if (mutation.error.response?.status === 400) {
-        const errors = mutation.error.response.data.errors;
-        if (errors.Password) {
+        const errors = mutation.error.response.data?.errors;
+        if (errors?.Password && Array.isArray(errors.Password) && errors.Password.length > 0) {
           setError('password', { type: 'manual', message: errors.Password.join(' ') });
         }
       }

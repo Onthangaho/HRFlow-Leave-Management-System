@@ -102,7 +102,7 @@ public static class DevelopmentIdentitySeeder
             return;
         }
 
-        var managerEmployee = await context.Employees.FirstOrDefaultAsync(e => e.IdentityUserId == managerUser.Id);
+        var managerEmployee = await context.Employees.FirstOrDefaultAsync(e => e.Email == ManagerEmail);
         if (managerEmployee is null)
         {
             var department = await context.Departments.FirstOrDefaultAsync();
@@ -116,6 +116,10 @@ public static class DevelopmentIdentitySeeder
             managerEmployee.SetIdentityUser(managerUser.Id);
             context.Employees.Add(managerEmployee);
             await context.SaveChangesAsync();
+        }
+        else if (string.IsNullOrEmpty(managerEmployee.IdentityUserId))
+        {
+            managerEmployee.SetIdentityUser(managerUser.Id);
         }
 
         var employeeToManage = await context.Employees.FirstOrDefaultAsync(e => e.Email == EmployeeEmail);
