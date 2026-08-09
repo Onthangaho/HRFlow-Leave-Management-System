@@ -91,11 +91,13 @@ public class Employee
     public static Employee Create(
         string fullName,
         string email,
-        Guid departmentId)
+        Guid departmentId,
+        string identityUserId)
     {
         var employee = new Employee
         {
-            Id = Guid.NewGuid()
+            Id = Guid.NewGuid(),
+            IdentityUserId = identityUserId
         };
 
         employee.UpdateIdentity(fullName, email);

@@ -9,8 +9,7 @@ import type {
   TokenResponse,
 } from './types.ts';
 
-const apiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:5250/api/v1';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retryOnce?: boolean;

@@ -1,50 +1,50 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { authHttpClient } from '../auth/api';
 import type { Employee, EmployeeFormValues } from './types';
 
-const API_BASE_URL = 'http://localhost:5228/api/v1';
-
 const getEmployees = async (): Promise<Employee[]> => {
-  const response = await fetch(`${API_BASE_URL}/employees`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch employees');
-  }
-  return response.json();
+  const response = await authHttpClient.get('/employees');
+  return response.data;
+};
+
+const getDepartments = async (): Promise<{ id: string, name: string }[]> => {
+  const response = await authHttpClient.get('/departments');
+  return response.data;
+};
+
+const getRoles = async (): Promise<{ name: string }[]> => {
+  const response = await authHttpClient.get('/roles');
+  return response.data;
 };
 
 const createEmployee = async (employee: EmployeeFormValues): Promise<Employee> => {
-  const response = await fetch(`${API_BASE_URL}/employees`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(employee),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || 'Failed to create employee');
-  }
-  return response.json();
+  const response = await authHttpClient.post('/employees', employee);
+  return response.data;
 };
 
 const updateEmployee = async ({ id, ...employee }: { id: string } & EmployeeFormValues): Promise<Employee> => {
-  const response = await fetch(`${API_BASE_URL}/employees/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(employee),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || 'Failed to update employee');
-  }
-  return response.json();
+  const response = await authHttpClient.put(`/employees/${id}`, employee);
+  return response.data;
 };
 
 export const useEmployees = () => {
   return useQuery<Employee[], Error>({
     queryKey: ['employees'],
     queryFn: getEmployees,
+  });
+};
+
+export const useDepartments = () => {
+  return useQuery<{ id: string, name: string }[], Error>({
+    queryKey: ['departments'],
+    queryFn: getDepartments,
+  });
+};
+
+export const useRoles = () => {
+  return useQuery<{ name: string }[], Error>({
+    queryKey: ['roles'],
+    queryFn: getRoles,
   });
 };
 

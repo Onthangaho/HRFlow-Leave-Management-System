@@ -14,10 +14,7 @@ function App() {
       </Route>
 
       <Route element={<ProtectedRoute requiredRoles={['HR Administrator']} />}>
-        <Route path="/admin" element={<HomePage />} />
-        <Route element={<ProtectedRoute requiredRoles={['HR Administrator']} />}>
-  <Route path="/admin/employees" element={<EmployeeManagementPage />} />
-</Route>
+        <Route path="/admin/employees" element={<EmployeeManagementPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -90,6 +90,14 @@ HRFlow.Client          -> React + TypeScript SPA
 - After generating a change, always propose, in this order: a branch name, a commit message, and a PR
   title — and create the branch as the *first* step, before writing any code.
 
+## Cross-cutting gotchas
+
+- Any change to the API's listening port, base route, or CORS
+  configuration must be verified with a real browser login test before
+  the change is considered complete — a passing API-only test (curl/
+  Swagger) does NOT prove the browser client still works, since CORS and
+  origin/port mismatches only affect real browser requests.
+
 ## Response style
 
 - Before writing code, briefly state the approach in 2-4 bullet points (what files you'll touch, what

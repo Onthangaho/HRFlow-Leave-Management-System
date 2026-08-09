@@ -45,6 +45,8 @@ public static class DevelopmentIdentitySeeder
         var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("DevelopmentIdentitySeeder");
 
+        logger.LogInformation("Seeding HR Administrator with password: {Password}", hrAdministratorPassword);
+
         await EnsureRoleExistsAsync(roleManager, HrAdministratorRoleName);
         await EnsureRoleExistsAsync(roleManager, EmployeeRoleName);
 

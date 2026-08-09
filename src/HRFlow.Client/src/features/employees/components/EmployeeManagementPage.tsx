@@ -1,48 +1,60 @@
 import { useState } from 'react';
-import { useEmployees, useCreateEmployee, useUpdateEmployee } from '../api';
-import type { Employee, EmployeeFormValues } from '../types';
 import { EmployeeTable } from './EmployeeTable';
 import { EmployeeForm } from './EmployeeForm';
-
+import type { Employee } from '../types';
 
 export const EmployeeManagementPage = () => {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const { data: employees, isLoading, error } = useEmployees();
-  const createEmployee = useCreateEmployee();
-  const updateEmployee = useUpdateEmployee();
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleSubmit = (data: EmployeeFormValues) => {
-    if (editingEmployee) {
-      updateEmployee.mutate({ id: editingEmployee.id, ...data });
-    } else {
-      createEmployee.mutate(data);
-    }
-    setEditingEmployee(null);
+  const handleEdit = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setIsCreating(false);
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  const handleCreate = () => {
+    setEditingEmployee(null);
+    setIsCreating(true);
+  };
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
+  const handleCancel = () => {
+    setEditingEmployee(null);
+    setIsCreating(false);
+  };
+
+  const handleSuccess = () => {
+    setEditingEmployee(null);
+    setIsCreating(false);
+  };
 
   return (
-    <div>
-      <h1>Employee Management</h1>
-      <EmployeeTable employees={employees || []} onEdit={setEditingEmployee} />
-      <h2>{editingEmployee ? 'Edit Employee' : 'Create Employee'}</h2>
-      <EmployeeForm
-        onSubmit={handleSubmit}
-        initialValues={editingEmployee ? {
-          fullName: editingEmployee.fullName,
-          email: editingEmployee.email,
-          departmentId: '', // This will need to be fetched
-          roleName: editingEmployee.roleName,
-        } : undefined}
-        isSubmitting={createEmployee.isPending || updateEmployee.isPending}
-      />
-    </div>
+    <main className="mx-auto mt-16 w-full max-w-5xl space-y-8 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+      <header>
+        <h1 className="text-3xl font-bold text-slate-900">Employee Management</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Manage employee records and assignments.
+        </p>
+      </header>
+
+      {(isCreating || editingEmployee) ? (
+        <EmployeeForm
+          employee={editingEmployee}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
+      ) : (
+        <>
+          <div className="flex justify-end">
+            <button
+              onClick={handleCreate}
+              className="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white transition hover:bg-slate-700"
+            >
+              New Employee
+            </button>
+          </div>
+          <EmployeeTable onEdit={handleEdit} />
+        </>
+      )}
+    </main>
   );
 };
