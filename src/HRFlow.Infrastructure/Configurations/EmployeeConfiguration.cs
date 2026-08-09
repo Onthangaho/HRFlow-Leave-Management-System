@@ -25,6 +25,7 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.HasOne(employee => employee.Department)
             .WithMany(department => department.Employees)
             .HasForeignKey(employee => employee.DepartmentId)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(employee => employee.Manager)

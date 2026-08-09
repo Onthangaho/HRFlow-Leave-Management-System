@@ -42,7 +42,7 @@ namespace HRFlow.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("DepartmentId")
+                    b.Property<Guid>("DepartmentId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
@@ -300,7 +300,8 @@ namespace HRFlow.Infrastructure.Migrations
                     b.HasOne("HRFlow.Domain.Entities.Department", "Department")
                         .WithMany("Employees")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("HRFlow.Domain.Entities.Employee", "Manager")
                         .WithMany("DirectReports")

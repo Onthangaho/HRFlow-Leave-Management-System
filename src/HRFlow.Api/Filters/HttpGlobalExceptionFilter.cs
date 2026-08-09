@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace HRFlow.Api.Filters
 {
+    /// <summary>
+    /// Global exception filter that translates application exceptions into RFC 7807 ProblemDetails responses.
+    /// Maps domain exceptions like InvalidCredentialsException and DuplicateEmailException to appropriate HTTP status codes.
+    /// </summary>
     public class HttpGlobalExceptionFilter : IExceptionFilter
     {
         private readonly ILogger<HttpGlobalExceptionFilter> _logger;
@@ -14,6 +18,10 @@ namespace HRFlow.Api.Filters
             _logger = logger;
         }
 
+        /// <summary>
+        /// Intercepts unhandled exceptions from MVC pipeline and converts them to ProblemDetails with appropriate status codes.
+        /// Logs all exceptions and marks them as handled to prevent ASP.NET Core default error handling.
+        /// </summary>
         public void OnException(ExceptionContext context)
         {
             _logger.LogError(new EventId(context.Exception.HResult), context.Exception, context.Exception.Message);
