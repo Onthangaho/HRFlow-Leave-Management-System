@@ -65,6 +65,17 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
     }
   }, [mutation.error, setError]);
 
+  useEffect(() => {
+    if (isAxiosError(mutation.error)) {
+      if (mutation.error.response?.status === 400) {
+        const errors = mutation.error.response.data.errors;
+        if (errors.Password) {
+          setError('password', { type: 'manual', message: errors.Password.join(' ') });
+        }
+      }
+    }
+  }, [mutation.error, setError]);
+
   const onSubmit = handleSubmit(async (values) => {
     if (isEditing && employee) {
       await updateEmployee.mutateAsync({ ...values, id: employee.id });
