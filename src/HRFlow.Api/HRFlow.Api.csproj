@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>95052a32-75c6-4519-8a35-9baeaef8b71f</UserSecretsId>
+    <!-- Force IDE refresh -->
   </PropertyGroup>
 
   <ItemGroup>

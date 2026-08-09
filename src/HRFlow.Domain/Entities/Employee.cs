@@ -40,12 +40,12 @@ public class Employee
     /// <summary>
     /// Gets or sets the identifier of the department that owns this employee.
     /// </summary>
-    public Guid? DepartmentId { get; private set; }
+    public Guid DepartmentId { get; private set; }
 
     /// <summary>
     /// Gets or sets the department that owns this employee.
     /// </summary>
-    public Department? Department { get; private set; }
+    public Department Department { get; private set; } = null!;
 
     /// <summary>
     /// Gets or sets the identifier of the employee's manager when one exists.
@@ -86,7 +86,7 @@ public class Employee
     public static Employee Create(
         string fullName,
         string email,
-        Guid? departmentId)
+        Guid departmentId)
     {
         var employee = new Employee
         {
@@ -112,7 +112,7 @@ public class Employee
     public void Update(
         string fullName,
         string email,
-        Guid? departmentId)
+        Guid departmentId)
     {
         // Validate all inputs before any mutation to ensure aggregate remains unchanged on validation failure
         ValidateIdentity(fullName, email);
@@ -160,9 +160,9 @@ public class Employee
         }
     }
 
-    private void ValidateDepartment(Guid? departmentId)
+    private void ValidateDepartment(Guid departmentId)
     {
-        if (!departmentId.HasValue || departmentId.Value == Guid.Empty)
+        if (departmentId == Guid.Empty)
         {
             throw new InvalidOperationException("Domain validation error: DepartmentId is required.");
         }
@@ -175,10 +175,10 @@ public class Employee
         Email = email.Trim();
     }
 
-    private void AssignDepartment(Guid? departmentId)
+    private void AssignDepartment(Guid departmentId)
     {
         ValidateDepartment(departmentId);
-        DepartmentId = departmentId!.Value;
+        DepartmentId = departmentId;
     }
 
 }

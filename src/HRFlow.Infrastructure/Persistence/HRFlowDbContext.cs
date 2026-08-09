@@ -1,3 +1,4 @@
+using HRFlow.Application.Interfaces;
 using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Configurations;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +19,9 @@ public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRo
         : base(options)
     {
     }
+
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<Department> Departments => Set<Department>();
 
     /// <summary>
     /// Gets refresh token records used for server-side token rotation and invalidation.
