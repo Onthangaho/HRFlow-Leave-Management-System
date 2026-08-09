@@ -11,6 +11,13 @@ import type {
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
+if (!apiBaseUrl || apiBaseUrl.trim() === '') {
+  throw new Error(
+    'VITE_API_BASE_URL environment variable is not configured. ' +
+    'Please ensure .env file exists with a valid API base URL.'
+  );
+}
+
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retryOnce?: boolean;
 }

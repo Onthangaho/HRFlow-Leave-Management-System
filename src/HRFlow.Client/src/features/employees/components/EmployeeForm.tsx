@@ -9,7 +9,7 @@ import type { Employee, EmployeeFormValues } from '../types';
 const employeeSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email('Invalid email address'),
-  password: z.string().optional(),
+  password: z.string().min(1, 'Password is required'),
   departmentId: z.string().min(1, 'Department is required'),
   roleName: z.string().min(1, 'Role is required'),
 });

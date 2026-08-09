@@ -19,8 +19,6 @@ public static class DevelopmentIdentitySeeder
     private const string DefaultEmployeePassword = "HrFlow!Employee2026";
 
     /// <summary>
-    /// Creates the development HR Administrator account once and self-guards to no-op outside Development.
-    /// <summary>
     /// Seeds the development HR Administrator and Employee roles and accounts when running in the Development environment.
     /// </summary>
     public static async Task SeedDevelopmentAdministratorAsync(this IServiceProvider serviceProvider)
@@ -45,7 +43,7 @@ public static class DevelopmentIdentitySeeder
         var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("DevelopmentIdentitySeeder");
 
-        logger.LogInformation("Seeding HR Administrator with password: {Password}", hrAdministratorPassword);
+        logger.LogInformation("Seeding development identity roles and accounts.");
 
         await EnsureRoleExistsAsync(roleManager, HrAdministratorRoleName);
         await EnsureRoleExistsAsync(roleManager, EmployeeRoleName);

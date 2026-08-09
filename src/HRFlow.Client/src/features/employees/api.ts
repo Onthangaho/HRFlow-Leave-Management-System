@@ -23,7 +23,15 @@ const createEmployee = async (employee: EmployeeFormValues): Promise<Employee> =
 };
 
 const updateEmployee = async ({ id, ...employee }: { id: string } & EmployeeFormValues): Promise<Employee> => {
-  const response = await authHttpClient.put(`/employees/${id}`, employee);
+  const payload = {
+    employeeId: id,
+    fullName: employee.fullName,
+    email: employee.email,
+    departmentId: employee.departmentId,
+    managerId: null,
+    roleName: employee.roleName,
+  };
+  const response = await authHttpClient.put(`/employees/${id}`, payload);
   return response.data;
 };
 
