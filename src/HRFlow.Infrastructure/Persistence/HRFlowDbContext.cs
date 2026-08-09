@@ -10,7 +10,7 @@ namespace HRFlow.Infrastructure.Persistence;
 /// <summary>
 /// Persists application data and the ASP.NET Core Identity schema for the HRFlow backend.
 /// </summary>
-public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
+public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>, IHRFlowDbContext
 {
     /// <summary>
     /// Creates a new EF Core context for HRFlow with the supplied options.

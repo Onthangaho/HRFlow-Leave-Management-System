@@ -28,6 +28,12 @@ public class Employee
     public Guid Id { get; private set; }
 
     /// <summary>
+    /// Gets the unique identifier linking this employee to their ASP.NET Core Identity user account.
+    /// This value is required, validated, and trimmed during construction to ensure referential integrity.
+    /// </summary>
+    public string? IdentityUserId { get; private set; }
+
+    /// <summary>
     /// Gets or sets the employee's full name.
     /// </summary>
     public string FullName { get; private set; } = string.Empty;
@@ -78,6 +84,10 @@ public class Employee
     /// <param name="fullName">Employee's display name used across HR workflows.</param>
     /// <param name="email">Employee email used as the primary communication/account identity.</param>
     /// <param name="departmentId">Department assignment for operational ownership.</param>
+    /// <param name="identityUserId">
+    /// The ASP.NET Core Identity user identifier linking this employee to their authentication account.
+    /// Must not be null or whitespace; will be trimmed and stored in normalized form.
+    /// </param>
     /// <returns>A validated employee aggregate instance.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when required identity fields are missing, email format is invalid,
@@ -86,11 +96,18 @@ public class Employee
     public static Employee Create(
         string fullName,
         string email,
-        Guid departmentId)
+        Guid departmentId,
+        string identityUserId)
     {
+        if (string.IsNullOrWhiteSpace(identityUserId))
+        {
+            throw new InvalidOperationException("Domain validation error: IdentityUserId is required.");
+        }
+
         var employee = new Employee
         {
-            Id = Guid.NewGuid()
+            Id = Guid.NewGuid(),
+            IdentityUserId = identityUserId.Trim()
         };
 
         employee.UpdateIdentity(fullName, email);

@@ -4,6 +4,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using HRFlow.Application.Features.Employees.Queries.GetAllEmployees;
+
 namespace HRFlow.Api.Controllers;
 
 /// <summary>
@@ -20,6 +22,16 @@ public class EmployeesController : ControllerBase
     public EmployeesController(ISender sender)
     {
         _sender = sender;
+    }
+
+    /// <summary>
+    /// Gets a list of all employees.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAllEmployees(CancellationToken cancellationToken)
+    {
+        var employees = await _sender.Send(new GetAllEmployeesQuery(), cancellationToken);
+        return Ok(employees);
     }
 
     /// <summary>
