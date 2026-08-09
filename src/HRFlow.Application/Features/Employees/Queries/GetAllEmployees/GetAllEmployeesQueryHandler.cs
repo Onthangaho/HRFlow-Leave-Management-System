@@ -1,5 +1,6 @@
 using HRFlow.Application.DTOs.Employee;
 using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,12 @@ public class GetAllEmployeesQueryHandler : IRequestHandler<GetAllEmployeesQuery,
         var employeeDtos = new List<EmployeeSummaryDto>();
         foreach (var employee in employees)
         {
-            var roleName = await _roleLookupService.GetRoleNameByIdentityUserIdAsync(employee.IdentityUserId, cancellationToken);
+            var roleName = string.Empty;
+            if (!string.IsNullOrEmpty(employee.IdentityUserId))
+            {
+                roleName = await _roleLookupService.GetRoleNameByIdentityUserIdAsync(employee.IdentityUserId, cancellationToken);
+            }
+            
             employeeDtos.Add(new EmployeeSummaryDto
             {
                 Id = employee.Id,
