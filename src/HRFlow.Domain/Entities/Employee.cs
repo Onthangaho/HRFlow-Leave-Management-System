@@ -28,6 +28,11 @@ public class Employee
     public Guid Id { get; private set; }
 
     /// <summary>
+    /// Gets or sets the unique identifier for the employee.
+    /// </summary>
+    public string? IdentityUserId { get; set; }
+
+    /// <summary>
     /// Gets or sets the employee's full name.
     /// </summary>
     public string FullName { get; private set; } = string.Empty;

@@ -36,6 +36,7 @@ builder.Services.AddMediatR(configuration =>
     configuration.RegisterServicesFromAssemblyContaining<CreateEmployeeCommand>());
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+builder.Services.AddScoped<IHRFlowDbContext>(provider => provider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>());
 builder.Services.AddControllers(options => options.Filters.Add<HttpGlobalExceptionFilter>());
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
