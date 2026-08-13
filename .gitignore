@@ -10,3 +10,6 @@ obj/
 ## User-specific files
 .vs/
 .vscode/
+
+## Log files
+api.log
