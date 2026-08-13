@@ -86,7 +86,29 @@ public static class DevelopmentIdentitySeeder
             "Manager");
 
         await SeedManagerDataAsync(scope.ServiceProvider);
+        await SeedLeaveDataAsync(scope.ServiceProvider);
     }
+
+    private static async Task SeedLeaveDataAsync(IServiceProvider serviceProvider)
+    {
+        var context = serviceProvider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>();
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger("DevelopmentLeaveSeeder");
+
+        if (!await context.LeaveTypes.AnyAsync(lt => lt.Name == "Unpaid"))
+        {
+            logger.LogInformation("Seeding Unpaid leave type.");
+
+            var unpaidPolicy = LeavePolicy.Create(true, 0);
+            context.LeavePolicies.Add(unpaidPolicy);
+
+            var unpaidLeaveType = LeaveType.Create("Unpaid", unpaidPolicy);
+            context.LeaveTypes.Add(unpaidLeaveType);
+
+            await context.SaveChangesAsync();
+        }
+    }
+
 
     private static async Task SeedManagerDataAsync(IServiceProvider serviceProvider)
     {
@@ -122,8 +144,30 @@ public static class DevelopmentIdentitySeeder
             managerEmployee.SetIdentityUser(managerUser.Id);
         }
 
+        var employeeUser = await userManager.FindByEmailAsync(EmployeeEmail);
         var employeeToManage = await context.Employees.FirstOrDefaultAsync(e => e.Email == EmployeeEmail);
-        if (employeeToManage is not null && employeeToManage.ManagerId is null)
+        if (employeeToManage is null)
+        {
+            var department = await context.Departments.FirstOrDefaultAsync();
+            if(department is null)
+            {
+                logger.LogWarning("No departments found, skipping employee creation.");
+                return;
+            }
+            employeeToManage = new Employee();
+            employeeToManage.Update("Employee User", EmployeeEmail, department.Id);
+            if (employeeUser is not null)
+            {
+                employeeToManage.SetIdentityUser(employeeUser.Id);
+            }
+            context.Employees.Add(employeeToManage);
+        }
+        else if (string.IsNullOrEmpty(employeeToManage.IdentityUserId) && employeeUser is not null)
+        {
+            employeeToManage.SetIdentityUser(employeeUser.Id);
+        }
+
+        if (employeeToManage.ManagerId is null)
         {
             employeeToManage.AssignManager(managerEmployee.Id);
             logger.LogInformation("Assigned manager to employee.");

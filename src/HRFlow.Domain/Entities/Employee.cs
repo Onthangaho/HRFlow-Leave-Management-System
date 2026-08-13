@@ -1,60 +1,52 @@
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using HRFlow.Domain.Common;
 
 namespace HRFlow.Domain.Entities;
 
 /// <summary>
-/// Represents an employee aggregate and enforces core HR identity and assignment invariants.
+/// Represents an employee in the HR system with identity information department and manager assignments.
 /// </summary>
-public class Employee
+public class Employee : BaseEntity
 {
-    /// <summary>
-    /// Maximum allowed length for employee full name. Shared with persistence configuration.
-    /// </summary>
-    public const int MaxFullNameLength = 200;
-
-    /// <summary>
-    /// Maximum allowed length for employee email. Shared with persistence configuration.
-    /// </summary>
-    public const int MaxEmailLength = 256;
-
     private static readonly Regex EmailRegex = new(
-        "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    /// <summary>
-    /// Gets or sets the unique identifier for the employee.
-    /// </summary>
-    public Guid Id { get; private set; }
-
-    /// <summary>
-    /// Gets the unique identifier linking this employee to their ASP.NET Core Identity user account.
-    /// This value is required, validated, and trimmed during construction to ensure referential integrity.
-    /// </summary>
-    public string? IdentityUserId { get; private set; }
+    public const int MaxFullNameLength = 200;
+    public const int MaxEmailLength = 256;
 
     /// <summary>
     /// Gets or sets the employee's full name.
     /// </summary>
-    public string FullName { get; private set; } = string.Empty;
+    [Required]
+    [StringLength(MaxFullNameLength)]
+    public string FullName { get; private set; } = default!;
 
     /// <summary>
-    /// Gets or sets the employee's primary email address.
+    /// Gets or sets the employee's email address which also serves as the username for identity.
     /// </summary>
-    public string Email { get; private set; } = string.Empty;
+    [Required]
+    [StringLength(MaxEmailLength)]
+    public string Email { get; private set; } = default!;
 
     /// <summary>
-    /// Gets or sets the identifier of the department that owns this employee.
+    /// Gets or sets the unique identifier for the linked ASP.NET Core Identity user.
+    /// </summary>
+    public string? IdentityUserId { get; private set; }
+
+    /// <summary>
+    /// Gets or sets the unique identifier for the department this employee belongs to.
     /// </summary>
     public Guid DepartmentId { get; private set; }
 
     /// <summary>
-    /// Gets or sets the department that owns this employee.
+    /// Gets or sets the department this employee belongs to.
     /// </summary>
-    public Department Department { get; private set; } = null!;
+    public virtual Department Department { get; private set; } = default!;
 
     /// <summary>
-    /// Gets or sets the identifier of the employee's manager when one exists.
+    /// Gets or sets the unique identifier for the employee's manager.
     /// </summary>
     public Guid? ManagerId { get; private set; }
 
@@ -178,5 +170,4 @@ public class Employee
         ValidateDepartment(departmentId);
         DepartmentId = departmentId;
     }
-
 }

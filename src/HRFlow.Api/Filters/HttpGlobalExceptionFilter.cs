@@ -1,4 +1,5 @@
 using HRFlow.Application.Exceptions;
+using HRFlow.Domain.Common;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -33,6 +34,18 @@ namespace HRFlow.Api.Filters
 
             switch (context.Exception)
             {
+                case DomainException e:
+                    problemDetails.Title = "A domain error occurred.";
+                    problemDetails.Detail = e.Message;
+                    problemDetails.Status = (int)HttpStatusCode.BadRequest;
+                    problemDetails.Type = "https://www.rfc-editor.org/rfc/rfc7807";
+                    break;
+                case IdentityException e:
+                    problemDetails.Title = "An identity error occurred.";
+                    problemDetails.Detail = e.Message;
+                    problemDetails.Status = (int)HttpStatusCode.BadRequest;
+                    problemDetails.Type = "https://www.rfc-editor.org/rfc/rfc7807";
+                    break;
                 case InvalidCredentialsException e:
                     problemDetails.Title = "Invalid credentials";
                     problemDetails.Detail = e.Message;
@@ -49,6 +62,12 @@ namespace HRFlow.Api.Filters
                     problemDetails.Title = "Employee not found";
                     problemDetails.Detail = e.Message;
                     problemDetails.Status = (int)HttpStatusCode.NotFound;
+                    problemDetails.Type = "https://www.rfc-editor.org/rfc/rfc7807";
+                    break;
+                case FluentValidation.ValidationException e:
+                    problemDetails.Title = "A validation error occurred.";
+                    problemDetails.Detail = e.Message;
+                    problemDetails.Status = (int)HttpStatusCode.BadRequest;
                     problemDetails.Type = "https://www.rfc-editor.org/rfc/rfc7807";
                     break;
                 default:

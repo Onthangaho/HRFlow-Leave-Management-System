@@ -67,6 +67,43 @@ namespace HRFlow.Infrastructure.Migrations
                     b.ToTable("Employees");
                 });
 
+            modelBuilder.Entity("HRFlow.Domain.Entities.LeavePolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("AllowOverlap")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DefaultBalance")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LeavePolicies");
+                });
+
+            modelBuilder.Entity("HRFlow.Domain.Entities.LeaveType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("LeavePolicyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeavePolicyId");
+
+                    b.ToTable("LeaveTypes");
+                });
+
             modelBuilder.Entity("HRFlow.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -313,6 +350,17 @@ namespace HRFlow.Infrastructure.Migrations
                     b.Navigation("Manager");
                 });
 
+            modelBuilder.Entity("HRFlow.Domain.Entities.LeaveType", b =>
+                {
+                    b.HasOne("HRFlow.Domain.Entities.LeavePolicy", "LeavePolicy")
+                        .WithMany("LeaveTypes")
+                        .HasForeignKey("LeavePolicyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LeavePolicy");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -372,6 +420,11 @@ namespace HRFlow.Infrastructure.Migrations
             modelBuilder.Entity("HRFlow.Domain.Entities.Employee", b =>
                 {
                     b.Navigation("DirectReports");
+                });
+
+            modelBuilder.Entity("HRFlow.Domain.Entities.LeavePolicy", b =>
+                {
+                    b.Navigation("LeaveTypes");
                 });
 #pragma warning restore 612, 618
         }
