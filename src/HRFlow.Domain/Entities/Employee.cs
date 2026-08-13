@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using HRFlow.Domain.Common;
 
@@ -19,15 +18,11 @@ public class Employee : BaseEntity
     /// <summary>
     /// Gets or sets the employee's full name.
     /// </summary>
-    [Required]
-    [StringLength(MaxFullNameLength)]
     public string FullName { get; private set; } = default!;
 
     /// <summary>
     /// Gets or sets the employee's email address which also serves as the username for identity.
     /// </summary>
-    [Required]
-    [StringLength(MaxEmailLength)]
     public string Email { get; private set; } = default!;
 
     /// <summary>

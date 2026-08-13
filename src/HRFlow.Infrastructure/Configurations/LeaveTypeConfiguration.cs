@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HRFlow.Infrastructure.Configurations;
 
+/// <summary>
+/// Configures the LeaveType entity for EF Core persistence.
+/// </summary>
 public class LeaveTypeConfiguration : IEntityTypeConfiguration<LeaveType>
 {
+    /// <summary>
+    /// Configures entity properties, keys, and relationships for the LeaveType entity.
+    /// </summary>
     public void Configure(EntityTypeBuilder<LeaveType> builder)
     {
         builder.HasKey(lt => lt.Id);

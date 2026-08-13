@@ -133,6 +133,9 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
                 }
                 EnsureIdentitySucceeded(updateUserResult, "update the identity user email");
             }
+
+            var setUsernameResult = await _userManager.SetUserNameAsync(identityUser, email);
+            EnsureIdentitySucceeded(setUsernameResult, "update the identity username");
         }
 
         await EnsureSingleAssignedRoleAsync(identityUser, roleName);

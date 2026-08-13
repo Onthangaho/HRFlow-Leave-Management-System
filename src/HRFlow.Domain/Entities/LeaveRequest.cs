@@ -41,6 +41,10 @@ public class LeaveRequest : BaseEntity
             throw new DomainException("EndDate cannot be earlier than StartDate.");
         }
 
+        // Normalize dates to date-only (strip time component)
+        startDate = startDate.Date;
+        endDate = endDate.Date;
+
         return new LeaveRequest(employeeId, leaveTypeId, startDate, endDate);
     }
 
@@ -61,6 +65,6 @@ public class LeaveRequest : BaseEntity
 
     private bool DatesOverlap(DateTime otherStart, DateTime otherEnd)
     {
-        return StartDate < otherEnd && otherStart < EndDate;
+        return StartDate <= otherEnd && otherStart <= EndDate;
     }
 }

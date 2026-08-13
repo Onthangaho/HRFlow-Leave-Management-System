@@ -41,8 +41,9 @@ namespace HRFlow.Api.Filters
                     problemDetails.Type = "https://www.rfc-editor.org/rfc/rfc7807";
                     break;
                 case IdentityException e:
+                    _logger.LogError(e, "Identity operation failed: {ErrorMessage}", e.Message);
                     problemDetails.Title = "An identity error occurred.";
-                    problemDetails.Detail = e.Message;
+                    problemDetails.Detail = "Unable to complete the identity operation. Please contact support if the issue persists.";
                     problemDetails.Status = (int)HttpStatusCode.BadRequest;
                     problemDetails.Type = "https://www.rfc-editor.org/rfc/rfc7807";
                     break;

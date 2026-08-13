@@ -15,7 +15,16 @@ public class LeaveType : BaseEntity
 
     public static LeaveType Create(string name, LeavePolicy leavePolicy)
     {
-        // Add validation here if needed
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new DomainException("LeaveType name cannot be null or empty.");
+        }
+
+        if (leavePolicy is null)
+        {
+            throw new DomainException("LeavePolicy cannot be null.");
+        }
+
         var leaveType = new LeaveType(name, leavePolicy);
         leaveType.LeavePolicyId = leavePolicy.Id;
         return leaveType;
