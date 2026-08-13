@@ -50,14 +50,20 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         try
         {
             var identityResult = await _userManager.CreateAsync(identityUser, password);
-            EnsureIdentitySucceeded(identityResult, "create the identity user");
+            if (!identityResult.Succeeded)
+            {
+                if (identityResult.Errors.Any(error => error.Code == "DuplicateUserName" || error.Code == "DuplicateEmail"))
+                {
+                    throw new DuplicateEmailException(email);
+                }
+                EnsureIdentitySucceeded(identityResult, "create the identity user");
+            }
             identityUserId = identityUser.Id;
 
             var addRoleResult = await _userManager.AddToRoleAsync(identityUser, roleName);
             EnsureIdentitySucceeded(addRoleResult, $"assign the '{roleName}' identity role");
 
-            var employee = new Employee();
-            employee.Update(fullName, email, departmentId);
+            var employee = Employee.Create(fullName, email, departmentId);
             employee.SetIdentityUser(identityUser.Id);
             employee.AssignManager(managerId);
 

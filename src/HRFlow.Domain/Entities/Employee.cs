@@ -61,12 +61,20 @@ public class Employee : BaseEntity
     public ICollection<Employee> DirectReports { get; private set; } = new List<Employee>();
 
     /// <summary>
-    /// Parameterless constructor for EF Core materialization and service-layer construction.
-    /// To properly initialize an employee, construct the instance, then call <see cref="Update"/>
-    /// to set identity and assignment details, followed by <see cref="SetIdentityUser"/> to link the ASP.NET Core Identity account.
+    /// Private constructor for EF Core and the public factory.
     /// </summary>
-    public Employee()
+    private Employee()
     {
+    }
+
+    /// <summary>
+    /// Creates a new employee, ensuring all validation rules for identity and department assignment are met.
+    /// </summary>
+    public static Employee Create(string fullName, string email, Guid departmentId)
+    {
+        var employee = new Employee();
+        employee.Update(fullName, email, departmentId);
+        return employee;
     }
 
     /// <summary>

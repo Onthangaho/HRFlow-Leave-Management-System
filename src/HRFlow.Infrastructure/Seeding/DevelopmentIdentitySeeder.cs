@@ -133,8 +133,7 @@ public static class DevelopmentIdentitySeeder
                 logger.LogWarning("No departments found, skipping manager employee creation.");
                 return;
             }
-            managerEmployee = new Employee();
-            managerEmployee.Update("Manager User", ManagerEmail, department.Id);
+            managerEmployee = Employee.Create("Manager User", ManagerEmail, department.Id);
             managerEmployee.SetIdentityUser(managerUser.Id);
             context.Employees.Add(managerEmployee);
             await context.SaveChangesAsync();
@@ -154,8 +153,7 @@ public static class DevelopmentIdentitySeeder
                 logger.LogWarning("No departments found, skipping employee creation.");
                 return;
             }
-            employeeToManage = new Employee();
-            employeeToManage.Update("Employee User", EmployeeEmail, department.Id);
+            employeeToManage = Employee.Create("Employee User", EmployeeEmail, department.Id);
             if (employeeUser is not null)
             {
                 employeeToManage.SetIdentityUser(employeeUser.Id);
