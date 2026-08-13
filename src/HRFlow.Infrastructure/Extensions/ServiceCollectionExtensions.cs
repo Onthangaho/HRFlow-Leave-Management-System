@@ -44,7 +44,8 @@ public static class ServiceCollectionExtensions
             })
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<HRFlowDbContext>()
-            .AddSignInManager<SignInManager<IdentityUser>>();
+            .AddSignInManager<SignInManager<IdentityUser>>()
+            .AddDefaultTokenProviders();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
         services.AddScoped<IEmployeeRoleLookupService, EmployeeRoleLookupService>();

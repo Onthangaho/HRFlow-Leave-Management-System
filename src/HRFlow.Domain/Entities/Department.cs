@@ -1,3 +1,4 @@
+using HRFlow.Domain.Common;
 using System.Collections.Generic;
 
 namespace HRFlow.Domain.Entities;
@@ -5,13 +6,8 @@ namespace HRFlow.Domain.Entities;
 /// <summary>
 /// Represents a department within the organization and its employees.
 /// </summary>
-public class Department
+public class Department : BaseEntity
 {
-    /// <summary>
-    /// Gets or sets the unique identifier for the department.
-    /// </summary>
-    public Guid Id { get; set; }
-
     /// <summary>
     /// Gets or sets the department name.
     /// </summary>

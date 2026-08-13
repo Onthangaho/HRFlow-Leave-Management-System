@@ -22,6 +22,8 @@ public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRo
 
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Department> Departments => Set<Department>();
+    public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
+    public DbSet<LeavePolicy> LeavePolicies => Set<LeavePolicy>();
 
     /// <summary>
     /// Gets refresh token records used for server-side token rotation and invalidation.
@@ -35,6 +37,8 @@ public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRo
 
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
         modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
+        modelBuilder.ApplyConfiguration(new LeaveTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new LeavePolicyConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
     }
 }

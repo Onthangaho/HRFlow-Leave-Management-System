@@ -5,29 +5,31 @@ using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HRFlow.Infrastructure.Services.Employees;
 
 /// <summary>
-/// Implements employee management by coordinating ASP.NET Identity and employee aggregate writes in one unit of work.
+/// Provides employee management services including creation and updates with transactional integrity
+/// between the application database and the ASP.NET Core Identity store.
 /// </summary>
 public sealed class EmployeeManagementService : IEmployeeManagementService
 {
     private readonly HRFlowDbContext _dbContext;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly ILogger<EmployeeManagementService> _logger;
 
-    /// <summary>
-    /// Creates a service with identity and persistence dependencies needed for atomic employee management flows.
-    /// </summary>
     public EmployeeManagementService(
         HRFlowDbContext dbContext,
         UserManager<IdentityUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole> roleManager,
+        ILogger<EmployeeManagementService> logger)
     {
         _dbContext = dbContext;
         _userManager = userManager;
         _roleManager = roleManager;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -40,46 +42,33 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         Guid? managerId,
         CancellationToken cancellationToken)
     {
-        if (!await IsEmailAvailableAsync(email, null, cancellationToken))
-        {
-            throw new DuplicateEmailException(email);
-        }
-
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        IdentityUser? createdIdentityUser = null;
+        var identityUser = new IdentityUser { UserName = email, Email = email };
+        string? identityUserId = null;
 
         try
         {
-            var identityUser = new IdentityUser
+            var identityResult = await _userManager.CreateAsync(identityUser, password);
+            if (!identityResult.Succeeded)
             {
-                UserName = email,
-                Email = email,
-                EmailConfirmed = true
-            };
-
-            var createUserResult = await _userManager.CreateAsync(identityUser, password);
-            if (!createUserResult.Succeeded)
-            {
-                if (createUserResult.Errors.Any(error => error.Code == "DuplicateUserName" || error.Code == "DuplicateEmail"))
+                if (identityResult.Errors.Any(error => error.Code == "DuplicateUserName" || error.Code == "DuplicateEmail"))
                 {
                     throw new DuplicateEmailException(email);
                 }
-                EnsureIdentitySucceeded(createUserResult, "create the identity user account");
+                EnsureIdentitySucceeded(identityResult, "create the identity user");
             }
-            createdIdentityUser = identityUser;
+            identityUserId = identityUser.Id;
 
             var addRoleResult = await _userManager.AddToRoleAsync(identityUser, roleName);
             EnsureIdentitySucceeded(addRoleResult, $"assign the '{roleName}' identity role");
 
-            var employee = new Employee(); // Use the parameterless constructor
-            employee.Update(fullName, email, departmentId); // Use Update to set initial values
-            employee.SetIdentityUser(identityUser.Id); // Set the identity user
+            var employee = Employee.Create(fullName, email, departmentId);
+            employee.SetIdentityUser(identityUser.Id);
             employee.AssignManager(managerId);
 
             _dbContext.Set<Employee>().Add(employee);
             await _dbContext.SaveChangesAsync(cancellationToken);
-
             await transaction.CommitAsync(cancellationToken);
 
             return new EmployeeManagementResult
@@ -88,18 +77,16 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
                 IdentityUserId = identityUser.Id
             };
         }
-        catch
+        catch (Exception ex)
         {
-            // In the current topology, Identity and Employee writes share the same DbContext and
-            // transaction, so rollback already reverts both sides on handled failures. This
-            // compensation path is defensive in case a future refactor separates Identity storage.
-            await transaction.RollbackAsync(CancellationToken.None);
+            _logger.LogError(ex, "Employee creation failed; rolling back transaction.");
+            await transaction.RollbackAsync(cancellationToken);
 
-            if (createdIdentityUser is not null)
+            if (!string.IsNullOrEmpty(identityUserId))
             {
-                await DeleteUserIfPresentAsync(createdIdentityUser.Id, CancellationToken.None);
+                await DeleteUserIfPresentAsync(identityUserId, cancellationToken);
             }
-
+            
             throw;
         }
     }
@@ -117,35 +104,27 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         var employee = await _dbContext.Set<Employee>()
-            .SingleOrDefaultAsync(entity => entity.Id == employeeId, cancellationToken);
+            .SingleOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
 
         if (employee is null)
         {
             throw new EmployeeNotFoundException(employeeId);
         }
 
-        var identityUser = await _userManager.FindByEmailAsync(employee.Email)
-            ?? throw new NotFoundException(
-                $"Linked identity user for employee '{employeeId}' with email '{employee.Email}' was not found.");
+        var identityUser = await _userManager.FindByIdAsync(employee.IdentityUserId!);
+        if (identityUser is null)
+        {
+            throw new InvalidOperationException($"Consistency error: Identity user not found for employee {employeeId}.");
+        }
 
         employee.Update(fullName, email, departmentId);
         employee.AssignManager(managerId);
-        if (string.IsNullOrEmpty(employee.IdentityUserId))
-        {
-            employee.SetIdentityUser(identityUser.Id);
-        }
 
         if (!string.Equals(identityUser.Email, email, StringComparison.OrdinalIgnoreCase))
         {
-            if (!await IsEmailAvailableAsync(email, employeeId, cancellationToken))
-            {
-                throw new DuplicateEmailException(email);
-            }
+            var token = await _userManager.GenerateChangeEmailTokenAsync(identityUser, email);
+            var updateUserResult = await _userManager.ChangeEmailAsync(identityUser, email, token);
 
-            identityUser.Email = email;
-            identityUser.UserName = email;
-
-            var updateUserResult = await _userManager.UpdateAsync(identityUser);
             if (!updateUserResult.Succeeded)
             {
                 if (updateUserResult.Errors.Any(error => error.Code == "DuplicateUserName" || error.Code == "DuplicateEmail"))
@@ -154,6 +133,9 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
                 }
                 EnsureIdentitySucceeded(updateUserResult, "update the identity user email");
             }
+
+            var setUsernameResult = await _userManager.SetUserNameAsync(identityUser, email);
+            EnsureIdentitySucceeded(setUsernameResult, "update the identity username");
         }
 
         await EnsureSingleAssignedRoleAsync(identityUser, roleName);
@@ -283,7 +265,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             return;
         }
 
-        var errors = string.Join(", ", identityResult.Errors.Select(error => error.Description));
-        throw new InvalidOperationException($"Unable to {actionDescription}: {errors}");
+        var errors = string.Join(" ", identityResult.Errors.Select(error => error.Description));
+        throw new IdentityException($"Unable to {actionDescription}: {errors}");
     }
 }
