@@ -50,7 +50,10 @@ public class LeaveRequest : BaseEntity
 
     public void ValidateAgainstPolicy(int availableBalance, IEnumerable<LeaveRequest> approvedRequests, LeavePolicy policy)
     {
-        if (GetRequestedDays() > availableBalance)
+        var totalApprovedDays = approvedRequests.Sum(ar => ar.GetRequestedDays());
+        var remainingBalance = availableBalance - totalApprovedDays;
+
+        if (GetRequestedDays() > remainingBalance)
         {
             throw new DomainException("Requested leave exceeds available balance.");
         }
@@ -61,7 +64,7 @@ public class LeaveRequest : BaseEntity
         }
     }
 
-    private int GetRequestedDays() => (EndDate - StartDate).Days + 1;
+    public int GetRequestedDays() => (EndDate - StartDate).Days + 1;
 
     private bool DatesOverlap(DateTime otherStart, DateTime otherEnd)
     {

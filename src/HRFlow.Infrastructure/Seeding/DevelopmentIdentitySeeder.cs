@@ -107,6 +107,32 @@ public static class DevelopmentIdentitySeeder
 
             await context.SaveChangesAsync();
         }
+
+        if (!await context.LeaveTypes.AnyAsync(lt => lt.Name == "Annual"))
+        {
+            logger.LogInformation("Seeding Annual leave type.");
+
+            var annualPolicy = LeavePolicy.Create(false, 20);
+            context.LeavePolicies.Add(annualPolicy);
+
+            var annualLeaveType = LeaveType.Create("Annual", annualPolicy);
+            context.LeaveTypes.Add(annualLeaveType);
+
+            await context.SaveChangesAsync();
+        }
+
+        if (!await context.LeaveTypes.AnyAsync(lt => lt.Name == "Sick"))
+        {
+            logger.LogInformation("Seeding Sick leave type.");
+
+            var sickPolicy = LeavePolicy.Create(true, 10);
+            context.LeavePolicies.Add(sickPolicy);
+
+            var sickLeaveType = LeaveType.Create("Sick", sickPolicy);
+            context.LeaveTypes.Add(sickLeaveType);
+
+            await context.SaveChangesAsync();
+        }
     }
 
 
