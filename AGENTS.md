@@ -106,3 +106,14 @@ HRFlow.Client          -> React + TypeScript SPA
   of guessing.
 - Keep explanations tight. This file carries the standards so you don't need to re-justify SOLID/Clean
   Architecture in every response — just apply them and note anything genuinely non-obvious.
+
+  ## GitHub issue linking (non-negotiable)
+
+- **Never write a placeholder issue number** like `#<issue-number>` in a PR body — this has
+  caused real, silent bugs before (PRs that never auto-closed their issue). If the real issue
+  number isn't known with certainty, stop and ask rather than guessing or leaving a placeholder.
+- **Before creating any PR**, run `gh issue view <number> --repo Onthangaho/HRFlow-Leave-Management-System`
+  to confirm the issue actually exists and its title matches the work just completed. Only then
+  use that confirmed number in the PR body as `Closes #<number>`.
+- After opening a PR, run `gh pr view <pr-number> --json body -q .body` and paste the real body
+  back for confirmation that the correct `Closes #N` is present before merging.
