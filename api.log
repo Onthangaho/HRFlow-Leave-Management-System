@@ -1,0 +1,143 @@
+Using launch settings from src\HRFlow.Api\Properties\launchSettings.json...
+Building...
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Migrations[20405]
+      No migrations were applied. The database is already up to date.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__engineeringDepartmentId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Departments" AS "d"
+          WHERE "d"."Id" = @__engineeringDepartmentId_0)
+info: DevelopmentIdentitySeeder[0]
+      Seeding development identity roles and accounts.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedName_0='?' (Size = 16)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."ConcurrencyStamp", "a"."Name", "a"."NormalizedName"
+      FROM "AspNetRoles" AS "a"
+      WHERE "a"."NormalizedName" = @__normalizedName_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__normalizedName_0='?' (Size = 8)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."ConcurrencyStamp", "a"."Name", "a"."NormalizedName"
+      FROM "AspNetRoles" AS "a"
+      WHERE "a"."NormalizedName" = @__normalizedName_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedName_0='?' (Size = 7)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."ConcurrencyStamp", "a"."Name", "a"."NormalizedName"
+      FROM "AspNetRoles" AS "a"
+      WHERE "a"."NormalizedName" = @__normalizedName_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedEmail_0='?' (Size = 29)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."AccessFailedCount", "a"."ConcurrencyStamp", "a"."Email", "a"."EmailConfirmed", "a"."LockoutEnabled", "a"."LockoutEnd", "a"."NormalizedEmail", "a"."NormalizedUserName", "a"."PasswordHash", "a"."PhoneNumber", "a"."PhoneNumberConfirmed", "a"."SecurityStamp", "a"."TwoFactorEnabled", "a"."UserName"
+      FROM "AspNetUsers" AS "a"
+      WHERE "a"."NormalizedEmail" = @__normalizedEmail_0
+      LIMIT 2
+info: DevelopmentIdentitySeeder[0]
+      Development HR Administrator account hr.administrator@hrflow.local already exists.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 16)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."ConcurrencyStamp", "a"."Name", "a"."NormalizedName"
+      FROM "AspNetRoles" AS "a"
+      WHERE "a"."NormalizedName" = @__normalizedRoleName_0
+      LIMIT 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__p_0='?' (Size = 36), @__p_1='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."UserId", "a"."RoleId"
+      FROM "AspNetUserRoles" AS "a"
+      WHERE "a"."UserId" = @__p_0 AND "a"."RoleId" = @__p_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedEmail_0='?' (Size = 21)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."AccessFailedCount", "a"."ConcurrencyStamp", "a"."Email", "a"."EmailConfirmed", "a"."LockoutEnabled", "a"."LockoutEnd", "a"."NormalizedEmail", "a"."NormalizedUserName", "a"."PasswordHash", "a"."PhoneNumber", "a"."PhoneNumberConfirmed", "a"."SecurityStamp", "a"."TwoFactorEnabled", "a"."UserName"
+      FROM "AspNetUsers" AS "a"
+      WHERE "a"."NormalizedEmail" = @__normalizedEmail_0
+      LIMIT 2
+info: DevelopmentIdentitySeeder[0]
+      Development Employee account employee@hrflow.local already exists.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 8)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."ConcurrencyStamp", "a"."Name", "a"."NormalizedName"
+      FROM "AspNetRoles" AS "a"
+      WHERE "a"."NormalizedName" = @__normalizedRoleName_0
+      LIMIT 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__p_0='?' (Size = 36), @__p_1='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."UserId", "a"."RoleId"
+      FROM "AspNetUserRoles" AS "a"
+      WHERE "a"."UserId" = @__p_0 AND "a"."RoleId" = @__p_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedEmail_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."AccessFailedCount", "a"."ConcurrencyStamp", "a"."Email", "a"."EmailConfirmed", "a"."LockoutEnabled", "a"."LockoutEnd", "a"."NormalizedEmail", "a"."NormalizedUserName", "a"."PasswordHash", "a"."PhoneNumber", "a"."PhoneNumberConfirmed", "a"."SecurityStamp", "a"."TwoFactorEnabled", "a"."UserName"
+      FROM "AspNetUsers" AS "a"
+      WHERE "a"."NormalizedEmail" = @__normalizedEmail_0
+      LIMIT 2
+info: DevelopmentIdentitySeeder[0]
+      Development Manager account manager@hrflow.local already exists.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 7)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."ConcurrencyStamp", "a"."Name", "a"."NormalizedName"
+      FROM "AspNetRoles" AS "a"
+      WHERE "a"."NormalizedName" = @__normalizedRoleName_0
+      LIMIT 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__p_0='?' (Size = 36), @__p_1='?' (Size = 36)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."UserId", "a"."RoleId"
+      FROM "AspNetUserRoles" AS "a"
+      WHERE "a"."UserId" = @__p_0 AND "a"."RoleId" = @__p_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedEmail_0='?' (Size = 20)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."AccessFailedCount", "a"."ConcurrencyStamp", "a"."Email", "a"."EmailConfirmed", "a"."LockoutEnabled", "a"."LockoutEnd", "a"."NormalizedEmail", "a"."NormalizedUserName", "a"."PasswordHash", "a"."PhoneNumber", "a"."PhoneNumberConfirmed", "a"."SecurityStamp", "a"."TwoFactorEnabled", "a"."UserName"
+      FROM "AspNetUsers" AS "a"
+      WHERE "a"."NormalizedEmail" = @__normalizedEmail_0
+      LIMIT 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "e"."Id", "e"."DepartmentId", "e"."Email", "e"."FullName", "e"."IdentityUserId", "e"."ManagerId"
+      FROM "Employees" AS "e"
+      WHERE "e"."Email" = 'manager@hrflow.local'
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__normalizedEmail_0='?' (Size = 21)], CommandType='Text', CommandTimeout='30']
+      SELECT "a"."Id", "a"."AccessFailedCount", "a"."ConcurrencyStamp", "a"."Email", "a"."EmailConfirmed", "a"."LockoutEnabled", "a"."LockoutEnd", "a"."NormalizedEmail", "a"."NormalizedUserName", "a"."PasswordHash", "a"."PhoneNumber", "a"."PhoneNumberConfirmed", "a"."SecurityStamp", "a"."TwoFactorEnabled", "a"."UserName"
+      FROM "AspNetUsers" AS "a"
+      WHERE "a"."NormalizedEmail" = @__normalizedEmail_0
+      LIMIT 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "e"."Id", "e"."DepartmentId", "e"."Email", "e"."FullName", "e"."IdentityUserId", "e"."ManagerId"
+      FROM "Employees" AS "e"
+      WHERE "e"."Email" = 'employee@hrflow.local'
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "LeaveTypes" AS "l"
+          WHERE "l"."Name" = 'Unpaid')
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5228
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Api
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...

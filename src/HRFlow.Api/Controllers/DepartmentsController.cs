@@ -8,9 +8,9 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/[controller]")]
 public class DepartmentsController : ControllerBase
 {
-    private readonly IHRFlowDbContext _context;
+    private readonly IApplicationDbContext _context;
 
-    public DepartmentsController(IHRFlowDbContext context)
+    public DepartmentsController(IApplicationDbContext context)
     {
         _context = context;
     }

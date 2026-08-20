@@ -1,15 +1,2 @@
-## .NET build outputs
-bin/
-obj/
 
-## Local databases
-*.db
-*.db-shm
-*.db-wal
-
-## User-specific files
-.vs/
-.vscode/
-
-## Log files
-api.log
+*.stackdump

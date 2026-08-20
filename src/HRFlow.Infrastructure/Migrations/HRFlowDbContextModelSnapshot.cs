@@ -84,6 +84,36 @@ namespace HRFlow.Infrastructure.Migrations
                     b.ToTable("LeavePolicies");
                 });
 
+            modelBuilder.Entity("HRFlow.Domain.Entities.LeaveRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("LeaveTypeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("LeaveTypeId");
+
+                    b.ToTable("LeaveRequests");
+                });
+
             modelBuilder.Entity("HRFlow.Domain.Entities.LeaveType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -348,6 +378,25 @@ namespace HRFlow.Infrastructure.Migrations
                     b.Navigation("Department");
 
                     b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("HRFlow.Domain.Entities.LeaveRequest", b =>
+                {
+                    b.HasOne("HRFlow.Domain.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HRFlow.Domain.Entities.LeaveType", "LeaveType")
+                        .WithMany()
+                        .HasForeignKey("LeaveTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("LeaveType");
                 });
 
             modelBuilder.Entity("HRFlow.Domain.Entities.LeaveType", b =>

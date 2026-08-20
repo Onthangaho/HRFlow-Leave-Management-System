@@ -8,10 +8,10 @@ namespace HRFlow.Application.Features.Employees.Queries.GetAllEmployees;
 
 public class GetAllEmployeesQueryHandler : IRequestHandler<GetAllEmployeesQuery, IEnumerable<EmployeeSummaryDto>>
 {
-    private readonly IHRFlowDbContext _dbContext;
+    private readonly IApplicationDbContext _dbContext;
     private readonly IEmployeeRoleLookupService _roleLookupService;
 
-    public GetAllEmployeesQueryHandler(IHRFlowDbContext dbContext, IEmployeeRoleLookupService roleLookupService)
+    public GetAllEmployeesQueryHandler(IApplicationDbContext dbContext, IEmployeeRoleLookupService roleLookupService)
     {
         _dbContext = dbContext;
         _roleLookupService = roleLookupService;

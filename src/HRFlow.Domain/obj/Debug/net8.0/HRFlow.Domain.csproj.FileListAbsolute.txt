@@ -1,0 +1,12 @@
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\bin\Debug\net8.0\HRFlow.Domain.deps.json
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\bin\Debug\net8.0\HRFlow.Domain.dll
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\bin\Debug\net8.0\HRFlow.Domain.pdb
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\HRFlow.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\HRFlow.Domain.AssemblyInfoInputs.cache
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\HRFlow.Domain.AssemblyInfo.cs
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\HRFlow.Domain.csproj.CoreCompileInputs.cache
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\HRFlow.Domain.sourcelink.json
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\HRFlow.Domain.dll
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\refint\HRFlow.Domain.dll
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\HRFlow.Domain.pdb
+D:\Study broh\Projects\HRFlow-scaffold\HRFlow_Leave_management_system\src\HRFlow.Domain\obj\Debug\net8.0\ref\HRFlow.Domain.dll

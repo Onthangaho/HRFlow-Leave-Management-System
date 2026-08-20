@@ -28,7 +28,7 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("DefaultConnection") ?? $"Data Source={databasePath}";
 
         services.AddDbContext<HRFlowDbContext>(options => options.UseSqlite(connectionString));
-        services.AddScoped<Application.Interfaces.IHRFlowDbContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
         services.AddIdentityCore<IdentityUser>(options =>
             {
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);

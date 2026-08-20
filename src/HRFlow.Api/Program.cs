@@ -21,7 +21,27 @@ const string HrAdministratorOnlyPolicyName = "HrAdministratorOnly";
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -36,7 +56,8 @@ builder.Services.AddMediatR(configuration =>
     configuration.RegisterServicesFromAssemblyContaining<CreateEmployeeCommand>());
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
-builder.Services.AddScoped<IHRFlowDbContext>(provider => provider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>());
+
+builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>());
 builder.Services.AddControllers(options => options.Filters.Add<HttpGlobalExceptionFilter>());
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
