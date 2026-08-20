@@ -1,5 +1,8 @@
 namespace HRFlow.Application.Features.Employees.Queries.GetEmployees;
 
+/// <summary>
+/// Data transfer object representing an employee for query results.
+/// </summary>
 public class GetEmployeeDto
 {
     public Guid Id { get; set; }

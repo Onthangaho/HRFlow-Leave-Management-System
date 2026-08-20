@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 
+/// <summary>
+/// Handles leave request submission with leave policy validation against approved requests and available balance.
+/// </summary>
 public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveRequestCommand, Guid>
 {
     private readonly IApplicationDbContext _context;

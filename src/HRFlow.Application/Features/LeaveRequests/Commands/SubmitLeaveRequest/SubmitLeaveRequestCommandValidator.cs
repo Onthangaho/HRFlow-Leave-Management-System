@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 
+/// <summary>
+/// Validates submit leave request commands with database-backed checks for employee and leave type existence.
+/// </summary>
 public class SubmitLeaveRequestCommandValidator : AbstractValidator<SubmitLeaveRequestCommand>
 {
     private readonly IApplicationDbContext _context;

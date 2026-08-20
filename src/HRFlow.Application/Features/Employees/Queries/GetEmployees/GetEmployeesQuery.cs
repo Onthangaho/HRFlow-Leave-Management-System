@@ -4,10 +4,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRFlow.Application.Features.Employees.Queries.GetEmployees;
 
+/// <summary>
+/// Query to retrieve all employees.
+/// </summary>
 public class GetEmployeesQuery : IRequest<IEnumerable<GetEmployeeDto>>
 {
 }
 
+/// <summary>
+/// Handles employee retrieval by projecting domain entities to DTOs.
+/// </summary>
 public class GetEmployeesQueryHandler : IRequestHandler<GetEmployeesQuery, IEnumerable<GetEmployeeDto>>
 {
     private readonly IApplicationDbContext _context;

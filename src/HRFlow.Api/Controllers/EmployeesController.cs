@@ -6,7 +6,7 @@ namespace HRFlow.Api.Controllers;
 
 using Microsoft.AspNetCore.Authorization;
 
-[Authorize]
+[Authorize(Policy = "HrAdministratorOnly")]
 [ApiController]
 [Route("api/v1/employees")]
 public class EmployeesController : ControllerBase
