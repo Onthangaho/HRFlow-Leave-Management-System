@@ -29,6 +29,8 @@ This account is development-only and must not exist in any real deployment.
 - Email: `employee@hrflow.local`
 - Role: `Employee`
 - Password (default): `HrFlow!Employee2026` (override with `Seeding:EmployeePassword` in configuration)
+
+<!-- This is a comment to trigger a new commit. -->
 The seed checks for the employee by email before creating it, so repeated restarts do not create duplicates.
 
 ## Development-only seeded manager

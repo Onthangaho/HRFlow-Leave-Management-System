@@ -1,6 +1,18 @@
+## .NET build outputs
+[Bb]in/
+[Oo]bj/
 
-*.stackdump
+## User-specific files
+.vs/
+.vscode/
+
+## Log files
+api.log
+
+## Database files
 *.db
 *.db-shm
 *.db-wal
-[Oo]bj/
+
+## Other
+*.stackdump
