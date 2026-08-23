@@ -1,2 +1,6 @@
 
 *.stackdump
+*.db
+*.db-shm
+*.db-wal
+[Oo]bj/
