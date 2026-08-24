@@ -29,12 +29,25 @@ namespace HRFlow.Infrastructure.Seeding
             }
 
             var dbContext = scope.ServiceProvider.GetRequiredService<HRFlowDbContext>();
-            var engineeringDepartmentId = Guid.Parse("a1b2c3d4-e5f6-7890-1234-567890abcdef");
-            if (!dbContext.Set<Department>().Any(d => d.Id == engineeringDepartmentId))
+
+            var departments = new[]
             {
-                await dbContext.Set<Department>().AddAsync(new Department { Id = engineeringDepartmentId, Name = "Engineering" });
-                await dbContext.SaveChangesAsync();
+                new { Id = Guid.Parse("a1b2c3d4-e5f6-7890-1234-567890abcdef"), Name = "Engineering" },
+                new { Id = Guid.NewGuid(), Name = "IT" },
+                new { Id = Guid.NewGuid(), Name = "Sales" },
+                new { Id = Guid.NewGuid(), Name = "Human Resources" },
+                new { Id = Guid.NewGuid(), Name = "Finance" }
+            };
+
+            foreach (var dept in departments)
+            {
+                if (!dbContext.Set<Department>().Any(d => d.Name == dept.Name))
+                {
+                    await dbContext.Set<Department>().AddAsync(new Department { Id = dept.Id, Name = dept.Name });
+                }
             }
+
+            await dbContext.SaveChangesAsync();
         }
     }
 }

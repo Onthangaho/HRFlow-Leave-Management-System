@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HRFlow.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a563d714851512550c52c075192055ada6aeb0a8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+453259969f7e8678131e6a42bcbb74ab4dd171f7")]
 [assembly: System.Reflection.AssemblyProductAttribute("HRFlow.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HRFlow.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
