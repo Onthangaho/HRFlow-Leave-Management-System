@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook for HRFlow.
+#
+# Blocks any commit whose staged index contains build artifacts that should remain
+# untracked. These are the #1 cause of noisy branch-switch carryover on this
+# repo (see commit eb275c6).
+#
+# Installed by scripts/git-hooks/install-hooks.sh (or .ps1 on Windows).
+
+set -euo pipefail
+
+BLOCK_PATTERNS=(
+    '/bin/'
+    '/obj/'
+    '\.(dll|pdb|exe|deps\.json|runtimeconfig\.json)$'
+    '\.(db|db-shm|db-wal)$'
+    '\.(cache|dg\.json|sourcelink\.json)$'
+    '^src/HRFlow\.[^/]+/(bin|obj)/'
+    '\.stackdump$'
+)
+
+WARN_ON_DIRTY=1
+
+staged_files="$(git diff --cached --name-only --diff-filter=ACM)"
+
+blocked=""
+while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    for p in "${BLOCK_PATTERNS[@]}"; do
+        if echo "$line" | grep -E -q "$p"; then
+            blocked="${blocked}  - ${line}${IFS}"
+            break
+        fi
+    done
+done <<< "$staged_files"
+
+if [ -n "$blocked" ]; then
+    echo "pre-commit: BLOCKED — staged index contains build-artifact files that"
+    echo "  must never be committed. Use 'git restore --staged <file>' to unstage."
+    echo ""
+    echo "Blocked staged paths:"
+    printf '%s' "$blocked"
+    echo ""
+    echo "If these were added with an accidental 'git add .', run:"
+    echo "  git rm --cached -r src/*/{bin,obj}"
+    echo "then check .gitignore already ignores them for future adds."
+    exit 1
+fi
+
+# Warn on dirty working tree (non-blocking, just a reminder so you only switch branches with clean trees).
+dirty_count="$(git status --porcelain=v1 | grep -c '^.[^ ]' || true)"
+if [ "$WARN_ON_DIRTY" -eq 1 ] && [ "$dirty_count" -gt 0 ]; then
+    echo "pre-commit: WARN — $dirty_count file(s) modified in working tree NOT staged for this commit."
+    echo "  Remember: never switch branches with uncommitted changes — they carry over silently."
+fi
+
+exit 0
