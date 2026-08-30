@@ -1,13 +1,12 @@
+using HRFlow.Application.Features.LeaveRequests.Commands.ApproveLeaveRequest;
+using HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
+using HRFlow.Application.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRFlow.Api.Controllers;
-
-using System.Security.Claims;
-using HRFlow.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 
 [Authorize]
 [ApiController]
@@ -15,32 +14,67 @@ using Microsoft.EntityFrameworkCore;
 public class LeaveRequestsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IApplicationDbContext _context;
+    private readonly ICurrentEmployeeProvider _currentEmployeeProvider;
 
-    public LeaveRequestsController(IMediator mediator, IApplicationDbContext context)
+    public LeaveRequestsController(IMediator mediator, ICurrentEmployeeProvider currentEmployeeProvider)
     {
         _mediator = mediator;
-        _context = context;
+        _currentEmployeeProvider = currentEmployeeProvider;
     }
 
     [HttpPost]
-    public async Task<IActionResult> SubmitLeaveRequest(SubmitLeaveRequestCommand command)
+    public async Task<IActionResult> SubmitLeaveRequest(SubmitLeaveRequestCommand command, CancellationToken cancellationToken)
     {
-        var identityUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(identityUserId))
-        {
-            return Unauthorized();
-        }
-
-        var employee = await _context.Employees
-            .FirstOrDefaultAsync(e => e.IdentityUserId == identityUserId);
+        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
         if (employee == null)
         {
             return Unauthorized();
         }
 
         command.EmployeeId = employee.Id;
-        var leaveRequestId = await _mediator.Send(command);
+        var leaveRequestId = await _mediator.Send(command, cancellationToken);
         return Ok(leaveRequestId);
+    }
+
+    [HttpPost("{id}/approve")]
+    [Authorize(Roles = "HR Administrator,Manager")]
+    public async Task<IActionResult> ApproveLeaveRequest(Guid id, CancellationToken cancellationToken)
+    {
+        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
+        if (employee == null)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Forbidden",
+                Detail = "Authenticated user is not a registered employee.",
+                Status = StatusCodes.Status403Forbidden,
+                Type = "https://www.rfc-editor.org/rfc/rfc7807"
+            });
+        }
+
+        var command = new ApproveLeaveRequestCommand { LeaveRequestId = id, ApproverId = employee.Id };
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id}/reject")]
+    [Authorize(Roles = "HR Administrator,Manager")]
+    public async Task<IActionResult> RejectLeaveRequest(Guid id, CancellationToken cancellationToken)
+    {
+        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
+        if (employee == null)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Forbidden",
+                Detail = "Authenticated user is not a registered employee.",
+                Status = StatusCodes.Status403Forbidden,
+                Type = "https://www.rfc-editor.org/rfc/rfc7807"
+            });
+        }
+
+        var command = new RejectLeaveRequestCommand { LeaveRequestId = id, RejectorId = employee.Id };
+        await _mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 }
