@@ -1,5 +1,5 @@
-using HRFlow.Application.DTOs.Auth;
-using HRFlow.Application.Interfaces.Auth;
+using HRFlow.Domain.DTOs.Auth;
+using HRFlow.Domain.Interfaces.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,6 +1,8 @@
-using HRFlow.Application.Interfaces;
-using HRFlow.Application.Interfaces.Auth;
-using HRFlow.Application.Interfaces.Employees;
+using HRFlow.Domain.Interfaces;
+using HRFlow.Domain.Interfaces.Auth;
+using HRFlow.Domain.Interfaces.Services;
+using HRFlow.Domain.Interfaces.Services.Employees;
+using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Persistence;
 using HRFlow.Infrastructure.Services;
 using HRFlow.Infrastructure.Services.Auth;
@@ -29,7 +31,7 @@ public static class ServiceCollectionExtensions
 
         services.AddDbContext<HRFlowDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
-        services.AddIdentityCore<IdentityUser>(options =>
+        services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
             {
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
                 options.Lockout.MaxFailedAccessAttempts = 5;
@@ -42,9 +44,7 @@ public static class ServiceCollectionExtensions
                 options.Password.RequiredLength = 8;
                 options.Password.RequiredUniqueChars = 1;
             })
-            .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<HRFlowDbContext>()
-            .AddSignInManager<SignInManager<IdentityUser>>()
             .AddDefaultTokenProviders();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();

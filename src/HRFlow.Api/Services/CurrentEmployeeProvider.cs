@@ -1,7 +1,6 @@
 using HRFlow.Application.Interfaces;
 using HRFlow.Domain.Entities;
 using HRFlow.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -13,20 +12,11 @@ namespace HRFlow.Api.Services;
 /// identifiers (Employee.Id) are always passed downstream instead of the raw Identity UserId,
 /// which would cause ManagerId / ApproverId comparisons to silently fail.
 /// </summary>
-public class CurrentEmployeeProvider : ICurrentEmployeeProvider
+public class CurrentEmployeeProvider(IHttpContextAccessor httpContextAccessor, IApplicationDbContext dbContext) : ICurrentEmployeeProvider
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IApplicationDbContext _dbContext;
-
-    public CurrentEmployeeProvider(IHttpContextAccessor httpContextAccessor, IApplicationDbContext dbContext)
-    {
-        _httpContextAccessor = httpContextAccessor;
-        _dbContext = dbContext;
-    }
-
     public async Task<Employee?> GetCurrentEmployeeAsync(CancellationToken cancellationToken)
     {
-        var httpContext = _httpContextAccessor.HttpContext;
+        var httpContext = httpContextAccessor.HttpContext;
         if (httpContext == null)
         {
             return null;
@@ -38,7 +28,7 @@ public class CurrentEmployeeProvider : ICurrentEmployeeProvider
             return null;
         }
 
-        return await _dbContext.Employees
+        return await dbContext.Employees
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.IdentityUserId == identityUserId, cancellationToken);
     }

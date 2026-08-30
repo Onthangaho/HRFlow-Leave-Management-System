@@ -1,8 +1,9 @@
-using HRFlow.Application.Exceptions;
+using HRFlow.Domain.Exceptions;
 using HRFlow.Domain.Common;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using HRFlow.Application.Exceptions;
 
 namespace HRFlow.Api.Filters
 {
@@ -10,22 +11,15 @@ namespace HRFlow.Api.Filters
     /// Global exception filter that translates application exceptions into RFC 7807 ProblemDetails responses.
     /// Maps domain exceptions like InvalidCredentialsException and DuplicateEmailException to appropriate HTTP status codes.
     /// </summary>
-    public class HttpGlobalExceptionFilter : IExceptionFilter
+    public class HttpGlobalExceptionFilter(ILogger<HttpGlobalExceptionFilter> logger) : IExceptionFilter
     {
-        private readonly ILogger<HttpGlobalExceptionFilter> _logger;
-
-        public HttpGlobalExceptionFilter(ILogger<HttpGlobalExceptionFilter> logger)
-        {
-            _logger = logger;
-        }
-
         /// <summary>
         /// Intercepts unhandled exceptions from MVC pipeline and converts them to ProblemDetails with appropriate status codes.
         /// Logs all exceptions and marks them as handled to prevent ASP.NET Core default error handling.
         /// </summary>
         public void OnException(ExceptionContext context)
         {
-            _logger.LogError(new EventId(context.Exception.HResult), context.Exception, context.Exception.Message);
+            logger.LogError(new EventId(context.Exception.HResult), context.Exception, "Unhandled exception occurred: {ExceptionMessage}", context.Exception.Message);
 
             var problemDetails = new ProblemDetails
             {
@@ -41,7 +35,7 @@ namespace HRFlow.Api.Filters
                     problemDetails.Type = "https://www.rfc-editor.org/rfc/rfc7807";
                     break;
                 case IdentityException e:
-                    _logger.LogError(e, "Identity operation failed: {ErrorMessage}", e.Message);
+                    logger.LogError(e, "Identity operation failed: {ErrorMessage}", e.Message);
                     problemDetails.Title = "An identity error occurred.";
                     problemDetails.Detail = "Unable to complete the identity operation. Please contact support if the issue persists.";
                     problemDetails.Status = (int)HttpStatusCode.BadRequest;

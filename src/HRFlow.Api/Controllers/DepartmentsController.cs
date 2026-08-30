@@ -1,4 +1,4 @@
-using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 

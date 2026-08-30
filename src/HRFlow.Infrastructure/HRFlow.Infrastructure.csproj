@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    
     <ProjectReference Include="..\HRFlow.Application\HRFlow.Application.csproj" />
     <ProjectReference Include="..\HRFlow.Domain\HRFlow.Domain.csproj" />
   </ItemGroup>

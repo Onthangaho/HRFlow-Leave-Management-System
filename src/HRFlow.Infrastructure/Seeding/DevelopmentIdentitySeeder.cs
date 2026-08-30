@@ -31,18 +31,17 @@ public static class DevelopmentIdentitySeeder
     /// Employee.ManagerId controls WHICH employees' requests a given manager can see/approve (data scoping).
     /// These are two different concerns that work together, not interchangeable.
     /// </remarks>
-    public static async Task SeedDevelopmentAdministratorAsync(this IServiceProvider serviceProvider)
+    public static async Task SeedIdentityAsync(this IServiceProvider serviceProvider)
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        using var scope = serviceProvider.CreateScope();
-        var hostEnvironment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+        var hostEnvironment = serviceProvider.GetRequiredService<IHostEnvironment>();
         if (!hostEnvironment.IsDevelopment())
         {
             return;
         }
 
-        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
         var hrAdministratorPassword =
             configuration["Seeding:HrAdministratorPassword"] ?? DefaultHrAdministratorPassword;
         var employeePassword =
@@ -50,9 +49,9 @@ public static class DevelopmentIdentitySeeder
         var managerPassword =
             configuration["Seeding:ManagerPassword"] ?? DefaultManagerPassword;
 
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-        var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("DevelopmentIdentitySeeder");
 
         logger.LogInformation("Seeding development identity roles and accounts.");
@@ -84,9 +83,12 @@ public static class DevelopmentIdentitySeeder
             managerPassword,
             ManagerRoleName,
             "Manager");
+    }
 
-        await SeedManagerDataAsync(scope.ServiceProvider);
-        await SeedLeaveDataAsync(scope.ServiceProvider);
+    public static async Task SeedApplicationDataAsync(this IServiceProvider serviceProvider)
+    {
+        await SeedManagerDataAsync(serviceProvider);
+        await SeedLeaveDataAsync(serviceProvider);
     }
 
     private static async Task SeedLeaveDataAsync(IServiceProvider serviceProvider)
@@ -104,8 +106,6 @@ public static class DevelopmentIdentitySeeder
 
             var unpaidLeaveType = LeaveType.Create("Unpaid", unpaidPolicy);
             context.LeaveTypes.Add(unpaidLeaveType);
-
-            await context.SaveChangesAsync();
         }
 
         if (!await context.LeaveTypes.AnyAsync(lt => lt.Name == "Annual"))
@@ -117,8 +117,6 @@ public static class DevelopmentIdentitySeeder
 
             var annualLeaveType = LeaveType.Create("Annual", annualPolicy);
             context.LeaveTypes.Add(annualLeaveType);
-
-            await context.SaveChangesAsync();
         }
 
         if (!await context.LeaveTypes.AnyAsync(lt => lt.Name == "Sick"))
@@ -130,8 +128,6 @@ public static class DevelopmentIdentitySeeder
 
             var sickLeaveType = LeaveType.Create("Sick", sickPolicy);
             context.LeaveTypes.Add(sickLeaveType);
-
-            await context.SaveChangesAsync();
         }
     }
 
@@ -139,7 +135,7 @@ public static class DevelopmentIdentitySeeder
     private static async Task SeedManagerDataAsync(IServiceProvider serviceProvider)
     {
         var context = serviceProvider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>();
-        var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("DevelopmentDataSeeder");
 
@@ -160,13 +156,12 @@ public static class DevelopmentIdentitySeeder
                 return;
             }
             managerEmployee = Employee.Create("Manager User", ManagerEmail, department.Id);
-            managerEmployee.SetIdentityUser(managerUser.Id);
+            managerEmployee.SetIdentityUser(managerUser.Id.ToString());
             context.Employees.Add(managerEmployee);
-            await context.SaveChangesAsync();
         }
         else if (string.IsNullOrEmpty(managerEmployee.IdentityUserId))
         {
-            managerEmployee.SetIdentityUser(managerUser.Id);
+            managerEmployee.SetIdentityUser(managerUser.Id.ToString());
         }
 
         var employeeUser = await userManager.FindByEmailAsync(EmployeeEmail);
@@ -182,13 +177,13 @@ public static class DevelopmentIdentitySeeder
             employeeToManage = Employee.Create("Employee User", EmployeeEmail, department.Id);
             if (employeeUser is not null)
             {
-                employeeToManage.SetIdentityUser(employeeUser.Id);
+                employeeToManage.SetIdentityUser(employeeUser.Id.ToString());
             }
             context.Employees.Add(employeeToManage);
         }
         else if (string.IsNullOrEmpty(employeeToManage.IdentityUserId) && employeeUser is not null)
         {
-            employeeToManage.SetIdentityUser(employeeUser.Id);
+            employeeToManage.SetIdentityUser(employeeUser.Id.ToString());
         }
 
         if (employeeToManage.ManagerId is null)
@@ -196,8 +191,6 @@ public static class DevelopmentIdentitySeeder
             employeeToManage.AssignManager(managerEmployee.Id);
             logger.LogInformation("Assigned manager to employee.");
         }
-
-        await context.SaveChangesAsync();
     }
 
     /// <summary>
@@ -207,14 +200,14 @@ public static class DevelopmentIdentitySeeder
     /// <param name="roleName">The name of the role to ensure exists.</param>
     /// <exception cref="InvalidOperationException">Thrown when the role cannot be created.</exception>
     ///
-    private static async Task EnsureRoleExistsAsync(RoleManager<IdentityRole> roleManager, string roleName)
+    private static async Task EnsureRoleExistsAsync(RoleManager<IdentityRole<Guid>> roleManager, string roleName)
     {
         if (await roleManager.RoleExistsAsync(roleName))
         {
             return;
         }
 
-        var createRoleResult = await roleManager.CreateAsync(new IdentityRole(roleName));
+        var createRoleResult = await roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
         EnsureSucceeded(createRoleResult, $"create the {roleName} role");
     }
 
@@ -226,7 +219,7 @@ public static class DevelopmentIdentitySeeder
     /// <param name="roleName">The role to assign to the account.</param>
     /// <param name="accountLabel">The label used to identify the account in log messages and errors.</param>
     private static async Task EnsureUserInRoleAsync(
-        UserManager<IdentityUser> userManager,
+        UserManager<ApplicationUser> userManager,
         ILogger logger,
         string email,
         string password,
@@ -236,7 +229,7 @@ public static class DevelopmentIdentitySeeder
         var existingUser = await userManager.FindByEmailAsync(email);
         if (existingUser is null)
         {
-            var user = new IdentityUser
+            var user = new ApplicationUser
             {
                 UserName = email,
                 Email = email,
@@ -245,6 +238,8 @@ public static class DevelopmentIdentitySeeder
 
             var createResult = await userManager.CreateAsync(user, password);
             EnsureSucceeded(createResult, $"create the development {accountLabel} account");
+
+            await userManager.UpdateAsync(user);
 
             existingUser = user;
             logger.LogInformation("Created development {AccountLabel} account {Email}.", accountLabel, email);

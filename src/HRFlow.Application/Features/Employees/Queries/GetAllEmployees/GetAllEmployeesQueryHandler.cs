@@ -1,5 +1,6 @@
 using HRFlow.Application.DTOs.Employee;
-using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Interfaces;
+using HRFlow.Domain.Interfaces.Services;
 using HRFlow.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
