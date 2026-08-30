@@ -2,7 +2,8 @@ using System.Text;
 using FluentValidation;
 using HRFlow.Application.Behaviors;
 using HRFlow.Application.Features.Employees.Commands.CreateEmployee;
-using HRFlow.Application.Interfaces.Auth;
+using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Interfaces.Auth;
 using HRFlow.Application.Validators.Auth;
 using HRFlow.Infrastructure.Extensions;
 using HRFlow.Infrastructure.Seeding;
@@ -12,8 +13,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Interfaces;
 using HRFlow.Api.Filters;
+using HRFlow.Api.Services;
+using HRFlow.Domain.Entities;
+using HRFlow.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Identity;
 
 const string HrAdministratorRoleName = "HR Administrator";
 const string HrAdministratorOnlyPolicyName = "HrAdministratorOnly";
@@ -57,30 +62,35 @@ builder.Services.AddMediatR(configuration =>
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
-builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>());
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentEmployeeProvider, CurrentEmployeeProvider>();
+
+
 builder.Services.AddControllers(options => options.Filters.Add<HttpGlobalExceptionFilter>());
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(o =>
+{
+    var signingKey = builder.Configuration["Authentication:Jwt:SigningKey"];
+    if (string.IsNullOrEmpty(signingKey))
     {
-        var signingKey = builder.Configuration["Authentication:Jwt:SigningKey"];
-        if (string.IsNullOrWhiteSpace(signingKey))
-        {
-            throw new InvalidOperationException(
-                "Authentication:Jwt:SigningKey must be configured via appsettings or user secrets.");
-        }
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Authentication:Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Authentication:Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey))
-        };
-    });
+        throw new InvalidOperationException("JWT SigningKey is not configured.");
+    }
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = builder.Configuration["Authentication:Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Authentication:Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = false,
+        ValidateIssuerSigningKey = true
+    };
+});
 
 builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder()
@@ -118,11 +128,7 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<HRFlow.Infrastructure.Persistence.HRFlowDbContext>();
-
-    await dbContext.Database.MigrateAsync();
-    await scope.ServiceProvider.SeedDepartmentsAsync();
-    await scope.ServiceProvider.SeedDevelopmentAdministratorAsync();
+    await scope.ServiceProvider.SeedAsync();
 }
 
 app.Run();
