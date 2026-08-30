@@ -35,24 +35,24 @@ git config --local init.defaultBranch main
 # Forces the caller to either commit, stash, or pass -f as the first arg.
 SAFE_CHECKOUT_FN=$(cat <<'ALIAS_BODY'
 !f() {
-  if [ "$1" = "-f" ]; then
-    shift
-    git checkout "$@"
-    return $?
+  args=()
+  force=0
+  if [ "${1:-}" = "-f" ]; then args+=("-f"); force=1; shift; fi
+  if [ $force -eq 0 ]; then
+    local dirty
+    dirty=$(git status --porcelain=v1 | grep -c '^.[^ ]' || true)
+    if [ "$dirty" -gt 0 ]; then
+      echo "git co: $dirty uncommitted file(s) in working tree — refuse to switch." >&2
+      echo "  Resolve first:" >&2
+      echo "    git commit ...  (preferred, if changes are coherent)" >&2
+      echo "    git stash push -u -m 'WIP: before switching'" >&2
+      echo "    git restore <file>  (if accidental edits)" >&2
+      echo "  Or force (overwrites tracked local changes):" >&2
+      echo "    git co -f <branch>" >&2
+      return 1
+    fi
   fi
-  local dirty
-  dirty=$(git status --porcelain=v1 | grep -c '^.[^ ]' || true)
-  if [ "$dirty" -gt 0 ]; then
-    echo "git co: $dirty uncommitted file(s) in working tree — refuse to switch." >&2
-    echo "  Resolve first:" >&2
-    echo "    git commit ...  (preferred, if changes are coherent)" >&2
-    echo "    git stash push -u -m 'WIP: before switching'" >&2
-    echo "    git restore <file>  (if accidental edits)" >&2
-    echo "  Or force (not recommended):" >&2
-    echo "    git co -f <branch>" >&2
-    return 1
-  fi
-  git checkout "$@"
+  git checkout "${args[@]}" "$@"
 }
 f
 ALIAS_BODY
