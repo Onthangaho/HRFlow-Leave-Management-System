@@ -1,5 +1,5 @@
 using FluentValidation;
-using HRFlow.Application.Interfaces.Employees;
+using HRFlow.Domain.Interfaces.Services.Employees;
 using HRFlow.Domain.Entities;
 
 namespace HRFlow.Application.Features.Employees.Commands.CreateEmployee;

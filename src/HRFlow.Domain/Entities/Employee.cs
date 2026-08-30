@@ -67,7 +67,10 @@ public class Employee : BaseEntity
     /// </summary>
     public static Employee Create(string fullName, string email, Guid departmentId)
     {
-        var employee = new Employee();
+        var employee = new Employee
+        {
+            Id = Guid.NewGuid()
+        };
         employee.Update(fullName, email, departmentId);
         return employee;
     }

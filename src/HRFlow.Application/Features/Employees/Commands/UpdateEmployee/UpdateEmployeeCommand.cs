@@ -1,4 +1,4 @@
-using HRFlow.Application.Models.Employees;
+using HRFlow.Domain.Models.Employees;
 using MediatR;
 
 namespace HRFlow.Application.Features.Employees.Commands.UpdateEmployee;

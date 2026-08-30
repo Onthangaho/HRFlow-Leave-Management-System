@@ -1,8 +1,9 @@
-using HRFlow.Application.Exceptions;
+using HRFlow.Domain.Exceptions;
 using HRFlow.Domain.Common;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using HRFlow.Application.Exceptions;
 
 namespace HRFlow.Api.Filters
 {

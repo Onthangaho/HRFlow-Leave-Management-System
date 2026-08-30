@@ -1,6 +1,8 @@
+
 using HRFlow.Application.Exceptions;
-using HRFlow.Application.Interfaces.Employees;
-using HRFlow.Application.Models.Employees;
+using HRFlow.Domain.Exceptions;
+using HRFlow.Domain.Interfaces.Services.Employees;
+using HRFlow.Domain.Models.Employees;
 using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -16,14 +18,14 @@ namespace HRFlow.Infrastructure.Services.Employees;
 public sealed class EmployeeManagementService : IEmployeeManagementService
 {
     private readonly HRFlowDbContext _dbContext;
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly ILogger<EmployeeManagementService> _logger;
 
     public EmployeeManagementService(
         HRFlowDbContext dbContext,
-        UserManager<IdentityUser> userManager,
-        RoleManager<IdentityRole> roleManager,
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole<Guid>> roleManager,
         ILogger<EmployeeManagementService> logger)
     {
         _dbContext = dbContext;
@@ -44,8 +46,8 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
     {
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var identityUser = new IdentityUser { UserName = email, Email = email };
-        string? identityUserId = null;
+        var identityUser = new ApplicationUser { UserName = email, Email = email };
+        Guid? identityUserId = null;
 
         try
         {
@@ -64,7 +66,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             EnsureIdentitySucceeded(addRoleResult, $"assign the '{roleName}' identity role");
 
             var employee = Employee.Create(fullName, email, departmentId);
-            employee.SetIdentityUser(identityUser.Id);
+            employee.SetIdentityUser(identityUser.Id.ToString());
             employee.AssignManager(managerId);
 
             _dbContext.Set<Employee>().Add(employee);
@@ -74,7 +76,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             return new EmployeeManagementResult
             {
                 EmployeeId = employee.Id,
-                IdentityUserId = identityUser.Id
+                IdentityUserId = identityUser.Id.ToString()
             };
         }
         catch (Exception ex)
@@ -82,9 +84,9 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             _logger.LogError(ex, "Employee creation failed; rolling back transaction.");
             await transaction.RollbackAsync(cancellationToken);
 
-            if (!string.IsNullOrEmpty(identityUserId))
+            if (identityUserId.HasValue)
             {
-                await DeleteUserIfPresentAsync(identityUserId, cancellationToken);
+                await DeleteUserIfPresentAsync(identityUserId.Value, cancellationToken);
             }
             
             throw;
@@ -103,51 +105,61 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
     {
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var employee = await _dbContext.Set<Employee>()
-            .SingleOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
-
+        var employee = await _dbContext.Employees
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
         if (employee is null)
         {
-            throw new EmployeeNotFoundException(employeeId);
+            throw new NotFoundException($"Employee with ID {employeeId} not found.");
         }
 
-        var identityUser = await _userManager.FindByIdAsync(employee.IdentityUserId!);
+        if (string.IsNullOrEmpty(employee.IdentityUserId))
+        {
+            throw new InvalidOperationException(
+                $"Employee {employeeId} does not have an associated identity user.");
+        }
+        
+        var identityUser = await _userManager.FindByIdAsync(employee.IdentityUserId);
         if (identityUser is null)
         {
-            throw new InvalidOperationException($"Consistency error: Identity user not found for employee {employeeId}.");
+            throw new InvalidOperationException(
+                $"Could not find the identity user for employee {employeeId} with identity ID {employee.IdentityUserId}.");
         }
 
-        employee.Update(fullName, email, departmentId);
-        employee.AssignManager(managerId);
-
-        if (!string.Equals(identityUser.Email, email, StringComparison.OrdinalIgnoreCase))
+        try
         {
-            var token = await _userManager.GenerateChangeEmailTokenAsync(identityUser, email);
-            var updateUserResult = await _userManager.ChangeEmailAsync(identityUser, email, token);
+            employee.Update(fullName, email, departmentId);
+            employee.AssignManager(managerId);
 
-            if (!updateUserResult.Succeeded)
+            identityUser.UserName = email;
+            identityUser.Email = email;
+            var identityResult = await _userManager.UpdateAsync(identityUser);
+            EnsureIdentitySucceeded(identityResult, "update the identity user");
+
+            var currentRoles = await _userManager.GetRolesAsync(identityUser);
+            if (!currentRoles.Contains(roleName))
             {
-                if (updateUserResult.Errors.Any(error => error.Code == "DuplicateUserName" || error.Code == "DuplicateEmail"))
-                {
-                    throw new DuplicateEmailException(email);
-                }
-                EnsureIdentitySucceeded(updateUserResult, "update the identity user email");
+                var removeRolesResult = await _userManager.RemoveFromRolesAsync(identityUser, currentRoles);
+                EnsureIdentitySucceeded(removeRolesResult, "remove the old identity roles");
+
+                var addRoleResult = await _userManager.AddToRoleAsync(identityUser, roleName);
+                EnsureIdentitySucceeded(addRoleResult, $"assign the new '{roleName}' identity role");
             }
 
-            var setUsernameResult = await _userManager.SetUserNameAsync(identityUser, email);
-            EnsureIdentitySucceeded(setUsernameResult, "update the identity username");
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return new EmployeeManagementResult
+            {
+                EmployeeId = employee.Id,
+                IdentityUserId = identityUser.Id.ToString()
+            };
         }
-
-        await EnsureSingleAssignedRoleAsync(identityUser, roleName);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        return new EmployeeManagementResult
+        catch (Exception ex)
         {
-            EmployeeId = employee.Id,
-            IdentityUserId = identityUser.Id
-        };
+            _logger.LogError(ex, "Employee update failed; rolling back transaction.");
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     /// <inheritdoc />
@@ -197,75 +209,22 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         return currentEmployee is not null
             && string.Equals(currentEmployee.Email, email, StringComparison.OrdinalIgnoreCase);
     }
-
-    private async Task EnsureSingleAssignedRoleAsync(IdentityUser identityUser, string roleName)
+    
+    private async Task DeleteUserIfPresentAsync(Guid identityUserId, CancellationToken cancellationToken)
     {
-        var currentRoles = await _userManager.GetRolesAsync(identityUser);
-
-        if (currentRoles.Count == 1 && string.Equals(currentRoles[0], roleName, StringComparison.Ordinal))
+        var user = await _userManager.FindByIdAsync(identityUserId.ToString());
+        if (user is not null)
         {
-            return;
-        }
-
-        if (currentRoles.Count > 0)
-        {
-            var removeRolesResult = await _userManager.RemoveFromRolesAsync(identityUser, currentRoles);
-            EnsureIdentitySucceeded(removeRolesResult, "remove existing identity roles");
-        }
-
-        var addRoleResult = await _userManager.AddToRoleAsync(identityUser, roleName);
-        EnsureIdentitySucceeded(addRoleResult, $"assign the '{roleName}' identity role");
-    }
-
-    private async Task DeleteUserIfPresentAsync(string userId, CancellationToken cancellationToken)
-    {
-        var trackedEntry = _dbContext.ChangeTracker.Entries<IdentityUser>()
-            .SingleOrDefault(entry => entry.Entity.Id == userId);
-
-        if (trackedEntry is not null)
-        {
-            trackedEntry.State = EntityState.Detached;
-        }
-
-        var userExists = await _dbContext.Users
-            .AsNoTracking()
-            .AnyAsync(user => user.Id == userId, cancellationToken);
-
-        if (!userExists)
-        {
-            return;
-        }
-
-        var existingUser = await _userManager.FindByIdAsync(userId);
-        if (existingUser is null)
-        {
-            return;
-        }
-
-        var deleteResult = await _userManager.DeleteAsync(existingUser);
-        if (deleteResult.Succeeded)
-        {
-            return;
-        }
-
-        var orphanStillExists = await _dbContext.Users
-            .AsNoTracking()
-            .AnyAsync(user => user.Id == userId, cancellationToken);
-
-        if (orphanStillExists)
-        {
-            EnsureIdentitySucceeded(deleteResult, "delete the identity user during rollback compensation");
+            await _userManager.DeleteAsync(user);
         }
     }
 
-    private static void EnsureIdentitySucceeded(IdentityResult identityResult, string actionDescription)
+    private static void EnsureIdentitySucceeded(IdentityResult result, string operationDescription)
     {
-        if (identityResult.Succeeded)
+        if (!result.Succeeded)
         {
-            return;
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to {operationDescription}: {errors}");
         }
-
-        var errors = string.Join(" ", identityResult.Errors.Select(error => error.Description));
-        throw new IdentityException($"Unable to {actionDescription}: {errors}");
     }
 }

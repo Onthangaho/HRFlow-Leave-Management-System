@@ -2,9 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using HRFlow.Application.DTOs.Auth;
-using HRFlow.Application.Interfaces.Auth;
-using HRFlow.Application.Models.Auth;
+using HRFlow.Domain.DTOs.Auth;
+using HRFlow.Domain.Interfaces.Auth;
+using HRFlow.Domain.Models.Auth;
 using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -22,8 +22,8 @@ public sealed class AuthService : IAuthService
     private const int DefaultAccessTokenMinutes = 15;
     private const int DefaultRefreshTokenDays = 7;
 
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly SignInManager<IdentityUser> _signInManager;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly HRFlowDbContext _dbContext;
     private readonly IConfiguration _configuration;
 
@@ -31,8 +31,8 @@ public sealed class AuthService : IAuthService
     /// Creates a new auth service with identity, persistence, and configuration dependencies.
     /// </summary>
     public AuthService(
-        UserManager<IdentityUser> userManager,
-        SignInManager<IdentityUser> signInManager,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
         HRFlowDbContext dbContext,
         IConfiguration configuration)
     {
@@ -103,7 +103,7 @@ public sealed class AuthService : IAuthService
         return AuthResult.Success(tokenResponse);
     }
 
-    private async Task<TokenResponse> IssueTokenPairAsync(IdentityUser user, CancellationToken cancellationToken)
+    private async Task<TokenResponse> IssueTokenPairAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
         var accessTokenLifetime = TimeSpan.FromMinutes(GetAccessTokenMinutes());
@@ -116,7 +116,7 @@ public sealed class AuthService : IAuthService
         var refreshToken = new RefreshToken
         {
             Id = Guid.NewGuid(),
-            UserId = user.Id,
+            UserId = user.Id.ToString(),
             TokenHash = HashRefreshToken(refreshTokenValue),
             CreatedAtUtc = now,
             ExpiresAtUtc = now.AddDays(GetRefreshTokenDays())
@@ -133,14 +133,14 @@ public sealed class AuthService : IAuthService
         };
     }
 
-    private string CreateAccessToken(IdentityUser user, IEnumerable<string> roles, DateTime expiresAtUtc)
+    private string CreateAccessToken(ApplicationUser user, IEnumerable<string> roles, DateTime expiresAtUtc)
     {
         var signingKey = GetSigningKey();
         var credentials = new SigningCredentials(new SymmetricSecurityKey(signingKey), SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };

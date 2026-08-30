@@ -1,5 +1,5 @@
 using FluentValidation;
-using HRFlow.Application.DTOs.Auth;
+using HRFlow.Domain.DTOs.Auth;
 
 namespace HRFlow.Application.Validators.Auth;
 

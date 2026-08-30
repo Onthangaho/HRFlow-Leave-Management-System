@@ -10,21 +10,33 @@ public class LeaveRequest : BaseEntity
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
     public LeaveRequestStatus Status { get; private set; }
+    public Guid? ProcessedById { get; private set; }
+    public DateTime? ProcessedOn { get; private set; }
 
     // Navigation properties
     public Employee Employee { get; private set; } = null!;
     public LeaveType LeaveType { get; private set; } = null!;
+    public Employee? ProcessedBy { get; private set; }
 
-    private LeaveRequest(Guid employeeId, Guid leaveTypeId, DateTime startDate, DateTime endDate)
+    private readonly List<AuditEntry> _auditEntries = new();
+    public IReadOnlyCollection<AuditEntry> AuditEntries => _auditEntries.AsReadOnly();
+
+    private LeaveRequest()
     {
-        EmployeeId = employeeId;
-        LeaveTypeId = leaveTypeId;
-        StartDate = startDate;
-        EndDate = endDate;
-        Status = LeaveRequestStatus.Pending;
+        // Required for EF Core
     }
 
     public static LeaveRequest Create(Guid employeeId, Guid leaveTypeId, DateTime startDate, DateTime endDate)
+    {
+        var leaveRequest = new LeaveRequest
+        {
+            Id = Guid.NewGuid()
+        };
+        leaveRequest.Update(employeeId, leaveTypeId, startDate, endDate);
+        return leaveRequest;
+    }
+
+    public void Update(Guid employeeId, Guid leaveTypeId, DateTime startDate, DateTime endDate)
     {
         if (employeeId == Guid.Empty)
         {
@@ -41,11 +53,11 @@ public class LeaveRequest : BaseEntity
             throw new DomainException("EndDate cannot be earlier than StartDate.");
         }
 
-        // Normalize dates to date-only (strip time component)
-        startDate = startDate.Date;
-        endDate = endDate.Date;
-
-        return new LeaveRequest(employeeId, leaveTypeId, startDate, endDate);
+        EmployeeId = employeeId;
+        LeaveTypeId = leaveTypeId;
+        StartDate = startDate.Date;
+        EndDate = endDate.Date;
+        Status = LeaveRequestStatus.Pending;
     }
 
     public void ValidateAgainstPolicy(int availableBalance, IEnumerable<LeaveRequest> approvedRequests, LeavePolicy policy)
@@ -69,5 +81,50 @@ public class LeaveRequest : BaseEntity
     private bool DatesOverlap(DateTime otherStart, DateTime otherEnd)
     {
         return StartDate <= otherEnd && otherStart <= EndDate;
+    }
+
+    public void Approve(Guid actorId)
+    {
+        if (Status != LeaveRequestStatus.Pending)
+        {
+            throw new DomainException("Only pending requests can be approved.");
+        }
+
+        var oldStatus = Status;
+        Status = LeaveRequestStatus.Approved;
+        ProcessedById = actorId;
+        ProcessedOn = DateTime.UtcNow;
+
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Approve", oldStatus, Status));
+    }
+
+    public void Reject(Guid actorId)
+    {
+        if (Status != LeaveRequestStatus.Pending)
+        {
+            throw new DomainException("Only pending requests can be rejected.");
+        }
+
+        var oldStatus = Status;
+        Status = LeaveRequestStatus.Rejected;
+        ProcessedById = actorId;
+        ProcessedOn = DateTime.UtcNow;
+
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Reject", oldStatus, Status));
+    }
+
+    public bool CanBeModifiedBy(Employee actor, IEnumerable<string> actorRoles, Employee requestOwner)
+    {
+        if (actor.Id == EmployeeId)
+        {
+            return false; // Employees cannot approve their own requests
+        }
+
+        if (actorRoles.Contains("HR Administrator"))
+        {
+            return true;
+        }
+
+        return requestOwner is not null && actor.Id == requestOwner.ManagerId;
     }
 }

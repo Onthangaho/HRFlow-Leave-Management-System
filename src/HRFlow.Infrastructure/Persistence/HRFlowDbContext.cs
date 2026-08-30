@@ -1,4 +1,4 @@
-using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Interfaces;
 using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Configurations;
 using Microsoft.AspNetCore.Identity;
@@ -11,7 +11,7 @@ namespace HRFlow.Infrastructure.Persistence;
 /// Persists application data and the ASP.NET Core Identity schema for the HRFlow backend.
 /// Provides access to employees linked to identity users and all domain entities.
 /// </summary>
-public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>, IApplicationDbContext
+public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IApplicationDbContext
 {
     /// <summary>
     /// Creates a new EF Core context for HRFlow with the supplied options.
@@ -24,6 +24,7 @@ public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRo
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
+        public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<LeavePolicy> LeavePolicies => Set<LeavePolicy>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
 
@@ -41,8 +42,6 @@ public sealed class HRFlowDbContext : IdentityDbContext<IdentityUser, IdentityRo
         modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
         modelBuilder.ApplyConfiguration(new LeaveTypeConfiguration());
         modelBuilder.ApplyConfiguration(new LeavePolicyConfiguration());
-        modelBuilder.ApplyConfiguration(new LeaveRequestConfiguration());
-        modelBuilder.ApplyConfiguration(new LeaveRequestConfiguration());
         modelBuilder.ApplyConfiguration(new LeaveRequestConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
     }
