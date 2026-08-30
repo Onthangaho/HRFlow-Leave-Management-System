@@ -1,4 +1,4 @@
-namespace HRFlow.Application.DTOs.Auth;
+namespace HRFlow.Domain.DTOs.Auth;
 
 /// <summary>
 /// Carries a refresh token so the API can rotate it and issue a replacement access token.

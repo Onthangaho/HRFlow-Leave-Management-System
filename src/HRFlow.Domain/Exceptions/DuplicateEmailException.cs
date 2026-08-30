@@ -1,4 +1,4 @@
-namespace HRFlow.Application.Exceptions;
+namespace HRFlow.Domain.Exceptions;
 
 /// <summary>
 /// Represents an error that occurs when attempting to create a user with an email that already exists.

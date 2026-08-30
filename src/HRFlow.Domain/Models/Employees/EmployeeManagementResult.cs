@@ -1,4 +1,4 @@
-namespace HRFlow.Application.Models.Employees;
+namespace HRFlow.Domain.Models.Employees;
 
 /// <summary>
 /// Returns the key identifiers produced or modified by employee management commands.

@@ -1,7 +1,7 @@
-using HRFlow.Application.DTOs.Auth;
-using HRFlow.Application.Models.Auth;
+using HRFlow.Domain.DTOs.Auth;
+using HRFlow.Domain.Models.Auth;
 
-namespace HRFlow.Application.Interfaces.Auth;
+namespace HRFlow.Domain.Interfaces.Auth;
 
 /// <summary>
 /// Encapsulates authentication and refresh-token rotation so token issuance logic stays outside API endpoint handlers.

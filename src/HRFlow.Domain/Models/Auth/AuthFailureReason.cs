@@ -1,4 +1,4 @@
-namespace HRFlow.Application.Models.Auth;
+namespace HRFlow.Domain.Models.Auth;
 
 /// <summary>
 /// Indicates why an authentication flow failed so endpoints can map failures to RFC 7807 Problem Details responses.

@@ -1,6 +1,6 @@
-using HRFlow.Application.DTOs.Auth;
+using HRFlow.Domain.DTOs.Auth;
 
-namespace HRFlow.Application.Models.Auth;
+namespace HRFlow.Domain.Models.Auth;
 
 /// <summary>
 /// Represents either a successful token issuance outcome or a typed auth failure reason.

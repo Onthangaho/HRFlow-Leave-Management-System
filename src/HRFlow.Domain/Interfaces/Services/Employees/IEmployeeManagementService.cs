@@ -1,6 +1,6 @@
-using HRFlow.Application.Models.Employees;
+using HRFlow.Domain.Models.Employees;
 
-namespace HRFlow.Application.Interfaces.Employees;
+namespace HRFlow.Domain.Interfaces.Services.Employees;
 
 /// <summary>
 /// Coordinates employee profile persistence with ASP.NET Identity account and role updates.

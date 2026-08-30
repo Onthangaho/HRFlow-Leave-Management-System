@@ -1,4 +1,4 @@
-namespace HRFlow.Application.DTOs.Auth;
+namespace HRFlow.Domain.DTOs.Auth;
 
 /// <summary>
 /// Returns the token pair required by clients to call protected APIs and renew sessions without re-entering credentials.

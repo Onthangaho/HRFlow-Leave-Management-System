@@ -1,4 +1,4 @@
-namespace HRFlow.Application.DTOs.Auth;
+namespace HRFlow.Domain.DTOs.Auth;
 
 /// <summary>
 /// Carries user credentials for authentication so the API can issue an access token and refresh token pair.
