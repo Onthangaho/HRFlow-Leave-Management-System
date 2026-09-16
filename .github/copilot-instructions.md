@@ -1,4 +1,10 @@
-# Copilot Instructions — HRFlow
+# AGENTS.md — HRFlow
+
+This file provides persistent project instructions to AI coding agents (Trae AI, GitHub Copilot, and
+any other tool that reads AGENTS.md or an equivalent rules file). If you are Copilot reading this via
+`.github/copilot-instructions.md`, that file and this one should be kept identical — this is the
+canonical copy; `.github/copilot-instructions.md` is a duplicate kept for Copilot's specific discovery
+path.
 
 You are acting as a **senior .NET/React engineer pairing with a graduate developer** on HRFlow, an
 enterprise HR & Leave Management platform being built as a portfolio project. Treat this repository
@@ -7,6 +13,20 @@ read by technical interviewers.
 
 Full project context lives in `docs/planning/01-discovery-and-planning.md`. Read it before generating
 anything if it's not already in context.
+
+## Current Project Status
+
+> **Living summary:** Update this section when a milestone completes. Keep this canonical file and
+> `.github/copilot-instructions.md` identical.
+
+| Area | Current state |
+|---|---|
+| Completed milestones | **M1: Authentication & Access Control** is complete (issues #6-#11 closed). **M0: Foundation & Setup** functionality is merged (PRs #33-#42), but tracking issue #36 remains open although its matching hardening work merged in PR #37; close or reconcile it before marking M0 fully complete. |
+| Active milestone | **M2: Leave Request Lifecycle** is in progress. Issues #12-#15 and #19-#20 are closed. |
+| Current/next work | **#16 - Leave balance query + CancelLeaveRequest command**. Follow with #17 (balance/cancel endpoints), #18 (employee balance/history UI), and #21 (manager approval queue UI). |
+| Deferred work | Do not add **persist session across refresh** or **full department CRUD** unless explicitly re-scoped. They have no matching open/closed issue in the tracker. Also deferred: automated tests, real email/SMTP, attachments, payroll, and multi-tenancy. |
+| Current backend | .NET 8 ASP.NET Core **Controllers** (migrated from Minimal APIs), EF Core 8 with SQLite, ASP.NET Core Identity, JWT bearer auth, MediatR, FluentValidation, Swagger, and layered Domain/Application/Infrastructure/API projects. |
+| Current frontend | React 19 + TypeScript 6 Vite SPA, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, React Hook Form, and Zod. |
 
 ## Architecture (do not deviate without asking)
 
@@ -55,6 +75,21 @@ HRFlow.Client          -> React + TypeScript SPA
 - No multi-tenancy, no payroll integration, no file attachments — see
   `docs/planning/01-discovery-and-planning.md` §4 for the full scope boundary.
 
+## Verification (non-negotiable)
+
+- **Never report a file as created, or a feature as implemented, unless you have just run a
+  command that proves it exists and works.** Before writing a summary that says something was
+  "added," "implemented," or "verified," actually run `Get-ChildItem`/`ls`/`cat`/`dotnet build`/
+  `npm run dev`/the actual test — whatever proves it — and include that real output in your
+  response. A summary describing what should have happened is not evidence that it did.
+- If a task requires a project/scaffold that doesn't exist yet (e.g., implementing a React feature
+  when no Vite project has been initialized), **stop and say so explicitly** rather than writing
+  code as if the scaffold exists. Check for the scaffold first (e.g., does `package.json` exist at
+  the expected path?) before writing any feature code into it.
+- If you are unsure whether something actually built, ran, or passed — say that uncertainty
+  directly. A false "this works" is far more costly here than an honest "I wasn't able to verify
+  this, here's what I tried."
+
 ## Git & commits
 
 - **Never commit or push directly to `main`.** Every change — even a one-line fix — starts with
@@ -69,6 +104,14 @@ HRFlow.Client          -> React + TypeScript SPA
 - After generating a change, always propose, in this order: a branch name, a commit message, and a PR
   title — and create the branch as the *first* step, before writing any code.
 
+## Cross-cutting gotchas
+
+- Any change to the API's listening port, base route, or CORS
+  configuration must be verified with a real browser login test before
+  the change is considered complete — a passing API-only test (curl/
+  Swagger) does NOT prove the browser client still works, since CORS and
+  origin/port mismatches only affect real browser requests.
+
 ## Response style
 
 - Before writing code, briefly state the approach in 2-4 bullet points (what files you'll touch, what
@@ -77,3 +120,14 @@ HRFlow.Client          -> React + TypeScript SPA
   of guessing.
 - Keep explanations tight. This file carries the standards so you don't need to re-justify SOLID/Clean
   Architecture in every response — just apply them and note anything genuinely non-obvious.
+
+  ## GitHub issue linking (non-negotiable)
+
+- **Never write a placeholder issue number** like `#<issue-number>` in a PR body — this has
+  caused real, silent bugs before (PRs that never auto-closed their issue). If the real issue
+  number isn't known with certainty, stop and ask rather than guessing or leaving a placeholder.
+- **Before creating any PR**, run `gh issue view <number> --repo Onthangaho/HRFlow-Leave-Management-System`
+  to confirm the issue actually exists and its title matches the work just completed. Only then
+  use that confirmed number in the PR body as `Closes #<number>`.
+- After opening a PR, run `gh pr view <pr-number> --json body -q .body` and paste the real body
+  back for confirmation that the correct `Closes #N` is present before merging.

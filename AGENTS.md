@@ -14,6 +14,20 @@ read by technical interviewers.
 Full project context lives in `docs/planning/01-discovery-and-planning.md`. Read it before generating
 anything if it's not already in context.
 
+## Current Project Status
+
+> **Living summary:** Update this section when a milestone completes. Keep this canonical file and
+> `.github/copilot-instructions.md` identical.
+
+| Area | Current state |
+|---|---|
+| Completed milestones | **M1: Authentication & Access Control** is complete (issues #6-#11 closed). **M0: Foundation & Setup** functionality is merged (PRs #33-#42), but tracking issue #36 remains open although its matching hardening work merged in PR #37; close or reconcile it before marking M0 fully complete. |
+| Active milestone | **M2: Leave Request Lifecycle** is in progress. Issues #12-#15 and #19-#20 are closed. |
+| Current/next work | **#16 - Leave balance query + CancelLeaveRequest command**. Follow with #17 (balance/cancel endpoints), #18 (employee balance/history UI), and #21 (manager approval queue UI). |
+| Deferred work | Do not add **persist session across refresh** or **full department CRUD** unless explicitly re-scoped. They have no matching open/closed issue in the tracker. Also deferred: automated tests, real email/SMTP, attachments, payroll, and multi-tenancy. |
+| Current backend | .NET 8 ASP.NET Core **Controllers** (migrated from Minimal APIs), EF Core 8 with SQLite, ASP.NET Core Identity, JWT bearer auth, MediatR, FluentValidation, Swagger, and layered Domain/Application/Infrastructure/API projects. |
+| Current frontend | React 19 + TypeScript 6 Vite SPA, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, React Hook Form, and Zod. |
+
 ## Architecture (do not deviate without asking)
 
 Layered architecture, dependencies point inward only:
