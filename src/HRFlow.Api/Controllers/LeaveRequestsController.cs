@@ -3,6 +3,7 @@ using HRFlow.Application.Features.LeaveRequests.Commands.CancelLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
+using HRFlow.Application.Features.LeaveRequests.Queries.GetLeaveBalances;
 using HRFlow.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -86,6 +87,36 @@ public class LeaveRequestsController : ControllerBase
             command.StartDate,
             command.EndDate);
         return Ok(leaveRequestId);
+    }
+
+    /// <summary>
+    /// Returns the authenticated employee's balances derived from leave policy entitlement and
+    /// approved request history rather than a persisted balance field.
+    /// </summary>
+    [HttpGet("balances")]
+    public async Task<IActionResult> GetLeaveBalances(CancellationToken cancellationToken)
+    {
+        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
+        if (employee == null)
+        {
+            _logger.LogWarning("Leave balance access was denied because the caller has no employee record.");
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Forbidden",
+                Detail = "Authenticated user is not a registered employee.",
+                Status = StatusCodes.Status403Forbidden,
+                Type = "https://www.rfc-editor.org/rfc/rfc7807"
+            });
+        }
+
+        var balances = await _mediator.Send(
+            new GetLeaveBalancesQuery { EmployeeId = employee.Id },
+            cancellationToken);
+        _logger.LogInformation(
+            "Leave balances returned for EmployeeId: {EmployeeId}; LeaveTypeCount: {LeaveTypeCount}",
+            employee.Id,
+            balances.Count);
+        return Ok(balances);
     }
 
     [HttpPost("{id}/approve")]

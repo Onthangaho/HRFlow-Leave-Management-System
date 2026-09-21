@@ -1,5 +1,4 @@
 using HRFlow.Application.Exceptions;
-using HRFlow.Domain.Entities;
 using HRFlow.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -42,16 +41,7 @@ public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLea
             throw new ForbiddenException("You can only cancel your own leave requests.");
         }
 
-        var oldStatus = leaveRequest.Status;
         leaveRequest.Cancel(request.EmployeeId);
-        var auditEntry = AuditEntry.Create(
-            leaveRequest.Id,
-            request.EmployeeId,
-            "Cancel",
-            oldStatus,
-            leaveRequest.Status);
-
-        _context.AuditEntries.Add(auditEntry);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }
