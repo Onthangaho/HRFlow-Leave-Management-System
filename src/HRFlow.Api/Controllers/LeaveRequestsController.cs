@@ -1,6 +1,7 @@
 using HRFlow.Application.Features.LeaveRequests.Commands.ApproveLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
+using HRFlow.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
 using HRFlow.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +14,10 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/leave-requests")]
 public class LeaveRequestsController : ControllerBase
 {
+    private const string HrAdministratorRoleName = "HR Administrator";
+    private const string ManagerAndHrAdministratorRoles = "HR Administrator,Manager";
+    private const string PendingStatus = "Pending";
+
     private readonly IMediator _mediator;
     private readonly ICurrentEmployeeProvider _currentEmployeeProvider;
 
@@ -20,6 +25,33 @@ public class LeaveRequestsController : ControllerBase
     {
         _mediator = mediator;
         _currentEmployeeProvider = currentEmployeeProvider;
+    }
+
+    [HttpGet]
+    [Authorize(Roles = ManagerAndHrAdministratorRoles)]
+    public async Task<IActionResult> GetLeaveRequests([FromQuery] string status, CancellationToken cancellationToken)
+    {
+        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
+        if (employee == null)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Forbidden",
+                Detail = "Authenticated user is not a registered employee.",
+                Status = StatusCodes.Status403Forbidden,
+                Type = "https://www.rfc-editor.org/rfc/rfc7807"
+            });
+        }
+
+        var query = new GetPendingLeaveRequestsQuery
+        {
+            Status = status,
+            CurrentEmployeeId = employee.Id,
+            IsHrAdministrator = User.IsInRole(HrAdministratorRoleName)
+        };
+
+        var leaveRequests = await _mediator.Send(query, cancellationToken);
+        return Ok(leaveRequests);
     }
 
     [HttpPost]
@@ -37,7 +69,7 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPost("{id}/approve")]
-    [Authorize(Roles = "HR Administrator,Manager")]
+    [Authorize(Roles = ManagerAndHrAdministratorRoles)]
     public async Task<IActionResult> ApproveLeaveRequest(Guid id, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
@@ -58,7 +90,7 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPost("{id}/reject")]
-    [Authorize(Roles = "HR Administrator,Manager")]
+    [Authorize(Roles = ManagerAndHrAdministratorRoles)]
     public async Task<IActionResult> RejectLeaveRequest(Guid id, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
