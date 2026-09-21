@@ -66,12 +66,7 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.ApproveLeaveRequest
                 throw new InvalidOperationException("Only pending leave requests can be approved.");
             }
 
-            var oldStatus = leaveRequest.Status;
             leaveRequest.Approve(request.ApproverId);
-            var newStatus = leaveRequest.Status;
-
-            var auditEntry = AuditEntry.Create(leaveRequest.Id, request.ApproverId, "Approve", oldStatus, newStatus);
-            _context.AuditEntries.Add(auditEntry);
 
             await _context.SaveChangesAsync(cancellationToken);
         }

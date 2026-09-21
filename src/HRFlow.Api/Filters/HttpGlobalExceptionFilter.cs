@@ -69,6 +69,20 @@ namespace HRFlow.Api.Filters
                     problemDetails.Status = (int)HttpStatusCode.NotFound;
                     problemDetails.Type = ProblemDetailsType;
                     break;
+                case NotFoundException e:
+                    LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status404NotFound);
+                    problemDetails.Title = "Resource not found";
+                    problemDetails.Detail = e.Message;
+                    problemDetails.Status = (int)HttpStatusCode.NotFound;
+                    problemDetails.Type = ProblemDetailsType;
+                    break;
+                case ForbiddenException e:
+                    LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status403Forbidden);
+                    problemDetails.Title = "Forbidden";
+                    problemDetails.Detail = e.Message;
+                    problemDetails.Status = (int)HttpStatusCode.Forbidden;
+                    problemDetails.Type = ProblemDetailsType;
+                    break;
                 case FluentValidation.ValidationException e:
                     LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status400BadRequest);
                     problemDetails.Title = "A validation error occurred.";

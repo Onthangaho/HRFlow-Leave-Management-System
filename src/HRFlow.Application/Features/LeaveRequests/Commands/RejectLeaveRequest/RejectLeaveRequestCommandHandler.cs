@@ -61,12 +61,7 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest
                 throw new Exception("You cannot reject your own leave request.");
             }
 
-            var oldStatus = leaveRequest.Status;
             leaveRequest.Reject(request.RejectorId);
-            var newStatus = leaveRequest.Status;
-
-            var auditEntry = AuditEntry.Create(leaveRequest.Id, request.RejectorId, "Reject", oldStatus, newStatus);
-            _context.AuditEntries.Add(auditEntry);
 
             await _context.SaveChangesAsync(cancellationToken);
         }
