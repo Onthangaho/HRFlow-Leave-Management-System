@@ -13,3 +13,32 @@ export interface PendingLeaveRequest {
   endDate: string;
   status: 'Pending';
 }
+
+/** Represents a server-calculated leave balance for one policy-backed leave type. */
+export interface LeaveBalance {
+  leaveTypeId: string;
+  leaveTypeName: string;
+  entitledDays: number;
+  usedDays: number;
+  remainingDays: number;
+}
+
+/** Represents one recorded status transition in an employee's request timeline. */
+export interface LeaveRequestDecision {
+  action: string;
+  actorFullName: string;
+  timestamp: string;
+  oldStatus: string | null;
+  newStatus: string;
+}
+
+/** Represents a self-scoped leave request with the audit context needed for employee history. */
+export interface EmployeeLeaveRequest {
+  id: string;
+  leaveTypeName: string;
+  startDate: string;
+  endDate: string;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+  processedOn: string | null;
+  decisionHistory: LeaveRequestDecision[];
+}
