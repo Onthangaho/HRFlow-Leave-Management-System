@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using HRFlow.Domain.Interfaces;
 using HRFlow.Api.Filters;
 using HRFlow.Api.Services;
+using HRFlow.Api.Middleware;
 using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -118,6 +119,7 @@ if (app.Environment.IsDevelopment())
     app.UseCors("ReactDevServer");
 }
 
+app.UseMiddleware<ApiRequestLoggingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

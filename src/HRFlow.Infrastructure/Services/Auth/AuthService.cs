@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
 
 namespace HRFlow.Infrastructure.Services.Auth;
 
@@ -26,6 +27,7 @@ public sealed class AuthService : IAuthService
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly HRFlowDbContext _dbContext;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthService> _logger;
 
     /// <summary>
     /// Creates a new auth service with identity, persistence, and configuration dependencies.
@@ -34,12 +36,14 @@ public sealed class AuthService : IAuthService
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         HRFlowDbContext dbContext,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _dbContext = dbContext;
         _configuration = configuration;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -48,16 +52,23 @@ public sealed class AuthService : IAuthService
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
+            _logger.LogWarning("Login failed because the supplied account was not found.");
             return AuthResult.Failed(AuthFailureReason.InvalidCredentials);
         }
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
         if (!signInResult.Succeeded)
         {
+            _logger.LogWarning(
+                "Login failed. UserId: {UserId}; IsLockedOut: {IsLockedOut}; IsNotAllowed: {IsNotAllowed}",
+                user.Id,
+                signInResult.IsLockedOut,
+                signInResult.IsNotAllowed);
             return AuthResult.Failed(AuthFailureReason.InvalidCredentials);
         }
 
         var tokenResponse = await IssueTokenPairAsync(user, cancellationToken);
+        _logger.LogInformation("Login succeeded. UserId: {UserId}", user.Id);
         return AuthResult.Success(tokenResponse);
     }
 
@@ -80,6 +91,7 @@ public sealed class AuthService : IAuthService
         // Proceed only if exactly one row was updated; otherwise the token was invalid, already used, or expired
         if (rowsUpdated != 1)
         {
+            _logger.LogWarning("Refresh token exchange failed because the supplied token was invalid, expired, or already revoked.");
             return AuthResult.Failed(AuthFailureReason.InvalidRefreshToken);
         }
 
@@ -90,16 +102,21 @@ public sealed class AuthService : IAuthService
 
         if (revokedToken is null)
         {
+            _logger.LogWarning("Refresh token exchange failed because the revoked token record could not be retrieved.");
             return AuthResult.Failed(AuthFailureReason.InvalidRefreshToken);
         }
 
         var user = await _userManager.FindByIdAsync(revokedToken.UserId);
         if (user is null)
         {
+            _logger.LogWarning(
+                "Refresh token exchange failed because the token owner no longer exists. UserId: {UserId}",
+                revokedToken.UserId);
             return AuthResult.Failed(AuthFailureReason.InvalidRefreshToken);
         }
 
         var tokenResponse = await IssueTokenPairAsync(user, cancellationToken);
+        _logger.LogInformation("Refresh token exchange succeeded. UserId: {UserId}", user.Id);
         return AuthResult.Success(tokenResponse);
     }
 
@@ -124,6 +141,12 @@ public sealed class AuthService : IAuthService
 
         _dbContext.RefreshTokens.Add(refreshToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation(
+            "Token pair issued. UserId: {UserId}; RoleCount: {RoleCount}; AccessTokenExpiresAtUtc: {AccessTokenExpiresAtUtc}; RefreshTokenExpiresAtUtc: {RefreshTokenExpiresAtUtc}",
+            user.Id,
+            roles.Count,
+            accessTokenExpiresAtUtc,
+            refreshToken.ExpiresAtUtc);
 
         return new TokenResponse
         {

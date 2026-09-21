@@ -45,6 +45,11 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         CancellationToken cancellationToken)
     {
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        _logger.LogInformation(
+            "Creating employee. DepartmentId: {DepartmentId}; RoleName: {RoleName}; ManagerId: {ManagerId}",
+            departmentId,
+            roleName,
+            managerId);
 
         var identityUser = new ApplicationUser { UserName = email, Email = email };
         Guid? identityUserId = null;
@@ -72,6 +77,12 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             _dbContext.Set<Employee>().Add(employee);
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            _logger.LogInformation(
+                "Employee created. EmployeeId: {EmployeeId}; IdentityUserId: {IdentityUserId}; DepartmentId: {DepartmentId}; RoleName: {RoleName}",
+                employee.Id,
+                identityUser.Id,
+                departmentId,
+                roleName);
 
             return new EmployeeManagementResult
             {
@@ -81,7 +92,12 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Employee creation failed; rolling back transaction.");
+            _logger.LogError(
+                ex,
+                "Employee creation failed; rolling back transaction. DepartmentId: {DepartmentId}; RoleName: {RoleName}; ManagerId: {ManagerId}",
+                departmentId,
+                roleName,
+                managerId);
             await transaction.RollbackAsync(cancellationToken);
 
             if (identityUserId.HasValue)
@@ -104,6 +120,12 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         CancellationToken cancellationToken)
     {
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        _logger.LogInformation(
+            "Updating employee. EmployeeId: {EmployeeId}; DepartmentId: {DepartmentId}; RoleName: {RoleName}; ManagerId: {ManagerId}",
+            employeeId,
+            departmentId,
+            roleName,
+            managerId);
 
         var employee = await _dbContext.Employees
             .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
@@ -147,6 +169,12 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
 
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            _logger.LogInformation(
+                "Employee updated. EmployeeId: {EmployeeId}; IdentityUserId: {IdentityUserId}; DepartmentId: {DepartmentId}; RoleName: {RoleName}",
+                employee.Id,
+                identityUser.Id,
+                departmentId,
+                roleName);
 
             return new EmployeeManagementResult
             {
@@ -156,7 +184,13 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Employee update failed; rolling back transaction.");
+            _logger.LogError(
+                ex,
+                "Employee update failed; rolling back transaction. EmployeeId: {EmployeeId}; DepartmentId: {DepartmentId}; RoleName: {RoleName}; ManagerId: {ManagerId}",
+                employeeId,
+                departmentId,
+                roleName,
+                managerId);
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }

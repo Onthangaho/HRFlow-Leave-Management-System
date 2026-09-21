@@ -20,11 +20,16 @@ public class LeaveRequestsController : ControllerBase
 
     private readonly IMediator _mediator;
     private readonly ICurrentEmployeeProvider _currentEmployeeProvider;
+    private readonly ILogger<LeaveRequestsController> _logger;
 
-    public LeaveRequestsController(IMediator mediator, ICurrentEmployeeProvider currentEmployeeProvider)
+    public LeaveRequestsController(
+        IMediator mediator,
+        ICurrentEmployeeProvider currentEmployeeProvider,
+        ILogger<LeaveRequestsController> logger)
     {
         _mediator = mediator;
         _currentEmployeeProvider = currentEmployeeProvider;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -34,6 +39,7 @@ public class LeaveRequestsController : ControllerBase
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
         if (employee == null)
         {
+            _logger.LogWarning("Leave request queue access was denied because the caller has no employee record.");
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
             {
                 Title = "Forbidden",
@@ -51,6 +57,11 @@ public class LeaveRequestsController : ControllerBase
         };
 
         var leaveRequests = await _mediator.Send(query, cancellationToken);
+        _logger.LogInformation(
+            "Pending leave request queue returned {RequestCount} request(s) for EmployeeId: {EmployeeId}; IsHrAdministrator: {IsHrAdministrator}",
+            leaveRequests.Count,
+            employee.Id,
+            query.IsHrAdministrator);
         return Ok(leaveRequests);
     }
 
@@ -60,11 +71,19 @@ public class LeaveRequestsController : ControllerBase
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
         if (employee == null)
         {
+            _logger.LogWarning("Leave request submission was denied because the caller has no employee record.");
             return Unauthorized();
         }
 
         command.EmployeeId = employee.Id;
         var leaveRequestId = await _mediator.Send(command, cancellationToken);
+        _logger.LogInformation(
+            "Leave request submitted. LeaveRequestId: {LeaveRequestId}; EmployeeId: {EmployeeId}; LeaveTypeId: {LeaveTypeId}; StartDate: {StartDate}; EndDate: {EndDate}",
+            leaveRequestId,
+            employee.Id,
+            command.LeaveTypeId,
+            command.StartDate,
+            command.EndDate);
         return Ok(leaveRequestId);
     }
 
@@ -75,6 +94,9 @@ public class LeaveRequestsController : ControllerBase
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
         if (employee == null)
         {
+            _logger.LogWarning(
+                "Leave request approval was denied because the caller has no employee record. LeaveRequestId: {LeaveRequestId}",
+                id);
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
             {
                 Title = "Forbidden",
@@ -86,6 +108,10 @@ public class LeaveRequestsController : ControllerBase
 
         var command = new ApproveLeaveRequestCommand { LeaveRequestId = id, ApproverId = employee.Id };
         await _mediator.Send(command, cancellationToken);
+        _logger.LogInformation(
+            "Leave request approved. LeaveRequestId: {LeaveRequestId}; ApproverEmployeeId: {ApproverEmployeeId}",
+            id,
+            employee.Id);
         return NoContent();
     }
 
@@ -96,6 +122,9 @@ public class LeaveRequestsController : ControllerBase
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
         if (employee == null)
         {
+            _logger.LogWarning(
+                "Leave request rejection was denied because the caller has no employee record. LeaveRequestId: {LeaveRequestId}",
+                id);
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
             {
                 Title = "Forbidden",
@@ -107,6 +136,10 @@ public class LeaveRequestsController : ControllerBase
 
         var command = new RejectLeaveRequestCommand { LeaveRequestId = id, RejectorId = employee.Id };
         await _mediator.Send(command, cancellationToken);
+        _logger.LogInformation(
+            "Leave request rejected. LeaveRequestId: {LeaveRequestId}; RejectorEmployeeId: {RejectorEmployeeId}",
+            id,
+            employee.Id);
         return NoContent();
     }
 }
