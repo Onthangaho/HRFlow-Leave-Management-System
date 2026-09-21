@@ -1,5 +1,6 @@
 using HRFlow.Domain.Interfaces;
 using HRFlow.Domain.Entities;
+using HRFlow.Application.Features.LeaveRequests;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,7 +36,14 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
             request.StartDate,
             request.EndDate);
 
-        leaveRequest.ValidateAgainstPolicy(leaveType.LeavePolicy.DefaultBalance, approvedRequests, leaveType.LeavePolicy);
+        var balance = LeaveBalanceCalculator.Calculate(
+            leaveType.LeavePolicy.DefaultBalance,
+            approvedRequests);
+
+        leaveRequest.ValidateAgainstPolicy(
+            balance.RemainingDays,
+            approvedRequests,
+            leaveType.LeavePolicy);
 
         _context.LeaveRequests.Add(leaveRequest);
         await _context.SaveChangesAsync(cancellationToken);

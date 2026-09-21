@@ -60,11 +60,8 @@ public class LeaveRequest : BaseEntity
         Status = LeaveRequestStatus.Pending;
     }
 
-    public void ValidateAgainstPolicy(int availableBalance, IEnumerable<LeaveRequest> approvedRequests, LeavePolicy policy)
+    public void ValidateAgainstPolicy(int remainingBalance, IEnumerable<LeaveRequest> approvedRequests, LeavePolicy policy)
     {
-        var totalApprovedDays = approvedRequests.Sum(ar => ar.GetRequestedDays());
-        var remainingBalance = availableBalance - totalApprovedDays;
-
         if (GetRequestedDays() > remainingBalance)
         {
             throw new DomainException("Requested leave exceeds available balance.");
@@ -111,6 +108,25 @@ public class LeaveRequest : BaseEntity
         ProcessedOn = DateTime.UtcNow;
 
         _auditEntries.Add(AuditEntry.Create(Id, actorId, "Reject", oldStatus, Status));
+    }
+
+    /// <summary>
+    /// Withdraws an employee-owned request before a manager or administrator has made it
+    /// read-only by approving or rejecting it.
+    /// </summary>
+    public void Cancel(Guid actorId)
+    {
+        if (Status != LeaveRequestStatus.Pending)
+        {
+            throw new DomainException("Only pending leave requests can be cancelled.");
+        }
+
+        var oldStatus = Status;
+        Status = LeaveRequestStatus.Cancelled;
+        ProcessedById = actorId;
+        ProcessedOn = DateTime.UtcNow;
+
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Cancel", oldStatus, Status));
     }
 
     public bool CanBeModifiedBy(Employee actor, IEnumerable<string> actorRoles, Employee requestOwner)
