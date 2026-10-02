@@ -4,6 +4,7 @@ import { LoginPage } from './features/auth/components/LoginPage.tsx'
 import { ProtectedRoute } from './features/auth/components/ProtectedRoute.tsx'
 import { EmployeeManagementPage } from './features/employees/components/EmployeeManagementPage';
 import { ManagerApprovalQueuePage } from './features/leave-requests/components/ManagerApprovalQueuePage.tsx';
+import { EmployeeLeaveHistoryPage } from './features/leave-requests/components/EmployeeLeaveHistoryPage.tsx';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/leave-requests/history" element={<EmployeeLeaveHistoryPage />} />
       </Route>
 
       <Route element={<ProtectedRoute requiredRoles={['HR Administrator']} />}>

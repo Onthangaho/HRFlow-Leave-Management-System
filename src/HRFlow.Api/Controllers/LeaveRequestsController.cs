@@ -2,6 +2,7 @@ using HRFlow.Application.Features.LeaveRequests.Commands.ApproveLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Commands.CancelLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest;
 using HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
+using HRFlow.Application.Features.LeaveRequests.Queries.GetEmployeeLeaveHistory;
 using HRFlow.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
 using HRFlow.Application.Features.LeaveRequests.Queries.GetLeaveBalances;
 using HRFlow.Application.Interfaces;
@@ -117,6 +118,35 @@ public class LeaveRequestsController : ControllerBase
             employee.Id,
             balances.Count);
         return Ok(balances);
+    }
+
+    /// <summary>
+    /// Returns the authenticated employee's leave-request timeline and recorded lifecycle decisions.
+    /// </summary>
+    [HttpGet("history")]
+    public async Task<IActionResult> GetLeaveRequestHistory(CancellationToken cancellationToken)
+    {
+        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
+        if (employee == null)
+        {
+            _logger.LogWarning("Leave request history access was denied because the caller has no employee record.");
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Forbidden",
+                Detail = "Authenticated user is not a registered employee.",
+                Status = StatusCodes.Status403Forbidden,
+                Type = "https://www.rfc-editor.org/rfc/rfc7807"
+            });
+        }
+
+        var leaveRequests = await _mediator.Send(
+            new GetEmployeeLeaveHistoryQuery { EmployeeId = employee.Id },
+            cancellationToken);
+        _logger.LogInformation(
+            "Leave request history returned for EmployeeId: {EmployeeId}; RequestCount: {RequestCount}",
+            employee.Id,
+            leaveRequests.Count);
+        return Ok(leaveRequests);
     }
 
     [HttpPost("{id}/approve")]

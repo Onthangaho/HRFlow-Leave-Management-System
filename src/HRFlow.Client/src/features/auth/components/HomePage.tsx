@@ -28,6 +28,12 @@ export function HomePage() {
       </section>
 
       <nav className="flex flex-wrap gap-3">
+        <Link
+          to="/leave-requests/history"
+          className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
+        >
+          My leave
+        </Link>
         {user?.roles.includes('HR Administrator') && (
           <Link
             to="/admin/employees"

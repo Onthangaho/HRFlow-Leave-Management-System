@@ -44,5 +44,15 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
         modelBuilder.ApplyConfiguration(new LeavePolicyConfiguration());
         modelBuilder.ApplyConfiguration(new LeaveRequestConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.Entity<AuditEntry>()
+            .HasIndex(auditEntry => new
+            {
+                auditEntry.LeaveRequestId,
+                auditEntry.Action,
+                auditEntry.ActorId,
+                auditEntry.OldStatus,
+                auditEntry.NewStatus
+            })
+            .IsUnique();
     }
 }
