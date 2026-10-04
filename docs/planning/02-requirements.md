@@ -37,10 +37,26 @@
 ### Business Rules
 1. Leave requests cannot exceed the employee’s currently available balance for the requested leave type.
 2. A leave request must be for a valid date range and cannot overlap a previously approved leave request for the same leave type unless the policy explicitly allows it.
-3. Only the assigned manager or an HR administrator may approve or reject a request; employees cannot approve their own requests.
+3. Only an assigned Manager-role employee may approve or reject a pending request. The manager must be the request owner's current direct manager and in the same department; managers cannot decide their own requests. HR administrators monitor pending work but have no approval override.
 4. A pending request may be canceled by the employee before approval; once approved or rejected, the request becomes read-only.
 5. Leave balances are calculated from policy rules and approved leave history; no manually stored balance field is used.
 6. If an employee is deactivated, any pending request is canceled automatically and historical records remain visible for audit purposes.
+7. A new leave request requires a current valid manager assignment. The assigned manager must be an existing same-department employee with the Manager role; self-assignment and reporting cycles are rejected. Existing pending requests are preserved when HR corrects an invalid assignment and use the current valid reporting relationship.
+
+### Role Capability Matrix
+
+| Capability | Employee | Manager | HR Administrator |
+|---|---|---|---|
+| Submit, view balances/history, cancel own Pending request | Yes | Yes | No, unless separately assigned Employee or Manager |
+| Approve/reject Pending requests | No | Only assigned same-department direct reports | No |
+| View actionable approval queue | No | Direct-report Pending requests only | No |
+| Monitor organisation-wide Pending requests | No | No | Yes, read-only |
+| Own employee, role, department, and leave-policy administration | No | No | Yes; employee write endpoints are not yet exposed |
+
+> Implementation note: the current HR employee screen is a read-only directory because the API
+> exposes only `GET /api/v1/employees`. Employee create/update commands and the client mutation
+> calls exist but are not wired to controller endpoints. A follow-up should expose the reviewed
+> CRUD contract, including explicit manager-assignment update semantics, before write controls return.
 
 ### Personas
 
@@ -56,7 +72,7 @@ An HR administrator wants accurate employee records, consistent leave policies, 
 ### User Journeys
 1. Employee: sign in, view balance, submit a request, and track its approval status.
 2. Manager: sign in, review pending requests, approve or reject one, and confirm team coverage impact.
-3. HR Administrator: sign in, update employee or policy data, review pending approvals, and check reporting.
+3. HR Administrator: sign in, update employee or policy data, monitor pending approvals without deciding them, and check reporting.
 
 ---
 

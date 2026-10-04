@@ -1,6 +1,8 @@
 using HRFlow.Domain.Interfaces;
 using HRFlow.Domain.Entities;
 using HRFlow.Application.Features.LeaveRequests;
+using HRFlow.Application.Exceptions;
+using HRFlow.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,14 +14,24 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveRequestCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILeaveApprovalAuthorizationService _leaveApprovalAuthorizationService;
 
-    public SubmitLeaveRequestCommandHandler(IApplicationDbContext context)
+    public SubmitLeaveRequestCommandHandler(
+        IApplicationDbContext context,
+        ILeaveApprovalAuthorizationService leaveApprovalAuthorizationService)
     {
         _context = context;
+        _leaveApprovalAuthorizationService = leaveApprovalAuthorizationService;
     }
 
     public async Task<Guid> Handle(SubmitLeaveRequestCommand request, CancellationToken cancellationToken)
     {
+        var employee = await _context.Employees
+            .SingleOrDefaultAsync(employee => employee.Id == request.EmployeeId, cancellationToken)
+            ?? throw new NotFoundException("Employee was not found.");
+
+        await _leaveApprovalAuthorizationService.EnsureEmployeeHasValidManagerAsync(employee, cancellationToken);
+
         var leaveType = await _context.LeaveTypes
             .Include(lt => lt.LeavePolicy)
             .FirstAsync(lt => lt.Id == request.LeaveTypeId, cancellationToken);

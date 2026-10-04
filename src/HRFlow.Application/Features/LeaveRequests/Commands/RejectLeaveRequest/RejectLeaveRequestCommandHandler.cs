@@ -1,23 +1,23 @@
 using HRFlow.Domain.Interfaces;
 using HRFlow.Domain.Entities;
+using HRFlow.Application.Exceptions;
+using HRFlow.Application.Interfaces;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest
 {
     public class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLeaveRequestCommand>
     {
         private readonly IApplicationDbContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILeaveApprovalAuthorizationService _leaveApprovalAuthorizationService;
 
-        public RejectLeaveRequestCommandHandler(IApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public RejectLeaveRequestCommandHandler(
+            IApplicationDbContext context,
+            ILeaveApprovalAuthorizationService leaveApprovalAuthorizationService)
         {
             _context = context;
-            _userManager = userManager;
+            _leaveApprovalAuthorizationService = leaveApprovalAuthorizationService;
         }
 
         public async Task Handle(RejectLeaveRequestCommand request, CancellationToken cancellationToken)
@@ -28,38 +28,19 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest
 
             if (leaveRequest == null)
             {
-                throw new Exception("Leave request not found.");
+                throw new NotFoundException("Leave request was not found.");
             }
 
             var rejector = await _context.Employees.FindAsync(request.RejectorId);
             if (rejector == null)
             {
-                throw new Exception("Rejector not found.");
+                throw new NotFoundException("Rejector was not found.");
             }
 
-            if (string.IsNullOrEmpty(rejector.IdentityUserId))
-            {
-                throw new Exception("Rejector is not linked to a system user account.");
-            }
-
-            var identityUser = await _userManager.FindByIdAsync(rejector.IdentityUserId);
-            if (identityUser == null)
-            {
-                throw new Exception("Rejector identity not found.");
-            }
-
-            var isManager = leaveRequest.Employee.ManagerId == rejector.Id;
-            var isHrAdmin = await _userManager.IsInRoleAsync(identityUser, "HR Administrator");
-
-            if (!isManager && !isHrAdmin)
-            {
-                throw new Exception("Only the assigned manager or an HR Administrator can reject this request.");
-            }
-
-            if (leaveRequest.EmployeeId == request.RejectorId)
-            {
-                throw new Exception("You cannot reject your own leave request.");
-            }
+            await _leaveApprovalAuthorizationService.EnsureManagerCanDecideAsync(
+                rejector,
+                leaveRequest.Employee,
+                cancellationToken);
 
             leaveRequest.Reject(request.RejectorId);
 

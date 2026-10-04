@@ -4,6 +4,7 @@ using HRFlow.Domain.Exceptions;
 using HRFlow.Domain.Interfaces.Services.Employees;
 using HRFlow.Domain.Models.Employees;
 using HRFlow.Domain.Entities;
+using HRFlow.Domain.Common;
 using HRFlow.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,8 @@ namespace HRFlow.Infrastructure.Services.Employees;
 /// </summary>
 public sealed class EmployeeManagementService : IEmployeeManagementService
 {
+    private const string ManagerRoleName = "Manager";
+
     private readonly HRFlowDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
@@ -45,6 +48,7 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
         CancellationToken cancellationToken)
     {
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await ValidateManagerAssignmentAsync(null, departmentId, managerId, cancellationToken);
         _logger.LogInformation(
             "Creating employee. DepartmentId: {DepartmentId}; RoleName: {RoleName}; ManagerId: {ManagerId}",
             departmentId,
@@ -134,6 +138,8 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             throw new NotFoundException($"Employee with ID {employeeId} not found.");
         }
 
+        await ValidateManagerAssignmentAsync(employeeId, departmentId, managerId, cancellationToken);
+
         if (string.IsNullOrEmpty(employee.IdentityUserId))
         {
             throw new InvalidOperationException(
@@ -146,6 +152,12 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
             throw new InvalidOperationException(
                 $"Could not find the identity user for employee {employeeId} with identity ID {employee.IdentityUserId}.");
         }
+
+        await EnsureDirectReportsRemainValidAsync(
+            employee,
+            departmentId,
+            roleName,
+            cancellationToken);
 
         try
         {
@@ -242,6 +254,111 @@ public sealed class EmployeeManagementService : IEmployeeManagementService
 
         return currentEmployee is not null
             && string.Equals(currentEmployee.Email, email, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <inheritdoc />
+    public async Task ValidateManagerAssignmentAsync(
+        Guid? employeeId,
+        Guid departmentId,
+        Guid? managerId,
+        CancellationToken cancellationToken)
+    {
+        if (!managerId.HasValue)
+        {
+            return;
+        }
+
+        if (managerId.Value == Guid.Empty)
+        {
+            throw new DomainException("Manager assignment must reference a valid employee.");
+        }
+
+        if (employeeId == managerId)
+        {
+            throw new DomainException("An employee cannot be assigned as their own manager.");
+        }
+
+        var manager = await _dbContext.Employees
+            .AsNoTracking()
+            .SingleOrDefaultAsync(employee => employee.Id == managerId.Value, cancellationToken)
+            ?? throw new DomainException("Assigned manager was not found.");
+
+        if (manager.DepartmentId != departmentId)
+        {
+            throw new DomainException("Assigned manager must belong to the same department.");
+        }
+
+        if (string.IsNullOrWhiteSpace(manager.IdentityUserId))
+        {
+            throw new DomainException("Assigned manager must be linked to an account with the Manager role.");
+        }
+
+        var managerIdentity = await _userManager.FindByIdAsync(manager.IdentityUserId);
+        if (managerIdentity is null || !await _userManager.IsInRoleAsync(managerIdentity, ManagerRoleName))
+        {
+            throw new DomainException("Assigned manager must have the Manager role.");
+        }
+
+        if (employeeId.HasValue)
+        {
+            await EnsureAssignmentDoesNotCreateCycleAsync(employeeId.Value, manager, cancellationToken);
+        }
+    }
+
+    private async Task EnsureAssignmentDoesNotCreateCycleAsync(
+        Guid employeeId,
+        Employee assignedManager,
+        CancellationToken cancellationToken)
+    {
+        var visitedEmployeeIds = new HashSet<Guid>();
+        Employee? current = assignedManager;
+
+        while (current is not null)
+        {
+            if (current.Id == employeeId)
+            {
+                throw new DomainException("Manager assignment would create a reporting cycle.");
+            }
+
+            if (!visitedEmployeeIds.Add(current.Id))
+            {
+                throw new DomainException("Manager assignment cannot use an existing reporting cycle.");
+            }
+
+            current = current.ManagerId.HasValue
+                ? await _dbContext.Employees
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(employee => employee.Id == current.ManagerId.Value, cancellationToken)
+                : null;
+        }
+    }
+
+    private async Task EnsureDirectReportsRemainValidAsync(
+        Employee employee,
+        Guid proposedDepartmentId,
+        string proposedRoleName,
+        CancellationToken cancellationToken)
+    {
+        var hasDirectReports = await _dbContext.Employees.AnyAsync(
+            candidate => candidate.ManagerId == employee.Id,
+            cancellationToken);
+
+        if (!hasDirectReports)
+        {
+            return;
+        }
+
+        if (employee.DepartmentId != proposedDepartmentId)
+        {
+            throw new DomainException(
+                "Cannot change an employee's department while they have direct reports. Reassign the direct reports first.");
+        }
+
+        if (!string.Equals(proposedRoleName, ManagerRoleName, StringComparison.Ordinal))
+        {
+            throw new DomainException(
+                "Cannot remove the Manager role while the employee has direct reports. Reassign the direct reports first.");
+        }
     }
     
     private async Task DeleteUserIfPresentAsync(Guid identityUserId, CancellationToken cancellationToken)

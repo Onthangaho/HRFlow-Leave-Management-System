@@ -6,9 +6,8 @@ import { useAuth } from '../hooks/useAuth.tsx';
  */
 export function HomePage() {
   const { user, logout } = useAuth();
-  const canReviewLeaveRequests = user?.roles.some(
-    (role) => role === 'Manager' || role === 'HR Administrator',
-  );
+  const canUsePersonalLeave = user?.roles.some((role) => role === 'Employee' || role === 'Manager');
+  const canReviewLeaveRequests = user?.roles.includes('Manager');
 
   return (
     <main className="mx-auto mt-16 w-full max-w-3xl space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -28,18 +27,20 @@ export function HomePage() {
       </section>
 
       <nav className="flex flex-wrap gap-3">
-        <Link
-          to="/leave-requests/history"
-          className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
-        >
-          My leave
-        </Link>
+        {canUsePersonalLeave && (
+          <Link
+            to="/leave-requests/history"
+            className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
+          >
+            My leave
+          </Link>
+        )}
         {user?.roles.includes('HR Administrator') && (
           <Link
             to="/admin/employees"
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-slate-100"
           >
-            Manage employees
+            Employee directory
           </Link>
         )}
         {canReviewLeaveRequests && (
@@ -48,6 +49,14 @@ export function HomePage() {
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
           >
             Review leave requests
+          </Link>
+        )}
+        {user?.roles.includes('HR Administrator') && (
+          <Link
+            to="/admin/leave-monitoring"
+            className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
+          >
+            Monitor pending leave
           </Link>
         )}
         <button

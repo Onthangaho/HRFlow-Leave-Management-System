@@ -51,4 +51,14 @@ public interface IEmployeeManagementService
     /// Checks whether an email can be used by the target create/update flow without conflicting with another employee account.
     /// </summary>
     Task<bool> IsEmailAvailableAsync(string email, Guid? currentEmployeeId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Ensures a proposed manager is a same-department Manager-role employee and does not create
+    /// a self-reference or reporting cycle.
+    /// </summary>
+    Task ValidateManagerAssignmentAsync(
+        Guid? employeeId,
+        Guid departmentId,
+        Guid? managerId,
+        CancellationToken cancellationToken);
 }

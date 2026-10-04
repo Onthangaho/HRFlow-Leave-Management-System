@@ -129,18 +129,4 @@ public class LeaveRequest : BaseEntity
         _auditEntries.Add(AuditEntry.Create(Id, actorId, "Cancel", oldStatus, Status));
     }
 
-    public bool CanBeModifiedBy(Employee actor, IEnumerable<string> actorRoles, Employee requestOwner)
-    {
-        if (actor.Id == EmployeeId)
-        {
-            return false; // Employees cannot approve their own requests
-        }
-
-        if (actorRoles.Contains("HR Administrator"))
-        {
-            return true;
-        }
-
-        return requestOwner is not null && actor.Id == requestOwner.ManagerId;
-    }
 }
