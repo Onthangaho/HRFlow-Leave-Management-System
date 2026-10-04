@@ -17,8 +17,9 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/leave-requests")]
 public class LeaveRequestsController : ControllerBase
 {
-    private const string HrAdministratorRoleName = "HR Administrator";
-    private const string ManagerAndHrAdministratorRoles = "HR Administrator,Manager";
+    private const string HrAdministratorOnlyPolicy = "HrAdministratorOnly";
+    private const string ManagerRoleName = "Manager";
+    private const string PersonalLeaveRoles = "Employee,Manager";
     private const string PendingStatus = "Pending";
 
     private readonly IMediator _mediator;
@@ -36,7 +37,7 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = ManagerAndHrAdministratorRoles)]
+    [Authorize(Roles = ManagerRoleName)]
     public async Task<IActionResult> GetLeaveRequests([FromQuery] string status, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
@@ -56,19 +57,40 @@ public class LeaveRequestsController : ControllerBase
         {
             Status = status,
             CurrentEmployeeId = employee.Id,
-            IsHrAdministrator = User.IsInRole(HrAdministratorRoleName)
+            CurrentDepartmentId = employee.DepartmentId
         };
 
         var leaveRequests = await _mediator.Send(query, cancellationToken);
         _logger.LogInformation(
-            "Pending leave request queue returned {RequestCount} request(s) for EmployeeId: {EmployeeId}; IsHrAdministrator: {IsHrAdministrator}",
+            "Manager pending leave request queue returned {RequestCount} request(s) for EmployeeId: {EmployeeId}",
             leaveRequests.Count,
-            employee.Id,
-            query.IsHrAdministrator);
+            employee.Id);
+        return Ok(leaveRequests);
+    }
+
+    /// <summary>
+    /// Returns a read-only organisation-wide view of pending requests for HR monitoring.
+    /// </summary>
+    [HttpGet("monitoring/pending")]
+    [Authorize(Policy = HrAdministratorOnlyPolicy)]
+    public async Task<IActionResult> GetOrganisationPendingLeaveRequests(CancellationToken cancellationToken)
+    {
+        var leaveRequests = await _mediator.Send(
+            new GetPendingLeaveRequestsQuery
+            {
+                Status = PendingStatus,
+                IsOrganisationMonitoring = true
+            },
+            cancellationToken);
+
+        _logger.LogInformation(
+            "HR pending leave monitoring returned {RequestCount} request(s).",
+            leaveRequests.Count);
         return Ok(leaveRequests);
     }
 
     [HttpPost]
+    [Authorize(Roles = PersonalLeaveRoles)]
     public async Task<IActionResult> SubmitLeaveRequest(SubmitLeaveRequestCommand command, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
@@ -95,6 +117,7 @@ public class LeaveRequestsController : ControllerBase
     /// approved request history rather than a persisted balance field.
     /// </summary>
     [HttpGet("balances")]
+    [Authorize(Roles = PersonalLeaveRoles)]
     public async Task<IActionResult> GetLeaveBalances(CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
@@ -124,6 +147,7 @@ public class LeaveRequestsController : ControllerBase
     /// Returns the authenticated employee's leave-request timeline and recorded lifecycle decisions.
     /// </summary>
     [HttpGet("history")]
+    [Authorize(Roles = PersonalLeaveRoles)]
     public async Task<IActionResult> GetLeaveRequestHistory(CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
@@ -150,7 +174,7 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPost("{id}/approve")]
-    [Authorize(Roles = ManagerAndHrAdministratorRoles)]
+    [Authorize(Roles = ManagerRoleName)]
     public async Task<IActionResult> ApproveLeaveRequest(Guid id, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
@@ -178,7 +202,7 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPost("{id}/reject")]
-    [Authorize(Roles = ManagerAndHrAdministratorRoles)]
+    [Authorize(Roles = ManagerRoleName)]
     public async Task<IActionResult> RejectLeaveRequest(Guid id, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
@@ -206,6 +230,7 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPost("{id}/cancel")]
+    [Authorize(Roles = PersonalLeaveRoles)]
     public async Task<IActionResult> CancelLeaveRequest(Guid id, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);

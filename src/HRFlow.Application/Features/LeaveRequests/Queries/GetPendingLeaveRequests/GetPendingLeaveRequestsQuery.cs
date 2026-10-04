@@ -6,14 +6,15 @@ using Microsoft.EntityFrameworkCore;
 namespace HRFlow.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
 
 /// <summary>
-/// Retrieves the manager approval queue while ensuring managers only see pending requests from their
-/// direct reports, and HR administrators can review the full pending queue for operational oversight.
+/// Retrieves pending requests for either a manager's actionable direct-report queue or HR's read-only
+/// organisation-wide monitoring view.
 /// </summary>
 public class GetPendingLeaveRequestsQuery : IRequest<IReadOnlyList<PendingLeaveRequestDto>>
 {
     public string Status { get; set; } = string.Empty;
     public Guid CurrentEmployeeId { get; set; }
-    public bool IsHrAdministrator { get; set; }
+    public bool IsOrganisationMonitoring { get; set; }
+    public Guid CurrentDepartmentId { get; set; }
 }
 
 /// <summary>
@@ -33,7 +34,8 @@ public class GetPendingLeaveRequestsQueryHandler : IRequestHandler<GetPendingLea
     }
 
     /// <summary>
-    /// Returns all pending requests for HR administrators, or only direct-report pending requests for managers.
+    /// Returns all pending requests for HR monitoring, or only same-department direct-report requests
+    /// for a manager queue. Decision commands recheck the shared reporting rule before mutating state.
     /// </summary>
     public async Task<IReadOnlyList<PendingLeaveRequestDto>> Handle(GetPendingLeaveRequestsQuery request, CancellationToken cancellationToken)
     {
@@ -41,9 +43,11 @@ public class GetPendingLeaveRequestsQueryHandler : IRequestHandler<GetPendingLea
             .AsNoTracking()
             .Where(lr => lr.Status == LeaveRequestStatus.Pending);
 
-        if (!request.IsHrAdministrator)
+        if (!request.IsOrganisationMonitoring)
         {
-            query = query.Where(lr => lr.Employee.ManagerId == request.CurrentEmployeeId);
+            query = query.Where(lr =>
+                lr.Employee.ManagerId == request.CurrentEmployeeId
+                && lr.Employee.DepartmentId == request.CurrentDepartmentId);
         }
 
         return await query

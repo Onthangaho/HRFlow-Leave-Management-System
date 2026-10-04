@@ -7,7 +7,7 @@ import {
 import { ApprovalQueueItem } from './ApprovalQueueItem';
 
 /**
- * Provides Managers and HR Administrators a focused, server-scoped workspace for pending decisions.
+ * Provides Managers a focused, server-scoped workspace for direct-report leave decisions.
  */
 export function ManagerApprovalQueuePage() {
   const { data: leaveRequests, isLoading, error } = usePendingLeaveRequests();

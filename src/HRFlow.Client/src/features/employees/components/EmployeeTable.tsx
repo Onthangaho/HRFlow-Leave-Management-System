@@ -1,11 +1,7 @@
 import { useEmployees } from '../api';
-import type { Employee } from '../types';
 
-interface EmployeeTableProps {
-  onEdit: (employee: Employee) => void;
-}
-
-export function EmployeeTable({ onEdit }: EmployeeTableProps) {
+/** Displays the currently available HR employee directory without exposing unavailable write routes. */
+export function EmployeeTable() {
   const { data: employees, isLoading, error } = useEmployees();
 
   if (isLoading) {
@@ -33,9 +29,6 @@ export function EmployeeTable({ onEdit }: EmployeeTableProps) {
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
               Role
             </th>
-            <th scope="col" className="relative px-6 py-3">
-              <span className="sr-only">Edit</span>
-            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 bg-white">
@@ -45,11 +38,6 @@ export function EmployeeTable({ onEdit }: EmployeeTableProps) {
               <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{employee.email}</td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{employee.departmentName}</td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{employee.roleName}</td>
-              <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                <button onClick={() => onEdit(employee)} className="text-slate-600 hover:text-slate-900">
-                  Edit
-                </button>
-              </td>
             </tr>
           ))}
         </tbody>

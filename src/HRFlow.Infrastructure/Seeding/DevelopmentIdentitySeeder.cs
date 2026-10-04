@@ -22,6 +22,8 @@ public static class DevelopmentIdentitySeeder
     private const string ManagerRoleName = "Manager";
     private const string ManagerEmail = "manager@hrflow.local";
     private const string DefaultManagerPassword = "HrFlow!Manager2026";
+    private const string SeniorManagerEmail = "senior.manager@hrflow.local";
+    private const string DefaultSeniorManagerPassword = "HrFlow!SeniorManager2026";
 
     /// <summary>
     /// Seeds the development HR Administrator, Manager, and Employee roles and accounts when running in the Development environment.
@@ -48,6 +50,8 @@ public static class DevelopmentIdentitySeeder
             configuration["Seeding:EmployeePassword"] ?? DefaultEmployeePassword;
         var managerPassword =
             configuration["Seeding:ManagerPassword"] ?? DefaultManagerPassword;
+        var seniorManagerPassword =
+            configuration["Seeding:SeniorManagerPassword"] ?? DefaultSeniorManagerPassword;
 
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
         var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -83,6 +87,14 @@ public static class DevelopmentIdentitySeeder
             managerPassword,
             ManagerRoleName,
             "Manager");
+
+        await EnsureUserInRoleAsync(
+            userManager,
+            logger,
+            SeniorManagerEmail,
+            seniorManagerPassword,
+            ManagerRoleName,
+            "Senior Manager");
     }
 
     public static async Task SeedApplicationDataAsync(this IServiceProvider serviceProvider)
@@ -162,6 +174,33 @@ public static class DevelopmentIdentitySeeder
         else if (string.IsNullOrEmpty(managerEmployee.IdentityUserId))
         {
             managerEmployee.SetIdentityUser(managerUser.Id.ToString());
+        }
+
+        var seniorManagerUser = await userManager.FindByEmailAsync(SeniorManagerEmail);
+        var seniorManagerEmployee = await context.Employees
+            .FirstOrDefaultAsync(e => e.Email == SeniorManagerEmail);
+        if (seniorManagerEmployee is null)
+        {
+            seniorManagerEmployee = Employee.Create(
+                "Senior Manager User",
+                SeniorManagerEmail,
+                managerEmployee.DepartmentId);
+            if (seniorManagerUser is not null)
+            {
+                seniorManagerEmployee.SetIdentityUser(seniorManagerUser.Id.ToString());
+            }
+
+            context.Employees.Add(seniorManagerEmployee);
+        }
+        else if (string.IsNullOrEmpty(seniorManagerEmployee.IdentityUserId) && seniorManagerUser is not null)
+        {
+            seniorManagerEmployee.SetIdentityUser(seniorManagerUser.Id.ToString());
+        }
+
+        if (managerEmployee.ManagerId is null)
+        {
+            managerEmployee.AssignManager(seniorManagerEmployee.Id);
+            logger.LogInformation("Assigned senior manager to development manager.");
         }
 
         var employeeUser = await userManager.FindByEmailAsync(EmployeeEmail);

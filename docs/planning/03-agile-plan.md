@@ -78,7 +78,7 @@ Not a classic 2-week Scrum sprint — a single-week Kanban-style plan sequenced 
 | 17 | GET balance + PATCH cancel endpoints | User Story 4 | `api` | must | 45 min |
 | 18 | Balance view + leave request history with cancel action | User Story 4 | `client` | must | 60 min |
 | 19 | Approval decision domain logic + audit entry creation | User Story 5 | `domain` | must | 60 min |
-| 20 | PATCH approve/reject endpoint + manager-scoped pending queue endpoint | User Story 5 | `api` | must | 45 min |
+| 20 | PATCH approve/reject endpoint + manager-scoped pending queue endpoint; HR read-only monitoring | User Story 5 | `api` | must | 45 min |
 | 21 | Manager approval queue UI | User Story 5 | `client` | must | 90 min |
 
 ### M3: Policy & Employee Administration

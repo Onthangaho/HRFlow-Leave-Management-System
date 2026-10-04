@@ -21,7 +21,7 @@ As a portfolio project, HRFlow is deliberately chosen because it lets a single d
 **Product goals (what the system does):**
 - Give employees self-service visibility into their leave balance and request history.
 - Give managers a fast, low-friction approval queue.
-- Give HR administrators control over employee records, leave policies, and reporting.
+- Give HR administrators control over employee records, leave policies, and read-only organisation reporting.
 - Guarantee every leave decision is auditable — who approved what, when, and why.
 
 **Portfolio goals (why this project exists at all):**

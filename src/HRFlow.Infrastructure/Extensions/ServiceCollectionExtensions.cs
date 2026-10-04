@@ -1,4 +1,5 @@
 using HRFlow.Domain.Interfaces;
+using HRFlow.Application.Interfaces;
 using HRFlow.Domain.Interfaces.Auth;
 using HRFlow.Domain.Interfaces.Services;
 using HRFlow.Domain.Interfaces.Services.Employees;
@@ -49,6 +50,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
         services.AddScoped<IEmployeeRoleLookupService, EmployeeRoleLookupService>();
+        services.AddScoped<ILeaveApprovalAuthorizationService, LeaveApprovalAuthorizationService>();
 
         return services;
     }

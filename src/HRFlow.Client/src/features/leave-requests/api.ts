@@ -3,6 +3,7 @@ import { authHttpClient } from '../auth/api';
 import type { EmployeeLeaveRequest, LeaveBalance, PendingLeaveRequest } from './types';
 
 const pendingLeaveRequestsQueryKey = ['pending-leave-requests'] as const;
+const organisationPendingLeaveRequestsQueryKey = ['organisation-pending-leave-requests'] as const;
 const leaveBalancesQueryKey = ['leave-balances'] as const;
 const employeeLeaveHistoryQueryKey = ['employee-leave-history'] as const;
 
@@ -16,6 +17,14 @@ async function getPendingLeaveRequests(): Promise<PendingLeaveRequest[]> {
 
 async function approveLeaveRequest(leaveRequestId: string): Promise<void> {
   await authHttpClient.post(`/leave-requests/${leaveRequestId}/approve`);
+}
+
+async function getOrganisationPendingLeaveRequests(): Promise<PendingLeaveRequest[]> {
+  const response = await authHttpClient.get<PendingLeaveRequest[]>(
+    '/leave-requests/monitoring/pending',
+  );
+
+  return response.data;
 }
 
 async function rejectLeaveRequest(leaveRequestId: string): Promise<void> {
@@ -44,6 +53,14 @@ export function usePendingLeaveRequests() {
   return useQuery<PendingLeaveRequest[], Error>({
     queryKey: pendingLeaveRequestsQueryKey,
     queryFn: getPendingLeaveRequests,
+  });
+}
+
+/** Retrieves HR's read-only organisation-wide pending-request monitoring data. */
+export function useOrganisationPendingLeaveRequests() {
+  return useQuery<PendingLeaveRequest[], Error>({
+    queryKey: organisationPendingLeaveRequestsQueryKey,
+    queryFn: getOrganisationPendingLeaveRequests,
   });
 }
 

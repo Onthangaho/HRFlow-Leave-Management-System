@@ -54,6 +54,8 @@ public static class DatabaseSeeder
         const string ManagerRoleName = "Manager";
         const string ManagerEmail = "manager@hrflow.local";
         const string DefaultManagerPassword = "HrFlow!Manager2026";
+        const string SeniorManagerEmail = "senior.manager@hrflow.local";
+        const string DefaultSeniorManagerPassword = "HrFlow!SeniorManager2026";
 
         var hrAdministratorPassword =
             configuration["Seeding:HrAdministratorPassword"] ?? DefaultHrAdministratorPassword;
@@ -61,6 +63,8 @@ public static class DatabaseSeeder
             configuration["Seeding:EmployeePassword"] ?? DefaultEmployeePassword;
         var managerPassword =
             configuration["Seeding:ManagerPassword"] ?? DefaultManagerPassword;
+        var seniorManagerPassword =
+            configuration["Seeding:SeniorManagerPassword"] ?? DefaultSeniorManagerPassword;
 
         await EnsureRoleExistsAsync(roleManager, HrAdministratorRoleName);
         await EnsureRoleExistsAsync(roleManager, EmployeeRoleName);
@@ -89,6 +93,14 @@ public static class DatabaseSeeder
             managerPassword,
             ManagerRoleName,
             "Manager");
+
+        await EnsureUserInRoleAsync(
+            userManager,
+            logger,
+            SeniorManagerEmail,
+            seniorManagerPassword,
+            ManagerRoleName,
+            "Senior Manager");
     }
 
     private static async Task SeedApplicationDataAsync(IServiceProvider serviceProvider, ILogger logger)
@@ -165,6 +177,33 @@ public static class DatabaseSeeder
         else if (string.IsNullOrEmpty(managerEmployee.IdentityUserId))
         {
             managerEmployee.SetIdentityUser(managerUser.Id.ToString());
+        }
+
+        var seniorManagerUser = await userManager.FindByEmailAsync("senior.manager@hrflow.local");
+        var seniorManagerEmployee = await context.Employees
+            .FirstOrDefaultAsync(e => e.Email == "senior.manager@hrflow.local");
+        if (seniorManagerEmployee is null)
+        {
+            seniorManagerEmployee = Employee.Create(
+                "Senior Manager User",
+                "senior.manager@hrflow.local",
+                managerEmployee.DepartmentId);
+            if (seniorManagerUser is not null)
+            {
+                seniorManagerEmployee.SetIdentityUser(seniorManagerUser.Id.ToString());
+            }
+
+            context.Employees.Add(seniorManagerEmployee);
+        }
+        else if (string.IsNullOrEmpty(seniorManagerEmployee.IdentityUserId) && seniorManagerUser is not null)
+        {
+            seniorManagerEmployee.SetIdentityUser(seniorManagerUser.Id.ToString());
+        }
+
+        if (managerEmployee.ManagerId is null)
+        {
+            managerEmployee.AssignManager(seniorManagerEmployee.Id);
+            logger.LogInformation("Assigned senior manager to development manager.");
         }
 
         var employeeUser = await userManager.FindByEmailAsync("employee@hrflow.local");
