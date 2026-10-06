@@ -28,6 +28,7 @@ export function EmployeeLeaveHistoryPage() {
           <div className="mt-6">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-200">Leave management</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">My leave</h1>
+            <Link to="/leave-requests/new" className="mt-4 inline-flex rounded-lg bg-white px-4 py-2 font-semibold text-indigo-900">Request leave</Link>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-indigo-100">
               Keep track of your available leave and follow every request from submission through its decision.
             </p>
