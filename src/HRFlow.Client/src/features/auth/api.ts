@@ -20,10 +20,12 @@ if (!apiBaseUrl || apiBaseUrl.trim() === '') {
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retryOnce?: boolean;
+  _sessionVersion?: number;
 }
 
 export interface AuthInterceptorControls {
   getAccessToken: () => string | null;
+  getSessionVersion: () => number;
   refreshAccessToken: () => Promise<string | null>;
   clearSession: () => void;
 }
@@ -102,6 +104,8 @@ export function configureAuthInterceptors(
         return config;
       }
 
+      (config as RetryableRequestConfig)._sessionVersion = controls.getSessionVersion();
+
       if (config.headers instanceof AxiosHeaders) {
         config.headers.set('Authorization', `Bearer ${token}`);
       } else {
@@ -122,6 +126,10 @@ export function configureAuthInterceptors(
         return Promise.reject(error);
       }
 
+      if (originalRequest._sessionVersion !== controls.getSessionVersion()) {
+        return Promise.reject(error);
+      }
+
       const isRefreshRequest = originalRequest.url?.includes('/auth/refresh');
       if (isRefreshRequest || originalRequest._retryOnce) {
         controls.clearSession();
@@ -133,6 +141,10 @@ export function configureAuthInterceptors(
       try {
         nextToken = await getSharedRefreshPromise();
       } catch {
+        return Promise.reject(error);
+      }
+
+      if (originalRequest._sessionVersion !== controls.getSessionVersion()) {
         return Promise.reject(error);
       }
 

@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { configureAuthInterceptors, login, refresh } from '../api.ts';
 import type { AuthSession, AuthUser, LoginRequest, TokenResponse } from '../types.ts';
 
@@ -60,45 +60,82 @@ function createSession(tokenResponse: TokenResponse): AuthSession {
  * Stores auth session in-memory only to reduce token exposure to XSS at the cost of losing session on full page reload.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<AuthSession | null>(null);
   const sessionRef = useRef<AuthSession | null>(null);
-  const refreshInFlightRef = useRef<Promise<string | null> | null>(null);
+  const sessionVersionRef = useRef(0);
+  const refreshInFlightRef = useRef<{
+    sessionVersion: number;
+    promise: Promise<string | null>;
+  } | null>(null);
 
   const updateSession = useCallback((newSession: AuthSession | null) => {
+    const previousUserId = sessionRef.current?.user.id;
+    const nextUserId = newSession?.user.id;
+
+    if (previousUserId !== nextUserId) {
+      sessionVersionRef.current += 1;
+      void queryClient.cancelQueries();
+      queryClient.clear();
+    }
+
     sessionRef.current = newSession;
     setSession(newSession);
-  }, []);
+  }, [queryClient]);
 
   const clearSession = useCallback(() => {
     updateSession(null);
   }, [updateSession]);
 
   const refreshAccessToken = useCallback(async () => {
-    if (!sessionRef.current?.refreshToken) {
+    const sessionAtRefreshStart = sessionRef.current;
+    const sessionVersion = sessionVersionRef.current;
+    if (!sessionAtRefreshStart?.refreshToken) {
       return null;
     }
 
-    if (refreshInFlightRef.current) {
-      return refreshInFlightRef.current;
+    if (refreshInFlightRef.current?.sessionVersion === sessionVersion) {
+      return refreshInFlightRef.current.promise;
     }
 
-    refreshInFlightRef.current = (async () => {
+    const refreshFlight: {
+      sessionVersion: number;
+      promise: Promise<string | null>;
+    } = {
+      sessionVersion,
+      promise: Promise.resolve(null),
+    };
+
+    refreshFlight.promise = (async () => {
       try {
         const tokenResponse = await refresh({
-          refreshToken: sessionRef.current?.refreshToken ?? '',
+          refreshToken: sessionAtRefreshStart.refreshToken,
         });
         const nextSession = createSession(tokenResponse);
+
+        if (
+          sessionVersionRef.current !== sessionVersion
+          || sessionRef.current?.refreshToken !== sessionAtRefreshStart.refreshToken
+        ) {
+          return null;
+        }
+
         updateSession(nextSession);
         return nextSession.accessToken;
       } catch {
-        updateSession(null);
+        if (sessionVersionRef.current === sessionVersion) {
+          updateSession(null);
+        }
         return null;
       } finally {
-        refreshInFlightRef.current = null;
+        if (refreshInFlightRef.current === refreshFlight) {
+          refreshInFlightRef.current = null;
+        }
       }
     })();
 
-    return refreshInFlightRef.current;
+    refreshInFlightRef.current = refreshFlight;
+    return refreshFlight.promise;
   }, [updateSession]);
 
   const loginMutation = useMutation({
@@ -118,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const tearDown = configureAuthInterceptors({
       getAccessToken: () => sessionRef.current?.accessToken ?? null,
+      getSessionVersion: () => sessionVersionRef.current,
       refreshAccessToken,
       clearSession,
     });
