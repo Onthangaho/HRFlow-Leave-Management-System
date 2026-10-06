@@ -157,3 +157,18 @@ and compared; verification evidence is recorded separately.
 - [EF Core application-managed concurrency tokens](https://learn.microsoft.com/en-us/ef/core/saving/concurrency#application-managed-concurrency-tokens)
 - [SQLite foreign-key restrictions](https://www.sqlite.org/foreignkeys.html)
 - [Verification record](../verification/leave-policy-management.md)
+
+## Client follow-up (#24)
+
+The HR UI consumes these contracts at `/admin/leave-policies`, with separate Leave types
+and Policies sections. Forms retain original snapshots/versions until an explicit reload;
+409 responses preserve drafts and deletion confirmations never silently rebase versions.
+Reference counts remain advisory; the server is always the authority for deletion.
+
+The connected `/leave-requests/new` form is limited to Employee/Manager accounts. It was
+missing when #23 was verified and is included in #24 only to satisfy the actual dropdown
+acceptance criterion. It sends type and dates, never employee identity or new policy rules.
+Selector reads always refetch on mount/re-entry; account-scoped invalidation cannot notify
+other signed-in accounts. No annual resets, reason field/API expansion, policy calculations,
+or backend authorization/concurrency changes are introduced. See the [UI verification
+record](../verification/leave-policy-management-ui.md) for actual form evidence and limitations.

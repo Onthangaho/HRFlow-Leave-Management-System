@@ -1,3 +1,5 @@
+import { LeaveConfigurationPage } from './features/leave-configuration/LeaveConfigurationPage';
+import { RequestLeavePage } from './features/leave-requests/components/RequestLeavePage';
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { HomePage } from './features/auth/components/HomePage.tsx'
 import { LoginPage } from './features/auth/components/LoginPage.tsx'
@@ -17,10 +19,12 @@ function App() {
       </Route>
 
       <Route element={<ProtectedRoute requiredRoles={['Employee', 'Manager']} />}>
+        <Route path="/leave-requests/new" element={<RequestLeavePage />} />
         <Route path="/leave-requests/history" element={<EmployeeLeaveHistoryPage />} />
       </Route>
 
       <Route element={<ProtectedRoute requiredRoles={['HR Administrator']} />}>
+        <Route path="/admin/leave-policies" element={<LeaveConfigurationPage />} />
         <Route path="/admin/employees" element={<EmployeeManagementPage />} />
       </Route>
 

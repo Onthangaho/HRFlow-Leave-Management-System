@@ -27,6 +27,8 @@ export function HomePage() {
       </section>
 
       <nav className="flex flex-wrap gap-3">
+        {canUsePersonalLeave && <Link to="/leave-requests/new" className="ui-primary">Request leave</Link>}
+        {user?.roles.includes('HR Administrator') && <Link to="/admin/leave-policies" className="ui-primary">Leave policies</Link>}
         {canUsePersonalLeave && (
           <Link
             to="/leave-requests/history"
