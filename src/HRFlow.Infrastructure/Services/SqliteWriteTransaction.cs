@@ -1,5 +1,6 @@
 using HRFlow.Application.Exceptions;
 using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -10,11 +11,14 @@ namespace HRFlow.Infrastructure.Services;
 /// Acquires SQLite's database-wide writer reservation before write-validation reads, including across
 /// processes. Explicit non-deferred transactions avoid validating against a stale read snapshot.
 /// </summary>
-public sealed class SqliteWriteTransaction(HRFlowDbContext context) : ILeaveDecisionTransaction, IEmployeeManagementTransaction
+public sealed class SqliteWriteTransaction(HRFlowDbContext context) : ILeaveDecisionTransaction, IEmployeeManagementTransaction, ILeaveConfigurationTransaction
 {
     private const int LockTimeoutSeconds = 3;
     private const int SqliteBusy = 5;
     private const int SqliteLocked = 6;
+    private const int SqliteUniqueConstraint = 2067;
+    private const int SqliteForeignKeyConstraint = 787;
+    private const int SqliteTriggerConstraint = 1811;
 
     /// <inheritdoc />
     public async Task ExecuteAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken)
@@ -57,6 +61,18 @@ public sealed class SqliteWriteTransaction(HRFlowDbContext context) : ILeaveDeci
         {
             throw new WriteConflictException("Updates are busy. Refresh and try again.");
         }
+        catch (DbUpdateException exception) when (exception.InnerException is SqliteException unique
+            && unique.SqliteExtendedErrorCode == SqliteUniqueConstraint
+            && unique.Message.Contains("LeaveTypes.NormalizedName", StringComparison.Ordinal))
+        {
+            throw new WriteConflictException("A leave type with this name already exists. Choose another name.");
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqliteException reference && IsReferenceConstraint(reference)
+            && exception.Entries.Any(entry => entry.Entity is LeaveType or LeavePolicy or LeaveRequest))
+        {
+            // Foreign keys are the final safeguard against reference races from writers outside this protocol.
+            throw new WriteConflictException("Leave configuration references changed or are still in use. Reload before trying again.");
+        }
         finally
         {
             // A rolled-back decision must not leave an unsaved status or domain audit entry available for reuse.
@@ -69,4 +85,9 @@ public sealed class SqliteWriteTransaction(HRFlowDbContext context) : ILeaveDeci
 
     private static bool IsContention(SqliteException exception) =>
         exception.SqliteErrorCode is SqliteBusy or SqliteLocked;
+
+    private static bool IsReferenceConstraint(SqliteException exception) =>
+        // SQLite's RESTRICT action reports a trigger constraint, unlike a missing-parent insert.
+        exception.SqliteExtendedErrorCode is SqliteForeignKeyConstraint or SqliteTriggerConstraint
+        && exception.Message.Contains("FOREIGN KEY constraint failed", StringComparison.Ordinal);
 }

@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Data.Sqlite;
 
 namespace HRFlow.Infrastructure.Extensions;
 
@@ -29,6 +30,8 @@ public static class ServiceCollectionExtensions
     {
         var databasePath = Path.Combine(AppContext.BaseDirectory, "hrflow.db");
         var connectionString = configuration.GetConnectionString("DefaultConnection") ?? $"Data Source={databasePath}";
+        // Reference integrity is mandatory; do not rely on a native SQLite build's default or permit an opt-out.
+        connectionString = new SqliteConnectionStringBuilder(connectionString) { ForeignKeys = true }.ToString();
 
         services.AddDbContext<HRFlowDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
@@ -53,6 +56,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILeaveApprovalAuthorizationService, LeaveApprovalAuthorizationService>();
         services.AddScoped<ILeaveDecisionTransaction, SqliteWriteTransaction>();
         services.AddScoped<IEmployeeManagementTransaction, SqliteWriteTransaction>();
+        services.AddScoped<ILeaveConfigurationTransaction, SqliteWriteTransaction>();
 
         return services;
     }

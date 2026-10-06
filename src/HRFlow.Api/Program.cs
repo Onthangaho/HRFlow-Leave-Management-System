@@ -65,6 +65,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentEmployeeProvider, CurrentEmployeeProvider>();
+builder.Services.AddScoped<HRFlow.Application.Features.LeaveConfiguration.LeaveConfigurationService>();
 
 
 builder.Services.AddControllers(options => options.Filters.Add<HttpGlobalExceptionFilter>());
@@ -120,6 +121,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ApiRequestLoggingMiddleware>();
+// HR management denials from JWT authorization also need form-ready ProblemDetails, before MVC runs.
+app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/v1/management"), branch =>
+    branch.UseStatusCodePages(async statusContext =>
+    {
+        var response = statusContext.HttpContext.Response;
+        if (response.StatusCode is StatusCodes.Status401Unauthorized or StatusCodes.Status403Forbidden)
+        {
+            await Results.Problem(statusCode: response.StatusCode,
+                title: response.StatusCode == StatusCodes.Status403Forbidden ? "Forbidden" : "Authentication required",
+                detail: response.StatusCode == StatusCodes.Status403Forbidden
+                    ? "HR Administrator access is required to manage leave types and policies."
+                    : "Sign in before accessing leave management.",
+                instance: statusContext.HttpContext.Request.Path).ExecuteAsync(statusContext.HttpContext);
+        }
+    }));
 app.UseAuthentication();
 app.UseAuthorization();
 
