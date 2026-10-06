@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authHttpClient } from '../auth/api';
+import { useAuth } from '../auth/hooks/useAuth';
 import type { Employee, EmployeeFormValues } from './types';
+
+const employeesQueryKey = (userId: string) => ['employees', userId] as const;
+const departmentsQueryKey = (userId: string) => ['departments', userId] as const;
+const rolesQueryKey = (userId: string) => ['roles', userId] as const;
 
 const getEmployees = async (): Promise<Employee[]> => {
   const response = await authHttpClient.get('/employees');
@@ -36,42 +41,57 @@ const updateEmployee = async ({ id, ...employee }: { id: string } & EmployeeForm
 };
 
 export const useEmployees = () => {
+  const { user } = useAuth();
+
   return useQuery<Employee[], Error>({
-    queryKey: ['employees'],
+    queryKey: employeesQueryKey(user?.id ?? ''),
     queryFn: getEmployees,
+    enabled: Boolean(user?.id),
   });
 };
 
 export const useDepartments = () => {
+  const { user } = useAuth();
+
   return useQuery<{ id: string, name: string }[], Error>({
-    queryKey: ['departments'],
+    queryKey: departmentsQueryKey(user?.id ?? ''),
     queryFn: getDepartments,
+    enabled: Boolean(user?.id),
   });
 };
 
 export const useRoles = () => {
+  const { user } = useAuth();
+
   return useQuery<{ name: string }[], Error>({
-    queryKey: ['roles'],
+    queryKey: rolesQueryKey(user?.id ?? ''),
     queryFn: getRoles,
+    enabled: Boolean(user?.id),
   });
 };
 
 export const useCreateEmployee = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation<Employee, Error, EmployeeFormValues>({
     mutationFn: createEmployee,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: employeesQueryKey(user.id) });
+      }
     },
   });
 };
 
 export const useUpdateEmployee = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation<Employee, Error, { id: string } & EmployeeFormValues>({
     mutationFn: updateEmployee,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: employeesQueryKey(user.id) });
+      }
     },
   });
 };
