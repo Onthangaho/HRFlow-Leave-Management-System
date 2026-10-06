@@ -73,28 +73,54 @@ export async function refresh(
 export function configureAuthInterceptors(
   controls: AuthInterceptorControls,
 ): () => void {
-  let refreshInFlightPromise: Promise<string> | null = null;
+  let refreshInFlight: {
+    sessionVersion: number;
+    promise: Promise<string>;
+  } | null = null;
 
-  const getSharedRefreshPromise = () => {
-    if (!refreshInFlightPromise) {
-      refreshInFlightPromise = (async () => {
-        const refreshedToken = await controls.refreshAccessToken();
-        if (!refreshedToken) {
-          throw new Error('Refresh endpoint did not return a new access token.');
-        }
+  const clearSessionForVersion = (sessionVersion: number) => {
+    if (controls.getSessionVersion() === sessionVersion) {
+      controls.clearSession();
+    }
+  };
 
-        return refreshedToken;
-      })()
-        .catch((refreshError) => {
-          controls.clearSession();
-          throw refreshError;
-        })
-        .finally(() => {
-          refreshInFlightPromise = null;
-        });
+  const getSharedRefreshPromise = (sessionVersion: number) => {
+    if (refreshInFlight?.sessionVersion === sessionVersion) {
+      return refreshInFlight.promise;
     }
 
-    return refreshInFlightPromise;
+    const refreshFlight: {
+      sessionVersion: number;
+      promise: Promise<string>;
+    } = {
+      sessionVersion,
+      promise: Promise.resolve(''),
+    };
+
+    refreshFlight.promise = (async () => {
+      const refreshedToken = await controls.refreshAccessToken();
+      if (!refreshedToken) {
+        throw new Error('Refresh endpoint did not return a new access token.');
+      }
+
+      if (controls.getSessionVersion() !== sessionVersion) {
+        throw new Error('Refresh completed for a stale authentication session.');
+      }
+
+      return refreshedToken;
+    })()
+      .catch((refreshError) => {
+        clearSessionForVersion(sessionVersion);
+        throw refreshError;
+      })
+      .finally(() => {
+        if (refreshInFlight === refreshFlight) {
+          refreshInFlight = null;
+        }
+      });
+
+    refreshInFlight = refreshFlight;
+    return refreshFlight.promise;
   };
 
   const requestInterceptorId = authHttpClient.interceptors.request.use(
@@ -126,25 +152,26 @@ export function configureAuthInterceptors(
         return Promise.reject(error);
       }
 
-      if (originalRequest._sessionVersion !== controls.getSessionVersion()) {
+      const sessionVersion = originalRequest._sessionVersion;
+      if (sessionVersion === undefined || sessionVersion !== controls.getSessionVersion()) {
         return Promise.reject(error);
       }
 
       const isRefreshRequest = originalRequest.url?.includes('/auth/refresh');
       if (isRefreshRequest || originalRequest._retryOnce) {
-        controls.clearSession();
+        clearSessionForVersion(sessionVersion);
         return Promise.reject(error);
       }
 
       originalRequest._retryOnce = true;
       let nextToken: string;
       try {
-        nextToken = await getSharedRefreshPromise();
+        nextToken = await getSharedRefreshPromise(sessionVersion);
       } catch {
         return Promise.reject(error);
       }
 
-      if (originalRequest._sessionVersion !== controls.getSessionVersion()) {
+      if (sessionVersion !== controls.getSessionVersion()) {
         return Promise.reject(error);
       }
 
