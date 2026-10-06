@@ -57,7 +57,9 @@
 > complete role collections, explicit Preserve/Assign/Clear reporting updates, and edit versions.
 > SQLite writer protection makes profile/Identity/role changes atomic and serializes relationship
 > validation. See [the reviewed contract and verification](../adr/0003-hr-employee-management.md).
-> Deactivation, policy CRUD, and full department CRUD remain outside this implementation.
+> Leave type/policy management APIs (#23) are locally verified with shared current rules, versions,
+> restricted deletion, and SQLite coordination with submissions/approvals. See [ADR 0004](../adr/0004-leave-policy-management.md)
+> and its verification record. Policy management UI (#24), deactivation, and full department CRUD remain separate.
 
 ### Personas
 

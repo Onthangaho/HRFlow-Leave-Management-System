@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using HRFlow.Domain.Entities;
+using HRFlow.Application.Interfaces;
 
 namespace HRFlow.Infrastructure.Seeding;
 
@@ -29,8 +30,9 @@ public static class DatabaseSeeder
         try
         {
             await SeedIdentityAsync(serviceProvider, logger);
-            await SeedApplicationDataAsync(serviceProvider, logger);
-            await context.SaveChangesAsync();
+            // Development configuration seeding must serialize with the new management/decision paths too.
+            await serviceProvider.GetRequiredService<ILeaveConfigurationTransaction>().ExecuteAsync(
+                _ => SeedApplicationDataAsync(serviceProvider, logger), CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -121,33 +123,35 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        if (!await context.LeaveTypes.AnyAsync(lt => lt.Name == "Unpaid"))
+        // Seed defaults only into a fresh application store; restarts must not undo HR renames/deletions.
+        var seedLeaveConfiguration = !await context.Employees.AnyAsync() && !await context.LeavePolicies.AnyAsync();
+        if (seedLeaveConfiguration)
         {
             logger.LogInformation("Seeding Unpaid leave type.");
 
-            var unpaidPolicy = LeavePolicy.Create(true, 0);
+            var unpaidPolicy = LeavePolicy.Create("Unpaid policy", true, 0);
             context.LeavePolicies.Add(unpaidPolicy);
 
             var unpaidLeaveType = LeaveType.Create("Unpaid", unpaidPolicy);
             context.LeaveTypes.Add(unpaidLeaveType);
         }
 
-        if (!await context.LeaveTypes.AnyAsync(lt => lt.Name == "Annual"))
+        if (seedLeaveConfiguration)
         {
             logger.LogInformation("Seeding Annual leave type.");
 
-            var annualPolicy = LeavePolicy.Create(false, 20);
+            var annualPolicy = LeavePolicy.Create("Annual policy", false, 20);
             context.LeavePolicies.Add(annualPolicy);
 
             var annualLeaveType = LeaveType.Create("Annual", annualPolicy);
             context.LeaveTypes.Add(annualLeaveType);
         }
 
-        if (!await context.LeaveTypes.AnyAsync(lt => lt.Name == "Sick"))
+        if (seedLeaveConfiguration)
         {
             logger.LogInformation("Seeding Sick leave type.");
 
-            var sickPolicy = LeavePolicy.Create(true, 10);
+            var sickPolicy = LeavePolicy.Create("Sick policy", true, 10);
             context.LeavePolicies.Add(sickPolicy);
 
             var sickLeaveType = LeaveType.Create("Sick", sickPolicy);

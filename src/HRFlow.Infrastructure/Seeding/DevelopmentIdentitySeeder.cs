@@ -113,7 +113,7 @@ public static class DevelopmentIdentitySeeder
         {
             logger.LogInformation("Seeding Unpaid leave type.");
 
-            var unpaidPolicy = LeavePolicy.Create(true, 0);
+            var unpaidPolicy = LeavePolicy.Create("Unpaid policy", true, 0);
             context.LeavePolicies.Add(unpaidPolicy);
 
             var unpaidLeaveType = LeaveType.Create("Unpaid", unpaidPolicy);
@@ -124,7 +124,7 @@ public static class DevelopmentIdentitySeeder
         {
             logger.LogInformation("Seeding Annual leave type.");
 
-            var annualPolicy = LeavePolicy.Create(false, 20);
+            var annualPolicy = LeavePolicy.Create("Annual policy", false, 20);
             context.LeavePolicies.Add(annualPolicy);
 
             var annualLeaveType = LeaveType.Create("Annual", annualPolicy);
@@ -135,7 +135,7 @@ public static class DevelopmentIdentitySeeder
         {
             logger.LogInformation("Seeding Sick leave type.");
 
-            var sickPolicy = LeavePolicy.Create(true, 10);
+            var sickPolicy = LeavePolicy.Create("Sick policy", true, 10);
             context.LeavePolicies.Add(sickPolicy);
 
             var sickLeaveType = LeaveType.Create("Sick", sickPolicy);

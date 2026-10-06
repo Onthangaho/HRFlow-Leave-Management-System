@@ -1,30 +1,20 @@
 using FluentValidation;
-using HRFlow.Domain.Interfaces;
-using HRFlow.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 
 /// <summary>
-/// Validates submit leave request commands with database-backed checks for employee and leave type existence.
+/// Validates request shape; authoritative existence and policy reads happen inside writer protection.
 /// </summary>
 public class SubmitLeaveRequestCommandValidator : AbstractValidator<SubmitLeaveRequestCommand>
 {
-    private readonly IApplicationDbContext _context;
-
-    public SubmitLeaveRequestCommandValidator(IApplicationDbContext context)
+    /// <summary>Checks identifiers and dates without reading an unprotected policy/type snapshot.</summary>
+    public SubmitLeaveRequestCommandValidator()
     {
-        _context = context;
-
         RuleFor(v => v.LeaveTypeId)
-            .NotEmpty()
-            .MustAsync(LeaveTypeExists)
-            .WithMessage("Leave type does not exist.");
+            .NotEmpty();
 
         RuleFor(v => v.EmployeeId)
-            .NotEmpty()
-            .MustAsync(EmployeeExists)
-            .WithMessage("Employee does not exist.");
+            .NotEmpty();
 
         RuleFor(v => v.StartDate)
             .NotEmpty()
@@ -37,13 +27,4 @@ public class SubmitLeaveRequestCommandValidator : AbstractValidator<SubmitLeaveR
             .WithMessage("End date must be on or after the start date.");
     }
 
-    private async Task<bool> LeaveTypeExists(Guid leaveTypeId, CancellationToken cancellationToken)
-    {
-        return await _context.LeaveTypes.AnyAsync(lt => lt.Id == leaveTypeId, cancellationToken);
-    }
-
-    private async Task<bool> EmployeeExists(Guid employeeId, CancellationToken cancellationToken)
-    {
-        return await _context.Employees.AnyAsync(e => e.Id == employeeId, cancellationToken);
-    }
 }

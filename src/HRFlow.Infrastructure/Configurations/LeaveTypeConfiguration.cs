@@ -17,11 +17,16 @@ public class LeaveTypeConfiguration : IEntityTypeConfiguration<LeaveType>
         builder.HasKey(lt => lt.Id);
 
         builder.Property(lt => lt.Name)
-            .IsRequired();
+            .IsRequired().HasMaxLength(LeaveType.MaxNameLength);
+        builder.Property(lt => lt.NormalizedName).IsRequired();
+        builder.HasIndex(lt => lt.NormalizedName).IsUnique();
+        builder.Property(lt => lt.Version).IsConcurrencyToken();
+        builder.ToTable(table => table.HasCheckConstraint("CK_LeaveTypes_Name", "length(trim(Name)) BETWEEN 1 AND 100"));
 
         builder.HasOne(lt => lt.LeavePolicy)
             .WithMany(lp => lp.LeaveTypes)
             .HasForeignKey(lt => lt.LeavePolicyId)
-            .IsRequired();
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
