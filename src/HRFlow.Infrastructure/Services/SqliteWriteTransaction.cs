@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore;
 namespace HRFlow.Infrastructure.Services;
 
 /// <summary>
-/// Acquires SQLite's database-wide writer reservation before decision reads, including across
+/// Acquires SQLite's database-wide writer reservation before write-validation reads, including across
 /// processes. Explicit non-deferred transactions avoid validating against a stale read snapshot.
 /// </summary>
-public sealed class SqliteLeaveDecisionTransaction(HRFlowDbContext context) : ILeaveDecisionTransaction
+public sealed class SqliteWriteTransaction(HRFlowDbContext context) : ILeaveDecisionTransaction, IEmployeeManagementTransaction
 {
     private const int LockTimeoutSeconds = 3;
     private const int SqliteBusy = 5;
@@ -22,7 +22,7 @@ public sealed class SqliteLeaveDecisionTransaction(HRFlowDbContext context) : IL
         // Never discard unrelated pending work if this service is accidentally composed into a larger unit of work.
         if (context.ChangeTracker.HasChanges() || context.Database.CurrentTransaction is not null)
         {
-            throw new InvalidOperationException("Leave decisions require a clean, independent unit of work.");
+            throw new InvalidOperationException("Protected writes require a clean, independent unit of work.");
         }
 
         var connection = (SqliteConnection)context.Database.GetDbConnection();
@@ -45,13 +45,17 @@ public sealed class SqliteLeaveDecisionTransaction(HRFlowDbContext context) : IL
             await context.SaveChangesAsync(cancellationToken);
             await transaction!.CommitAsync(cancellationToken);
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new WriteConflictException("This record changed. Reload it before saving again.");
+        }
         catch (SqliteException exception) when (IsContention(exception))
         {
-            throw new LeaveDecisionConflictException("Leave decisions are busy. Refresh and try again.");
+            throw new WriteConflictException("Updates are busy. Refresh and try again.");
         }
         catch (DbUpdateException exception) when (exception.InnerException is SqliteException sqliteException && IsContention(sqliteException))
         {
-            throw new LeaveDecisionConflictException("Leave decisions are busy. Refresh and try again.");
+            throw new WriteConflictException("Updates are busy. Refresh and try again.");
         }
         finally
         {

@@ -34,6 +34,20 @@ namespace HRFlow.Api.Filters
 
             switch (context.Exception)
             {
+                case WriteConflictException e:
+                    LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status409Conflict);
+                    problemDetails.Title = "Update conflict";
+                    problemDetails.Detail = e.Message;
+                    problemDetails.Status = StatusCodes.Status409Conflict;
+                    problemDetails.Type = ProblemDetailsType;
+                    break;
+                case EmployeeManagementValidationException e:
+                    LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status400BadRequest);
+                    problemDetails.Title = "Employee validation failed";
+                    problemDetails.Detail = e.Message;
+                    problemDetails.Status = StatusCodes.Status400BadRequest;
+                    problemDetails.Type = ProblemDetailsType;
+                    break;
                 case LeaveDecisionConflictException e:
                     LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status409Conflict);
                     problemDetails.Title = "Leave decision conflict";

@@ -5,6 +5,8 @@ namespace HRFlow.Domain.Interfaces.Services;
 /// </summary>
 public interface IEmployeeRoleLookupService
 {
+    /// <summary>Returns all assigned roles so a profile edit does not drop combined capabilities.</summary>
+    Task<IReadOnlyList<string>> GetRolesByIdentityUserIdAsync(string? identityUserId, CancellationToken cancellationToken);
     /// <summary>
     /// Retrieves the role name assigned to the specified Identity user.
     /// </summary>

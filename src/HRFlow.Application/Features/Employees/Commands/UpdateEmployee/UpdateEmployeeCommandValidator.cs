@@ -1,47 +1,29 @@
 using FluentValidation;
-using HRFlow.Domain.Interfaces.Services.Employees;
 using HRFlow.Domain.Entities;
+using HRFlow.Domain.Models.Employees;
 
 namespace HRFlow.Application.Features.Employees.Commands.UpdateEmployee;
 
-/// <summary>
-/// Validates employee update input before transactional identity/domain writes begin.
-/// </summary>
+/// <summary>Validates the request shape only; relationship and Identity checks run under the writer reservation.</summary>
 public sealed class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmployeeCommand>
 {
-    /// <summary>
-    /// Configures update-command validation rules, including department and role checks against live stores.
-    /// </summary>
-    public UpdateEmployeeCommandValidator(IEmployeeManagementService employeeManagementService)
+    /// <summary>Rejects ambiguous manager changes and incomplete role replacements before side effects.</summary>
+    public UpdateEmployeeCommandValidator()
     {
-        RuleFor(command => command.EmployeeId)
-            .NotEmpty();
-
-        RuleFor(command => command.FullName)
-            .NotEmpty()
-            .MaximumLength(Employee.MaxFullNameLength);
-
-        RuleFor(command => command.Email)
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(Employee.MaxEmailLength);
-
-        RuleFor(command => command.DepartmentId)
-            .NotEmpty()
-            .MustAsync(async (departmentId, cancellationToken) =>
-                await employeeManagementService.DepartmentExistsAsync(departmentId, cancellationToken))
-            .WithMessage("Department does not exist.");
-
-        RuleFor(command => command.RoleName)
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty()
-            .MustAsync(async (roleName, cancellationToken) =>
-                await employeeManagementService.RoleExistsAsync(roleName, cancellationToken))
-            .WithMessage("Role does not exist in ASP.NET Identity.");
-
-        RuleFor(command => command.ManagerId)
-            .Must(managerId => !managerId.HasValue || managerId.Value != Guid.Empty)
-            .WithMessage("ManagerId must be a non-empty GUID when provided.");
+        RuleFor(command => command.EmployeeId).NotEmpty();
+        RuleFor(command => command.ExpectedVersion).NotEmpty();
+        RuleFor(command => command.FullName).NotEmpty().MaximumLength(Employee.MaxFullNameLength);
+        RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(Employee.MaxEmailLength);
+        RuleFor(command => command.DepartmentId).NotEmpty();
+        RuleFor(command => command.Roles).NotEmpty();
+        RuleForEach(command => command.Roles)
+            .Must(role => role is not null && EmployeeRoles.All.Contains(role.Trim(), StringComparer.OrdinalIgnoreCase))
+            .WithMessage("Select only Employee, Manager, or HR Administrator roles.");
+        RuleFor(command => command.ManagerAssignment).IsInEnum();
+        RuleFor(command => command).Must(command =>
+            command.ManagerAssignment == ManagerAssignmentOperation.Assign
+                ? command.ManagerId.HasValue && command.ManagerId != Guid.Empty
+                : !command.ManagerId.HasValue)
+            .WithMessage("Assign requires a manager ID; Preserve and Clear must not include one.");
     }
 }

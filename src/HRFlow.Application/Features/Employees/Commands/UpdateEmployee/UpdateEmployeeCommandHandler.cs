@@ -23,11 +23,14 @@ public sealed class UpdateEmployeeCommandHandler : IRequestHandler<UpdateEmploye
     public Task<EmployeeManagementResult> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
     {
         return _employeeManagementService.UpdateEmployeeAsync(
-            request.EmployeeId,
+            request.ActorIdentityUserId,
+            request.EmployeeId!.Value,
+            request.ExpectedVersion,
             request.FullName,
             request.Email,
             request.DepartmentId,
-            request.RoleName,
+            request.Roles,
+            request.ManagerAssignment,
             request.ManagerId,
             cancellationToken);
     }

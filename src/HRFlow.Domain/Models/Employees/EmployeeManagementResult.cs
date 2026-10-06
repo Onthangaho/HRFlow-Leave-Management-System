@@ -11,7 +11,7 @@ public sealed class EmployeeManagementResult
     public Guid EmployeeId { get; set; }
 
     /// <summary>
-    /// Gets or sets the linked ASP.NET Identity user identifier.
+    /// Returns the version of the accepted edit without exposing account credentials or Identity internals.
     /// </summary>
-    public string IdentityUserId { get; set; } = string.Empty;
+    public Guid Version { get; set; }
 }

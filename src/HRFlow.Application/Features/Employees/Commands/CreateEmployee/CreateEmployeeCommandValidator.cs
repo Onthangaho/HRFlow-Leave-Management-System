@@ -1,53 +1,29 @@
 using FluentValidation;
-using HRFlow.Domain.Interfaces.Services.Employees;
 using HRFlow.Domain.Entities;
+using HRFlow.Domain.Models.Employees;
 
 namespace HRFlow.Application.Features.Employees.Commands.CreateEmployee;
 
-/// <summary>
-/// Validates employee creation input before identity and domain persistence side effects start.
-/// </summary>
+/// <summary>Validates the request shape only; relationship and Identity checks run under the writer reservation.</summary>
 public sealed class CreateEmployeeCommandValidator : AbstractValidator<CreateEmployeeCommand>
 {
-    /// <summary>
-    /// Configures create-command validation rules, including department and role checks against live stores.
-    /// </summary>
-    public CreateEmployeeCommandValidator(IEmployeeManagementService employeeManagementService)
+    /// <summary>Rejects ambiguous manager changes and incomplete role replacements before side effects.</summary>
+    public CreateEmployeeCommandValidator()
     {
-        RuleFor(command => command.FullName)
-            .NotEmpty()
-            .MaximumLength(Employee.MaxFullNameLength);
-
-        RuleFor(command => command.Email)
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(Employee.MaxEmailLength);
-
-        RuleFor(command => command.Password)
-            .NotEmpty()
-            .MinimumLength(8)
-            .Matches(@"[0-9]").WithMessage("Password must contain at least one digit.")
-            .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter.")
-            .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
-            .Matches(@"[^a-zA-Z0-9]").WithMessage("Password must contain at least one non-alphanumeric character.")
-            .Must(password => password.Distinct().Count() >= 1).WithMessage("Password must contain at least 1 unique character.");
-
-        RuleFor(command => command.DepartmentId)
-            .NotEmpty()
-            .MustAsync(async (departmentId, cancellationToken) =>
-                await employeeManagementService.DepartmentExistsAsync(departmentId, cancellationToken))
-            .WithMessage("Department does not exist.");
-
-        RuleFor(command => command.RoleName)
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty()
-            .MustAsync(async (roleName, cancellationToken) =>
-                await employeeManagementService.RoleExistsAsync(roleName, cancellationToken))
-            .WithMessage("Role does not exist in ASP.NET Identity.");
-
+        RuleFor(command => command.FullName).NotEmpty().MaximumLength(Employee.MaxFullNameLength);
+        RuleFor(command => command.Email).NotEmpty().EmailAddress().MaximumLength(Employee.MaxEmailLength);
+        RuleFor(command => command.DepartmentId).NotEmpty();
+        RuleFor(command => command.Roles).NotEmpty();
+        RuleForEach(command => command.Roles)
+            .Must(role => role is not null && EmployeeRoles.All.Contains(role.Trim(), StringComparer.OrdinalIgnoreCase))
+            .WithMessage("Select only Employee, Manager, or HR Administrator roles.");
+        RuleFor(command => command.Password).NotEmpty().MinimumLength(8)
+            .Matches("[0-9]").WithMessage("Password must contain a digit.")
+            .Matches("[a-z]").WithMessage("Password must contain a lowercase letter.")
+            .Matches("[A-Z]").WithMessage("Password must contain an uppercase letter.")
+            .Matches("[^a-zA-Z0-9]").WithMessage("Password must contain a symbol.");
         RuleFor(command => command.ManagerId)
-            .Must(managerId => !managerId.HasValue || managerId.Value != Guid.Empty)
+            .Must(id => !id.HasValue || id.Value != Guid.Empty)
             .WithMessage("ManagerId must be a non-empty GUID when provided.");
     }
 }

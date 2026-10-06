@@ -51,12 +51,13 @@
 | Approve/reject Pending requests | No | Only assigned same-department direct reports | No |
 | View actionable approval queue | No | Direct-report Pending requests only | No |
 | Monitor organisation-wide Pending requests | No | No | Yes, read-only |
-| Own employee, role, department, and leave-policy administration | No | No | Yes; employee write endpoints are not yet exposed |
+| Own employee, role, department, and leave-policy administration | No | No | Yes; employee creation/editing and reporting assignments are exposed |
 
-> Implementation note: the current HR employee screen is a read-only directory because the API
-> exposes only `GET /api/v1/employees`. Employee create/update commands and the client mutation
-> calls exist but are not wired to controller endpoints. A follow-up should expose the reviewed
-> CRUD contract, including explicit manager-assignment update semantics, before write controls return.
+> Implementation note: HR employee creation and editing now use current Identity membership,
+> complete role collections, explicit Preserve/Assign/Clear reporting updates, and edit versions.
+> SQLite writer protection makes profile/Identity/role changes atomic and serializes relationship
+> validation. See [the reviewed contract and verification](../adr/0003-hr-employee-management.md).
+> Deactivation, policy CRUD, and full department CRUD remain outside this implementation.
 
 ### Personas
 
