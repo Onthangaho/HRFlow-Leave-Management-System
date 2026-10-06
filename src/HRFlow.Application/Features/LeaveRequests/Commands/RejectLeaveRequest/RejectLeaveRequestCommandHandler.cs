@@ -1,50 +1,51 @@
-using HRFlow.Domain.Interfaces;
-using HRFlow.Domain.Entities;
 using HRFlow.Application.Exceptions;
 using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Enums;
+using HRFlow.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest
+namespace HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest;
+
+/// <summary>Rejects a pending request under the same database protection used by approval and cancellation.</summary>
+public sealed class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLeaveRequestCommand>
 {
-    public class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLeaveRequestCommand>
+    private readonly IApplicationDbContext _context;
+    private readonly ILeaveDecisionTransaction _decisionTransaction;
+    private readonly ILeaveApprovalAuthorizationService _authorization;
+
+    /// <summary>Shares the scoped persistence and authorization services with the decision transaction.</summary>
+    public RejectLeaveRequestCommandHandler(
+        IApplicationDbContext context,
+        ILeaveDecisionTransaction decisionTransaction,
+        ILeaveApprovalAuthorizationService authorization)
     {
-        private readonly IApplicationDbContext _context;
-        private readonly ILeaveApprovalAuthorizationService _leaveApprovalAuthorizationService;
+        _context = context;
+        _decisionTransaction = decisionTransaction;
+        _authorization = authorization;
+    }
 
-        public RejectLeaveRequestCommandHandler(
-            IApplicationDbContext context,
-            ILeaveApprovalAuthorizationService leaveApprovalAuthorizationService)
+    /// <summary>Acquires protection before loading the state used to authorize and validate the decision.</summary>
+    public Task Handle(RejectLeaveRequestCommand request, CancellationToken cancellationToken) =>
+        _decisionTransaction.ExecuteAsync(token => DecideAsync(request, token), cancellationToken);
+
+    private async Task DecideAsync(RejectLeaveRequestCommand request, CancellationToken cancellationToken)
+    {
+        var leaveRequest = await _context.LeaveRequests
+            .Include(current => current.Employee)
+            .SingleOrDefaultAsync(current => current.Id == request.LeaveRequestId, cancellationToken)
+            ?? throw new NotFoundException("Leave request was not found.");
+
+        var actor = await _context.Employees
+            .SingleOrDefaultAsync(employee => employee.Id == request.RejectorId, cancellationToken)
+            ?? throw new NotFoundException("Decision maker was not found.");
+        await _authorization.EnsureManagerCanDecideAsync(actor, leaveRequest.Employee, cancellationToken);
+
+        if (leaveRequest.Status != LeaveRequestStatus.Pending)
         {
-            _context = context;
-            _leaveApprovalAuthorizationService = leaveApprovalAuthorizationService;
+            throw new LeaveDecisionConflictException("Only pending leave requests can be decided. Refresh the request.");
         }
 
-        public async Task Handle(RejectLeaveRequestCommand request, CancellationToken cancellationToken)
-        {
-            var leaveRequest = await _context.LeaveRequests
-                .Include(lr => lr.Employee)
-                .FirstOrDefaultAsync(lr => lr.Id == request.LeaveRequestId, cancellationToken);
-
-            if (leaveRequest == null)
-            {
-                throw new NotFoundException("Leave request was not found.");
-            }
-
-            var rejector = await _context.Employees.FindAsync(request.RejectorId);
-            if (rejector == null)
-            {
-                throw new NotFoundException("Rejector was not found.");
-            }
-
-            await _leaveApprovalAuthorizationService.EnsureManagerCanDecideAsync(
-                rejector,
-                leaveRequest.Employee,
-                cancellationToken);
-
-            leaveRequest.Reject(request.RejectorId);
-
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+        leaveRequest.Reject(request.RejectorId);
     }
 }

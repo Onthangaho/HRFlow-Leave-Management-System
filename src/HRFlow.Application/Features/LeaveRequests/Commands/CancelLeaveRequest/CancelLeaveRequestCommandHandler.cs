@@ -1,47 +1,47 @@
 using HRFlow.Application.Exceptions;
+using HRFlow.Application.Interfaces;
+using HRFlow.Domain.Enums;
 using HRFlow.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRFlow.Application.Features.LeaveRequests.Commands.CancelLeaveRequest;
 
-/// <summary>
-/// Withdraws an employee-owned pending leave request while ensuring decided requests remain
-/// immutable and every cancellation has an audit record.
-/// </summary>
+/// <summary>Withdraws an owner's pending request under database protection so it cannot race a manager decision.</summary>
 public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLeaveRequestCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILeaveDecisionTransaction _decisionTransaction;
 
-    /// <summary>
-    /// Creates the handler with persistence access for the leave request and its audit event.
-    /// </summary>
-    public CancelLeaveRequestCommandHandler(IApplicationDbContext context)
+    /// <summary>Shares the scoped persistence services with the decision transaction.</summary>
+    public CancelLeaveRequestCommandHandler(
+        IApplicationDbContext context,
+        ILeaveDecisionTransaction decisionTransaction)
     {
         _context = context;
+        _decisionTransaction = decisionTransaction;
     }
 
-    /// <summary>
-    /// Cancels a pending request only when the authenticated employee owns it.
-    /// </summary>
-    public async Task Handle(CancelLeaveRequestCommand request, CancellationToken cancellationToken)
+    /// <summary>Acquires protection before loading the state used to authorize and validate the decision.</summary>
+    public Task Handle(CancelLeaveRequestCommand request, CancellationToken cancellationToken) =>
+        _decisionTransaction.ExecuteAsync(token => DecideAsync(request, token), cancellationToken);
+
+    private async Task DecideAsync(CancelLeaveRequestCommand request, CancellationToken cancellationToken)
     {
         var leaveRequest = await _context.LeaveRequests
-            .FirstOrDefaultAsync(
-                currentRequest => currentRequest.Id == request.LeaveRequestId,
-                cancellationToken);
-
-        if (leaveRequest is null)
-        {
-            throw new NotFoundException("Leave request was not found.");
-        }
+            .SingleOrDefaultAsync(current => current.Id == request.LeaveRequestId, cancellationToken)
+            ?? throw new NotFoundException("Leave request was not found.");
 
         if (leaveRequest.EmployeeId != request.EmployeeId)
         {
             throw new ForbiddenException("You can only cancel your own leave requests.");
         }
 
+        if (leaveRequest.Status != LeaveRequestStatus.Pending)
+        {
+            throw new LeaveDecisionConflictException("Only pending leave requests can be decided. Refresh the request.");
+        }
+
         leaveRequest.Cancel(request.EmployeeId);
-        await _context.SaveChangesAsync(cancellationToken);
     }
 }

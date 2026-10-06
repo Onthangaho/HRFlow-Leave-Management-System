@@ -34,6 +34,13 @@ namespace HRFlow.Api.Filters
 
             switch (context.Exception)
             {
+                case LeaveDecisionConflictException e:
+                    LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status409Conflict);
+                    problemDetails.Title = "Leave decision conflict";
+                    problemDetails.Detail = e.Message;
+                    problemDetails.Status = StatusCodes.Status409Conflict;
+                    problemDetails.Type = ProblemDetailsType;
+                    break;
                 case DomainException e:
                     LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status400BadRequest);
                     problemDetails.Title = "A domain error occurred.";
