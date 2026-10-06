@@ -24,11 +24,12 @@ public sealed class CreateEmployeeCommandHandler : IRequestHandler<CreateEmploye
     public Task<EmployeeManagementResult> Handle(CreateEmployeeCommand request, CancellationToken cancellationToken)
     {
         return _employeeManagementService.CreateEmployeeAsync(
+            request.ActorIdentityUserId,
             request.FullName,
             request.Email,
             request.Password,
             request.DepartmentId,
-            request.RoleName,
+            request.Roles,
             request.ManagerId,
             cancellationToken);
     }

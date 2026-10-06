@@ -13,6 +13,7 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
     public void Configure(EntityTypeBuilder<Employee> builder)
     {
         builder.HasKey(employee => employee.Id);
+        builder.Property(employee => employee.Version).IsConcurrencyToken();
 
         builder.Property(employee => employee.FullName)
             .IsRequired()

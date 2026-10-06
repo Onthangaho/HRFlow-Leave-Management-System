@@ -51,7 +51,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
         services.AddScoped<IEmployeeRoleLookupService, EmployeeRoleLookupService>();
         services.AddScoped<ILeaveApprovalAuthorizationService, LeaveApprovalAuthorizationService>();
-        services.AddScoped<ILeaveDecisionTransaction, SqliteLeaveDecisionTransaction>();
+        services.AddScoped<ILeaveDecisionTransaction, SqliteWriteTransaction>();
+        services.AddScoped<IEmployeeManagementTransaction, SqliteWriteTransaction>();
 
         return services;
     }

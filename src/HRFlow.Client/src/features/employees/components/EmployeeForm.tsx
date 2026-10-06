@@ -1,184 +1,165 @@
-import { useForm } from 'react-hook-form';
+import { useEffect } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect } from 'react';
 import { isAxiosError } from 'axios';
 import { useCreateEmployee, useUpdateEmployee, useDepartments, useRoles } from '../api';
-import type { Employee, EmployeeFormValues } from '../types';
+import { employeeRoles, type Employee, type EmployeeFormValues } from '../types';
 
-const employeeSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-  departmentId: z.string().min(1, 'Department is required'),
-  roleName: z.string().min(1, 'Role is required'),
+const schema = z.object({
+  fullName: z.string().trim().min(1, 'Full name is required').max(200),
+  email: z.string().trim().email('Enter a valid email address').max(256),
+  password: z.string().optional(),
+  departmentId: z.string().min(1, 'Select a department'),
+  roles: z.array(z.enum(employeeRoles)).min(1, 'Select at least one role'),
+  managerAssignment: z.enum(['Preserve', 'Assign', 'Clear']),
+  managerId: z.string(),
 });
 
-const employeeEditSchema = employeeSchema.omit({ password: true });
-
 interface EmployeeFormProps {
-  employee?: Employee | null;
+  employee: Employee | null;
+  employees: Employee[];
   onSuccess: () => void;
   onCancel: () => void;
+  onReload: () => Promise<void>;
+  reloadError: string;
 }
 
-export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProps) {
-  const isEditing = !!employee;
+const inputClass = 'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-slate-600';
+const errorClass = 'mt-1 text-sm text-rose-700';
 
-  const { data: departments, isLoading: isLoadingDepartments } = useDepartments();
-  const { data: roles, isLoading: isLoadingRoles } = useRoles();
-
-  const createEmployee = useCreateEmployee();
-  const updateEmployee = useUpdateEmployee();
-
-  const { register, handleSubmit, formState: { errors }, setError, reset } = useForm<EmployeeFormValues>({
-    resolver: zodResolver(isEditing ? employeeEditSchema : employeeSchema),
+/** Preserves the original version, roles, and reporting intent until the user explicitly reloads or saves. */
+export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReload, reloadError }: EmployeeFormProps) {
+  const isEditing = Boolean(employee);
+  const departments = useDepartments();
+  const availableRoles = useRoles();
+  const create = useCreateEmployee();
+  const update = useUpdateEmployee();
+  const formSchema = schema.superRefine((values, context) => {
+    if (!isEditing && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/.test(values.password ?? '')) {
+      context.addIssue({ code: 'custom', path: ['password'], message: 'Use at least 8 characters with uppercase, lowercase, a number, and a symbol.' });
+    }
+    if (isEditing && values.managerAssignment === 'Assign' && !values.managerId) {
+      context.addIssue({ code: 'custom', path: ['managerId'], message: 'Select a manager to assign.' });
+    }
   });
-
-  useEffect(() => {
-    if (employee) {
-      const department = departments?.find(d => d.name === employee.departmentName);
-      reset({
-        fullName: employee.fullName,
-        email: employee.email,
-        departmentId: department?.id || '',
-        roleName: employee.roleName,
-      });
-    } else {
-      reset({
-        fullName: '',
-        email: '',
-        password: '',
-        departmentId: '',
-        roleName: '',
-      });
-    }
-  }, [employee, reset, departments]);
-
-  const mutation = isEditing ? updateEmployee : createEmployee;
-
-  useEffect(() => {
-    if (isAxiosError(mutation.error)) {
-      if (mutation.error.response?.status === 409) {
-        setError('email', { type: 'manual', message: 'Email already in use' });
-      }
-    }
-  }, [mutation.error, setError]);
-
-  useEffect(() => {
-    if (isAxiosError(mutation.error)) {
-      if (mutation.error.response?.status === 400) {
-        const errors = mutation.error.response.data?.errors;
-        if (errors?.Password && Array.isArray(errors.Password) && errors.Password.length > 0) {
-          setError('password', { type: 'manual', message: errors.Password.join(' ') });
-        }
-      }
-    }
-  }, [mutation.error, setError]);
-
-  const onSubmit = handleSubmit(async (values) => {
-    if (isEditing && employee) {
-      await updateEmployee.mutateAsync({ ...values, id: employee.id });
-    } else {
-      await createEmployee.mutateAsync(values);
-    }
-    onSuccess();
+  const { register, handleSubmit, reset, control, setValue, formState: { errors, isSubmitting } } = useForm<EmployeeFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { fullName: '', email: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '', password: '' },
   });
+  const departmentId = useWatch({ control, name: 'departmentId' });
+  const managerAssignment = useWatch({ control, name: 'managerAssignment' });
+  const eligibleManagers = employees.filter(candidate =>
+    candidate.id !== employee?.id && candidate.departmentId === departmentId && candidate.roles.includes('Manager'),
+  );
+  const mutation = employee ? update : create;
+  const busy = mutation.isPending || isSubmitting;
+  const choicesUnavailable = departments.isPending || availableRoles.isPending ||
+    Boolean(departments.error || availableRoles.error) || !departments.data?.length || !availableRoles.data?.length;
+
+  useEffect(() => {
+    reset(employee ? {
+      fullName: employee.fullName, email: employee.email, departmentId: employee.departmentId,
+      roles: [...employee.roles], managerAssignment: 'Preserve', managerId: '',
+    } : { fullName: '', email: '', password: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '' });
+  }, [employee, reset]);
+
+  let failure = '';
+  let conflict = false;
+  if (mutation.error) {
+    failure = 'Unable to save this employee. Please try again.';
+    if (isAxiosError(mutation.error)) {
+      const problem = mutation.error.response?.data;
+      conflict = mutation.error.response?.status === 409;
+      failure = typeof problem?.detail === 'string' ? problem.detail : failure;
+      if (problem?.errors && typeof problem.errors === 'object') {
+        failure = Object.values(problem.errors).flat().filter(value => typeof value === 'string').join(' ');
+      }
+      if (mutation.error.response?.status === 403) failure = 'You no longer have permission to manage employees. Sign in again or contact HR.';
+    }
+  }
+
+  const submit = handleSubmit(async values => {
+    if (mutation.isPending) return;
+    try {
+      if (employee) await update.mutateAsync({ ...values, id: employee.id, expectedVersion: employee.version });
+      else await create.mutateAsync(values);
+      onSuccess();
+    } catch {
+      // Mutation state displays the safe server error and keeps the user's unsaved input available.
+    }
+  });
+  const departmentRegistration = register('departmentId');
+  const managerRegistration = register('managerAssignment');
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h2 className="text-2xl font-bold text-slate-900">{isEditing ? 'Edit Employee' : 'Create New Employee'}</h2>
-      <form className="mt-6 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-8" onSubmit={onSubmit}>
-        <div className="sm:col-span-1">
-          <label className="block text-sm font-medium text-slate-700" htmlFor="fullName">
-            Full Name
-          </label>
-          <input
-            id="fullName"
-            type="text"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-500"
-            {...register('fullName')}
-          />
-          {errors.fullName && <p className="mt-1 text-sm text-rose-600">{errors.fullName.message}</p>}
-        </div>
-
-        <div className="sm:col-span-1">
-          <label className="block text-sm font-medium text-slate-700" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-500"
-            {...register('email')}
-          />
-          {errors.email && <p className="mt-1 text-sm text-rose-600">{errors.email.message}</p>}
-        </div>
-
-        {!isEditing && (
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-slate-700" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-500"
-              {...register('password')}
-            />
-            {errors.password && <p className="mt-1 text-sm text-rose-600">{errors.password.message}</p>}
+    <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-6" aria-labelledby="employee-form-title">
+      <h2 id="employee-form-title" className="text-xl font-bold">{employee ? 'Edit Employee' : 'New Employee'}</h2>
+      {departments.isPending || availableRoles.isPending ? <p role="status" className="mt-4">Loading choices...</p> : null}
+      {(departments.error || availableRoles.error) && <div role="alert" className={errorClass}>
+        Unable to load department or role choices. <button type="button" className="underline"
+          onClick={() => { void departments.refetch(); void availableRoles.refetch(); }}>Try again</button>
+      </div>}
+      {!departments.isPending && departments.data?.length === 0 && <p role="alert" className={errorClass}>No departments are available. Contact your administrator.</p>}
+      {!availableRoles.isPending && availableRoles.data?.length === 0 && <p role="alert" className={errorClass}>No roles are available. Contact your administrator.</p>}
+      {failure && <div role="alert" className="mt-4 whitespace-pre-line rounded-lg bg-rose-50 p-3 text-sm text-rose-800">
+        {failure}
+        {conflict && employee && <button type="button" disabled={busy} className="ml-2 underline"
+          onClick={() => { void onReload().then(() => update.reset()); }}>Reload latest values</button>}
+      </div>}
+      {reloadError && <p role="alert" className={errorClass}>{reloadError}</p>}
+      <form onSubmit={submit} className="mt-6">
+        <fieldset disabled={busy} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <legend className="sr-only">Employee details</legend>
+          <div><label htmlFor="employee-full-name" className="text-sm font-medium">Full name</label>
+            <input id="employee-full-name" autoComplete="name" className={inputClass} aria-invalid={Boolean(errors.fullName)}
+              aria-describedby={errors.fullName ? 'full-name-error' : undefined} {...register('fullName')} />
+            {errors.fullName && <p id="full-name-error" className={errorClass}>{errors.fullName.message}</p>}</div>
+          <div><label htmlFor="employee-email" className="text-sm font-medium">Email</label>
+            <input id="employee-email" type="email" autoComplete="off" className={inputClass} aria-invalid={Boolean(errors.email)}
+              aria-describedby={errors.email ? 'email-error' : undefined} {...register('email')} />
+            {errors.email && <p id="email-error" className={errorClass}>{errors.email.message}</p>}</div>
+          {!employee && <div className="sm:col-span-2"><label htmlFor="employee-password" className="text-sm font-medium">Initial password</label>
+            <input id="employee-password" type="password" autoComplete="new-password" className={inputClass}
+              aria-invalid={Boolean(errors.password)} aria-describedby="password-help password-error" {...register('password')} />
+            <p id="password-help" className="mt-1 text-xs text-slate-600">At least 8 characters, including uppercase, lowercase, a number, and a symbol.</p>
+            <p id="password-error" className={errorClass}>{errors.password?.message}</p></div>}
+          <div><label htmlFor="employee-department" className="text-sm font-medium">Department</label>
+            <select id="employee-department" className={inputClass} aria-invalid={Boolean(errors.departmentId)}
+              aria-describedby={errors.departmentId ? 'department-error' : undefined} {...departmentRegistration}
+              onChange={event => { void departmentRegistration.onChange(event); setValue('managerId', ''); }}>
+              <option value="">Select a department</option>
+              {departments.data?.map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
+            </select>
+            {errors.departmentId && <p id="department-error" className={errorClass}>{errors.departmentId.message}</p>}</div>
+          <fieldset><legend className="text-sm font-medium">Roles</legend>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+              {employeeRoles.filter(role => availableRoles.data?.some(available => available.name === role)).map(role =>
+                <label key={role} className="flex items-center gap-2 text-sm"><input type="checkbox" value={role}
+                  aria-describedby={errors.roles ? 'roles-error' : undefined} {...register('roles')} />{role}</label>,
+              )}
+            </div>{errors.roles && <p id="roles-error" className={errorClass}>{errors.roles.message}</p>}</fieldset>
+          {employee && <div><label htmlFor="manager-change" className="text-sm font-medium">Manager assignment</label>
+            <select id="manager-change" className={inputClass} {...managerRegistration}
+              onChange={event => { void managerRegistration.onChange(event); setValue('managerId', ''); }}>
+              <option value="Preserve">Keep current manager</option><option value="Assign">Assign a manager</option><option value="Clear">Clear manager assignment</option>
+            </select><p className="mt-1 text-sm text-slate-600">Current manager: {employee.managerName || 'No manager'}</p></div>}
+          {(!employee || managerAssignment === 'Assign') && <div><label htmlFor="employee-manager" className="text-sm font-medium">Manager</label>
+            <select id="employee-manager" className={inputClass} {...register('managerId')}
+              aria-invalid={Boolean(errors.managerId)} aria-describedby="manager-help manager-error">
+              <option value="">{employee ? 'Select a manager' : 'No manager'}</option>
+              {eligibleManagers.map(manager => <option key={manager.id} value={manager.id}>{manager.fullName}</option>)}
+            </select>
+            <p id="manager-help" className="mt-1 text-xs text-slate-600">{departmentId && eligibleManagers.length === 0
+              ? 'No eligible managers in this department.' : 'Choose a manager in the selected department.'}</p>
+            <p id="manager-error" className={errorClass}>{errors.managerId?.message}</p></div>}
+          <div className="flex flex-wrap justify-end gap-3 sm:col-span-2">
+            <button type="button" onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2">Cancel</button>
+            <button type="submit" disabled={busy || choicesUnavailable}
+              className="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white disabled:opacity-50">{busy ? 'Saving...' : 'Save Employee'}</button>
           </div>
-        )}
-
-        <div className="sm:col-span-1">
-          <label className="block text-sm font-medium text-slate-700" htmlFor="departmentId">
-            Department
-          </label>
-          <select
-            id="departmentId"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-500"
-            {...register('departmentId')}
-            disabled={isLoadingDepartments}
-          >
-            <option value="">Select Department</option>
-            {departments?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
-          {errors.departmentId && <p className="mt-1 text-sm text-rose-600">{errors.departmentId.message}</p>}
-        </div>
-
-        <div className="sm:col-span-1">
-          <label className="block text-sm font-medium text-slate-700" htmlFor="roleName">
-            Role
-          </label>
-          <select
-            id="roleName"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-500"
-            {...register('roleName')}
-            disabled={isLoadingRoles}
-          >
-            <option value="">Select Role</option>
-            {roles?.map(r => <option key={r.name} value={r.name}>{r.name}</option>)}
-          </select>
-          {errors.roleName && <p className="mt-1 text-sm text-rose-600">{errors.roleName.message}</p>}
-        </div>
-
-        <div className="sm:col-span-2 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            {mutation.isPending ? 'Saving...' : 'Save Employee'}
-          </button>
-        </div>
+        </fieldset>
       </form>
-    </div>
+    </section>
   );
 }

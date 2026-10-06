@@ -12,13 +12,13 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/[controller]")]
 public class RolesController : ControllerBase
 {
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly RoleManager<IdentityRole<Guid>> _roleManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RolesController"/> class.
     /// </summary>
     /// <param name="roleManager">The role manager for querying Identity roles.</param>
-    public RolesController(RoleManager<IdentityRole> roleManager)
+    public RolesController(RoleManager<IdentityRole<Guid>> roleManager)
     {
         _roleManager = roleManager;
     }

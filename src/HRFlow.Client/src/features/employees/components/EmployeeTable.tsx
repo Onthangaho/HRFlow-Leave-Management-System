@@ -1,43 +1,41 @@
-import { useEmployees } from '../api';
+import type { Employee } from '../types';
 
-/** Displays the currently available HR employee directory without exposing unavailable write routes. */
-export function EmployeeTable() {
-  const { data: employees, isLoading, error } = useEmployees();
+interface EmployeeTableProps {
+  employees: Employee[];
+  onEdit: (employee: Employee) => void;
+  editing: boolean;
+}
 
-  if (isLoading) {
-    return <div>Loading employees...</div>;
+/** Shows complete roles and current reporting with accessible actions and a scrollable narrow-screen layout. */
+export function EmployeeTable({ employees, onEdit, editing }: EmployeeTableProps) {
+  if (employees.length === 0) {
+    return <p className="rounded-lg bg-slate-50 p-6 text-slate-600">No employees yet. Create an employee to get started.</p>;
   }
-
-  if (error) {
-    return <div className="text-rose-600">Error loading employees: {error.message}</div>;
-  }
-
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200">
       <table className="min-w-full divide-y divide-slate-200">
+        <caption className="sr-only">Employees and their current departments, roles, and managers</caption>
         <thead className="bg-slate-50">
-          <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
-              Full Name
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
-              Email
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
-              Department
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
-              Role
-            </th>
-          </tr>
+          <tr>{['Employee', 'Department', 'Roles', 'Manager', 'Actions'].map(label =>
+            <th key={label} scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600">{label}</th>,
+          )}</tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 bg-white">
-          {employees?.map((employee) => (
-            <tr key={employee.id} className="hover:bg-slate-50">
-              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">{employee.fullName}</td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{employee.email}</td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{employee.departmentName}</td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{employee.roleName}</td>
+        <tbody className="divide-y divide-slate-200">
+          {employees.map(employee => (
+            <tr key={employee.id}>
+              <th scope="row" className="px-4 py-4 text-left font-medium">
+                <div>{employee.fullName}</div><div className="text-sm font-normal text-slate-600">{employee.email}</div>
+              </th>
+              <td className="px-4 py-4 text-sm">{employee.departmentName}</td>
+              <td className="px-4 py-4 text-sm">{employee.roles.join(', ') || 'No roles'}</td>
+              <td className="px-4 py-4 text-sm">{employee.managerName || 'No manager'}</td>
+              <td className="px-4 py-4">
+                <button type="button" disabled={editing} aria-label={`Edit ${employee.fullName}`}
+                  onClick={() => onEdit(employee)}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-50">
+                  Edit
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

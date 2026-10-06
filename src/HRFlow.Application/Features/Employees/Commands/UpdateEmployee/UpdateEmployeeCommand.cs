@@ -1,40 +1,26 @@
+using System.Text.Json.Serialization;
 using HRFlow.Domain.Models.Employees;
 using MediatR;
 
 namespace HRFlow.Application.Features.Employees.Commands.UpdateEmployee;
 
-/// <summary>
-/// Updates an employee profile and synchronizes the linked ASP.NET Identity role assignment.
-/// </summary>
+/// <summary>Uses an explicit role replacement and manager operation to avoid accidental privilege or reporting loss.</summary>
 public sealed class UpdateEmployeeCommand : IRequest<EmployeeManagementResult>
 {
-    /// <summary>
-    /// Gets or sets the employee identifier to update.
-    /// </summary>
-    public Guid EmployeeId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the employee display name used across HR workflows.
-    /// </summary>
+    /// <summary>The API supplies the authenticated actor, ignoring any JSON value.</summary>
+    [JsonIgnore]
+    public Guid ActorIdentityUserId { get; set; }
+    /// <summary>Optional in JSON; the route is authoritative and a differing body ID is rejected.</summary>
+    public Guid? EmployeeId { get; set; }
+    /// <summary>The version loaded with the edit form; never silently merges a stale replacement.</summary>
+    public Guid ExpectedVersion { get; set; }
     public string FullName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the employee email used for both domain profile and identity login.
-    /// </summary>
     public string Email { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the department assignment for the employee profile.
-    /// </summary>
     public Guid DepartmentId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the optional direct manager assignment.
-    /// </summary>
+    /// <summary>Replaces all current roles. A profile-only edit must send the complete loaded collection.</summary>
+    public List<string> Roles { get; set; } = [];
+    /// <summary>Preserve is the omission default; Assign requires a manager ID and Clear forbids one.</summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<ManagerAssignmentOperation>))]
+    public ManagerAssignmentOperation ManagerAssignment { get; set; } = ManagerAssignmentOperation.Preserve;
     public Guid? ManagerId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the identity role to assign (for example HR Administrator, Manager, or Employee).
-    /// </summary>
-    public string RoleName { get; set; } = string.Empty;
 }

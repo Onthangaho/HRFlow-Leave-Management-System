@@ -25,6 +25,9 @@ public class Employee : BaseEntity
     /// </summary>
     public string Email { get; private set; } = default!;
 
+    /// <summary>Changes on every management edit so a form loaded earlier cannot overwrite newer data.</summary>
+    public Guid Version { get; private set; } = Guid.NewGuid();
+
     /// <summary>
     /// Gets or sets the unique identifier for the linked ASP.NET Core Identity user.
     /// </summary>
@@ -97,6 +100,7 @@ public class Employee : BaseEntity
         // All validation passed - now apply mutations
         UpdateIdentity(fullName, email);
         AssignDepartment(departmentId);
+        Version = Guid.NewGuid();
     }
 
     /// <summary>
@@ -105,7 +109,12 @@ public class Employee : BaseEntity
     /// <param name="managerId">Manager identifier, or null when clearing manager assignment.</param>
     public void AssignManager(Guid? managerId)
     {
-        ManagerId = managerId == Guid.Empty ? null : managerId;
+        var effectiveManagerId = managerId == Guid.Empty ? null : managerId;
+        if (ManagerId != effectiveManagerId)
+        {
+            ManagerId = effectiveManagerId;
+            Version = Guid.NewGuid();
+        }
     }
 
     /// <summary>

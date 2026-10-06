@@ -19,7 +19,7 @@ HRFlow replaces email-and-spreadsheet leave handling with clear, role-appropriat
 
 - **🧑‍💼 Employees** submit leave requests, view live balances and decision history, and cancel their own pending requests.
 - **🧭 Managers** review and decide only the pending requests of their current, same-department direct reports.
-- **🏢 HR Administrators** monitor organisation-wide pending leave and view the employee directory without receiving a decision override.
+- **🏢 HR Administrators** create and edit employees, assign combined roles and reporting relationships, and monitor organisation-wide pending leave without receiving a decision override.
 - **📝 Auditing** records leave lifecycle decisions with the actor, status transition, and timestamp.
 - **🛡️ Authentication** uses JWT access tokens and rotating refresh tokens; the client isolates authenticated query caches so one user's data cannot appear after another user signs in.
 
@@ -35,7 +35,7 @@ Permissions are enforced by the API, not just hidden in the interface.
 | Approve or reject leave | ❌ | ✅ Direct reports only | ❌ |
 | Actionable approval queue | ❌ | ✅ Scoped to direct reports | ❌ |
 | Organisation-wide pending monitoring | ❌ | ❌ | ✅ Read-only |
-| Employee directory | ❌ | ❌ | ✅ Read-only |
+| Employee profiles, roles, and reporting | ❌ | ❌ | ✅ Create/edit |
 
 \* An account with only the **HR Administrator** role has no personal-leave capability. Combined roles receive the capabilities of their explicitly assigned roles.
 
@@ -50,6 +50,8 @@ Managers may decide a request only when all of the following are true:
 5. The manager is not deciding their own request.
 
 New personal leave requests require a valid assigned manager. HR monitoring remains deliberately separate from the manager approval queue.
+
+Employee management uses explicit Preserve/Assign/Clear manager updates and original edit versions. See [the contract and SQLite safeguards](docs/adr/0003-hr-employee-management.md).
 
 ## 🏗️ Architecture
 
@@ -169,7 +171,7 @@ npm run lint
 |---|---|
 | Foundation and authentication | ✅ Layered solution, Identity, JWT login/refresh, protected routing, and server-side role checks are in place. |
 | Leave lifecycle | ✅ Personal submission, live balance calculation, history, cancellation, scoped manager approval/rejection, and audit history are implemented. |
-| HR operations | ✅ Read-only employee directory and organisation-wide pending-leave monitoring are available. |
+| HR operations | ✅ HR employee creation/editing, multiple roles, explicit manager assignment, and organisation-wide pending monitoring are available; employee writes use live HR authorization and version conflicts. |
 | Client security | ✅ Authenticated query caches are scoped by user and cleared at session boundaries; refresh and retry flows are fenced against stale sessions. |
 | Policy administration | 🚧 Leave types and policies exist in the domain. Full HR CRUD endpoints and UI remain planned work. |
 | Reporting | 🚧 Team summaries and department-level reporting remain planned work. |
@@ -188,7 +190,8 @@ All business endpoints are rooted at `/api/v1`.
 | Leave requests | `POST /leave-requests`, `GET /leave-requests/balances`, `GET /leave-requests/history`, `POST /leave-requests/{id}/cancel` |
 | Manager decisions | `GET /leave-requests?status=Pending`, `POST /leave-requests/{id}/approve`, `POST /leave-requests/{id}/reject` |
 | HR monitoring | `GET /leave-requests/monitoring/pending` |
-| Reference data | `GET /employees`, `GET /departments`, `GET /roles`, `GET /leave-types` |
+| Employee management | `GET /employees`, `GET /employees/{id}`, `POST /employees`, `PUT /employees/{id}` |
+| Reference data | `GET /departments`, `GET /roles`, `GET /leave-types` |
 
 Swagger is the authoritative interactive contract for a running Development API.
 

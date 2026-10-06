@@ -5,7 +5,8 @@ balance. Submission checks alone cannot prevent two pending requests spending th
 
 ## Decision
 
-Approve, reject, and cancel run through `ILeaveDecisionTransaction`. Its Infrastructure implementation
+Approve, reject, and cancel run through `ILeaveDecisionTransaction`. Its shared Infrastructure
+implementation, `SqliteWriteTransaction`,
 explicitly calls `SqliteConnection.BeginTransaction(deferred: false)` before decision reads and enlists
 the scoped EF Core context using `UseTransactionAsync`. In Microsoft.Data.Sqlite 8.0.23, this begins
 `BEGIN IMMEDIATE`, reserving SQLite's single writer. A second decision, even in another API process,
@@ -36,7 +37,8 @@ calls are synchronous and a cancellation cannot interrupt every native lock wait
 
 The writer reservation covers the whole database, including different employees and unrelated
 writes. This is deliberately simple for the current single-organization SQLite application, but
-limits write throughput. All API instances must run this decision safeguard and share the same
+limits write throughput. Employee management uses the same writer reservation so reporting changes
+serialize with decisions. All API instances must run this decision safeguard and share the same
 database file on a filesystem that supports SQLite locking. Direct SQL writers, older API binaries,
 and future transition paths must not bypass the validation protocol. A future provider change must
 replace this implementation with equivalent protection of the full read/validate/write operation;

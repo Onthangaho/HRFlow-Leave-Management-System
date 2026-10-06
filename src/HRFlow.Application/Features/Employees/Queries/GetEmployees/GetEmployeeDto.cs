@@ -1,13 +1,16 @@
 namespace HRFlow.Application.Features.Employees.Queries.GetEmployees;
 
-/// <summary>
-/// Data transfer object representing an employee for query results.
-/// </summary>
-public class GetEmployeeDto
+/// <summary>Provides a complete editable snapshot; no Identity credentials or tokens are exposed.</summary>
+public sealed class GetEmployeeDto
 {
     public Guid Id { get; set; }
-    public string? FullName { get; set; }
-    public string? Email { get; set; }
-    public Guid? DepartmentId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public Guid DepartmentId { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
     public Guid? ManagerId { get; set; }
+    public string? ManagerName { get; set; }
+    public IReadOnlyList<string> Roles { get; set; } = [];
+    /// <summary>Clients must return this version as ExpectedVersion when replacing profile or roles.</summary>
+    public Guid Version { get; set; }
 }
