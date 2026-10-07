@@ -124,3 +124,20 @@ See [executed verification and limitations](../verification/employee-deactivatio
 - [Microsoft.Data.Sqlite transaction behavior](https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/transactions)
 - [JWT post-validation hook](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.jwtbearer.jwtbearerevents.ontokenvalidated)
 - [Existing reservation design](0002-consistent-leave-decisions.md)
+
+## HR lifecycle UI follow-up (PR #69 backend)
+
+The HR directory UI now offers status filtering/search, versioned deactivation confirmation
+and inactive read-only details. HR management DTOs additionally project the opaque Identity
+account link (to recognize self-deactivation despite email changes), deactivation UTC time,
+current actor display name and reason. These fields are HR-only and are not added to public
+selectors or logs. No migration or business-rule change is required.
+
+The client retains the loaded version and entered reason through recoverable errors;
+explicit reload/discard is required before adopting a newer version. Returned cancellation
+counts are shown only after success. Self-deactivation clears the session and protected
+caches. A session epoch guards delayed callbacks; deactivation opts out of both mutation
+retry and Axios authentication replay. Existing server writer protection remains authoritative.
+
+This is a UI follow-up to completed #25/#26, not a new issue. See
+[UI verification and browser limitations](../verification/employee-deactivation-ui.md).

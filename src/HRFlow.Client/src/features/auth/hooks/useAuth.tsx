@@ -16,6 +16,9 @@ const roleClaimType =
   'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
 
 interface AuthContextValue {
+  /** Logout/relogin epochs differ even for the same account; token refresh retains the epoch. */
+  sessionVersion: number;
+  getSessionVersion: () => number;
   session: AuthSession | null;
   user: AuthUser | null;
   isAuthenticated: boolean;
@@ -163,8 +166,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return tearDown;
   }, [clearSession, refreshAccessToken]);
 
+  const getSessionVersion = useCallback(() => sessionVersionRef.current, []);
   const value = useMemo<AuthContextValue>(
     () => ({
+      sessionVersion: sessionVersionRef.current,
+      getSessionVersion,
       session,
       user: session?.user ?? null,
       isAuthenticated: Boolean(session?.accessToken),
@@ -172,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login: loginUser,
       logout: clearSession,
     }),
-    [clearSession, loginMutation.isPending, loginUser, session],
+    [clearSession, getSessionVersion, loginMutation.isPending, loginUser, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

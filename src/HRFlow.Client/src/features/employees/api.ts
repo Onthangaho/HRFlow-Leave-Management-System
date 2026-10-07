@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authHttpClient } from '../auth/api';
 import { useAuth } from '../auth/hooks/useAuth';
-import type { Employee, EmployeeFormValues, EmployeeWriteResult } from './types';
+import type { Employee, EmployeeFormValues, EmployeeWriteResult, EmployeeDeactivationResult } from './types';
 
 const employeesQueryKey = (userId: string) => ['employees', userId] as const;
 const departmentsQueryKey = (userId: string) => ['departments', userId] as const;
@@ -58,9 +58,9 @@ export function useRoles() {
 
 function useRefreshManagementQueries() {
   const client = useQueryClient();
-  const { user } = useAuth();
+  const { user, sessionVersion, getSessionVersion } = useAuth();
   return async () => {
-    if (!user?.id) return;
+    if (!user?.id || getSessionVersion() !== sessionVersion) return;
     await Promise.all([
       client.invalidateQueries({ queryKey: employeesQueryKey(user.id) }),
       client.invalidateQueries({ queryKey: ['pending-leave-requests', user.id] }),
@@ -82,5 +82,26 @@ export function useUpdateEmployee() {
   const refresh = useRefreshManagementQueries();
   return useMutation<EmployeeWriteResult, Error, { id: string; expectedVersion: string } & EmployeeFormValues>({
     mutationFn: updateEmployee, onSuccess: refresh,
+  });
+}
+
+/** Sends one versioned lifecycle decision; neither Axios nor the mutation retries it. */
+export function useDeactivateEmployee() {
+  const client = useQueryClient();
+  const { user, sessionVersion, getSessionVersion } = useAuth();
+  return useMutation<EmployeeDeactivationResult, Error, { employee: Employee; reason: string }>({
+    retry: false,
+    mutationFn: async ({ employee, reason }) => {
+      if (!user || getSessionVersion() !== sessionVersion) throw new Error('The session has changed.');
+      return (await authHttpClient.patch<EmployeeDeactivationResult>(`/employees/${employee.id}/deactivate`, {
+        expectedVersion: employee.version, reason: reason.trim(),
+      }, { skipAuthReplay: true })).data;
+    },
+    onSuccess: async (_, { employee }) => {
+      if (!user || getSessionVersion() !== sessionVersion || employee.identityUserId === user.id) return;
+      await Promise.all(['employees', 'leave-balances', 'employee-leave-history', 'pending-leave-requests',
+        'organisation-pending-leave-requests', 'leave-types', 'managed-leave-types', 'leave-policies',
+        'departments', 'roles'].map(key => client.invalidateQueries({ queryKey: [key, user.id] })));
+    },
   });
 }

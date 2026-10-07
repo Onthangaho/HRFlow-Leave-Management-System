@@ -13,6 +13,8 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginLocationState {
+  selfDeactivated?: boolean;
+  cancelledRequestCount?: number;
   from?: {
     pathname?: string;
   };
@@ -26,6 +28,7 @@ export function LoginPage() {
   const location = useLocation();
   const { login, isLoggingIn, isAuthenticated } = useAuth();
   const [authError, setAuthError] = useState<string | null>(null);
+  const locationState = location.state as LoginLocationState | null;
 
   const fromPath =
     (location.state as LoginLocationState | null)?.from?.pathname ?? '/';
@@ -57,6 +60,12 @@ export function LoginPage() {
       <p className="mt-2 text-sm text-slate-600">
         Use your account to access protected HR pages.
       </p>
+
+      {!isAuthenticated && locationState?.selfDeactivated && <p role="status" className="mt-4 text-slate-700">
+        Your account has been deactivated and you have been signed out.
+        {typeof locationState.cancelledRequestCount === 'number' && <> {locationState.cancelledRequestCount} Pending requests were cancelled.</>}
+        {' '}Use an active account to continue.
+      </p>}
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
         <label className="block text-sm font-medium text-slate-700" htmlFor="email">
