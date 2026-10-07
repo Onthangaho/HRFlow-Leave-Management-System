@@ -16,7 +16,7 @@ export function EmployeeTable({ employees, onEdit, editing }: EmployeeTableProps
       <table className="min-w-full divide-y divide-slate-200">
         <caption className="sr-only">Employees and their current departments, roles, and managers</caption>
         <thead className="bg-slate-50">
-          <tr>{['Employee', 'Department', 'Roles', 'Manager', 'Actions'].map(label =>
+          <tr>{['Employee', 'Status', 'Department', 'Roles', 'Manager', 'Actions'].map(label =>
             <th key={label} scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600">{label}</th>,
           )}</tr>
         </thead>
@@ -26,6 +26,12 @@ export function EmployeeTable({ employees, onEdit, editing }: EmployeeTableProps
               <th scope="row" className="px-4 py-4 text-left font-medium">
                 <div>{employee.fullName}</div><div className="text-sm font-normal text-slate-600">{employee.email}</div>
               </th>
+              <td className="px-4 py-4 text-sm">
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${employee.isActive
+                  ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                  {employee.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </td>
               <td className="px-4 py-4 text-sm">{employee.departmentName}</td>
               <td className="px-4 py-4 text-sm">{employee.roles.join(', ') || 'No roles'}</td>
               <td className="px-4 py-4 text-sm">{employee.managerName || 'No manager'}</td>

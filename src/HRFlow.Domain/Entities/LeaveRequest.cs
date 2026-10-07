@@ -111,10 +111,10 @@ public class LeaveRequest : BaseEntity
     }
 
     /// <summary>
-    /// Withdraws an employee-owned request before a manager or administrator has made it
-    /// read-only by approving or rejecting it.
+    /// Withdraws pending leave only. HR deactivation supplies its reason and acting HR employee;
+    /// ordinary owner cancellation leaves the optional reason null.
     /// </summary>
-    public void Cancel(Guid actorId)
+    public void Cancel(Guid actorId, string? reason = null)
     {
         if (Status != LeaveRequestStatus.Pending)
         {
@@ -126,7 +126,7 @@ public class LeaveRequest : BaseEntity
         ProcessedById = actorId;
         ProcessedOn = DateTime.UtcNow;
 
-        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Cancel", oldStatus, Status));
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Cancel", oldStatus, Status, reason));
     }
 
 }

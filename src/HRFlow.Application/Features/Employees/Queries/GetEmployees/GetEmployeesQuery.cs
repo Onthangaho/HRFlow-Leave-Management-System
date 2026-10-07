@@ -30,7 +30,7 @@ public sealed class GetEmployeesQueryHandler(
                 Id = employee.Id, FullName = employee.FullName, Email = employee.Email,
                 DepartmentId = employee.DepartmentId, DepartmentName = employee.Department.Name,
                 ManagerId = employee.ManagerId, ManagerName = employee.Manager?.FullName,
-                Version = employee.Version,
+                Version = employee.Version, IsActive = employee.IsActive,
                 Roles = await roleLookup.GetRolesByIdentityUserIdAsync(employee.IdentityUserId, cancellationToken)
             });
         }

@@ -6,6 +6,7 @@ export type ManagerAssignment = 'Preserve' | 'Assign' | 'Clear';
 /** Complete editable snapshot, including the version used to detect stale forms. */
 export interface Employee {
   id: string;
+  isActive: boolean;
   fullName: string;
   email: string;
   departmentId: string;

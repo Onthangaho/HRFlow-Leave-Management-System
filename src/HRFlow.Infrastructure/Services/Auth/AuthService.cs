@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using HRFlow.Application.Interfaces;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -28,6 +29,8 @@ public sealed class AuthService : IAuthService
     private readonly HRFlowDbContext _dbContext;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
+    private readonly IEmployeeManagementTransaction _transaction;
+    private readonly IAccountAccessService _access;
 
     /// <summary>
     /// Creates a new auth service with identity, persistence, and configuration dependencies.
@@ -37,22 +40,32 @@ public sealed class AuthService : IAuthService
         SignInManager<ApplicationUser> signInManager,
         HRFlowDbContext dbContext,
         IConfiguration configuration,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        IEmployeeManagementTransaction transaction, IAccountAccessService access)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _dbContext = dbContext;
         _configuration = configuration;
         _logger = logger;
+        _transaction = transaction;
+        _access = access;
     }
 
     /// <inheritdoc />
     public async Task<AuthResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
+        AuthResult? result = null;
+        await _transaction.ExecuteAsync(async token => result = await LoginProtectedAsync(request, token), cancellationToken);
+        return result!;
+    }
+
+    private async Task<AuthResult> LoginProtectedAsync(LoginRequest request, CancellationToken cancellationToken)
+    {
         var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user is null)
+        if (user is null || !await _access.IsActiveAsync(user.Id.ToString(), cancellationToken))
         {
-            _logger.LogWarning("Login failed because the supplied account was not found.");
+            _logger.LogWarning("Login failed because the supplied account was unavailable.");
             return AuthResult.Failed(AuthFailureReason.InvalidCredentials);
         }
 
@@ -74,6 +87,13 @@ public sealed class AuthService : IAuthService
 
     /// <inheritdoc />
     public async Task<AuthResult> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
+    {
+        AuthResult? result = null;
+        await _transaction.ExecuteAsync(async token => result = await RefreshProtectedAsync(request, token), cancellationToken);
+        return result!;
+    }
+
+    private async Task<AuthResult> RefreshProtectedAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
         var tokenHash = HashRefreshToken(request.RefreshToken);
@@ -107,10 +127,10 @@ public sealed class AuthService : IAuthService
         }
 
         var user = await _userManager.FindByIdAsync(revokedToken.UserId);
-        if (user is null)
+        if (user is null || !await _access.IsActiveAsync(user.Id.ToString(), cancellationToken))
         {
             _logger.LogWarning(
-                "Refresh token exchange failed because the token owner no longer exists. UserId: {UserId}",
+                "Refresh token exchange failed because the token owner is unavailable. UserId: {UserId}",
                 revokedToken.UserId);
             return AuthResult.Failed(AuthFailureReason.InvalidRefreshToken);
         }

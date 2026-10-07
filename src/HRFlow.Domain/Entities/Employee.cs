@@ -14,6 +14,33 @@ public class Employee : BaseEntity
 
     public const int MaxFullNameLength = 200;
     public const int MaxEmailLength = 256;
+    public const int MaxDeactivationReasonLength = 500;
+
+    /// <summary>Inactive profiles remain available to authorized history readers.</summary>
+    public bool IsActive { get; private set; } = true;
+    /// <summary>Retains the lifecycle decision even when no pending leave exists.</summary>
+    public DateTime? DeactivatedAtUtc { get; private set; }
+    public Guid? DeactivatedById { get; private set; }
+    public string? DeactivationReason { get; private set; }
+
+    /// <summary>Ends access while retaining the account, reporting links and leave history.</summary>
+    public void Deactivate(Guid actorId, string reason)
+    {
+        if (!IsActive) throw new DomainException("This employee is already inactive.");
+        if (actorId == Guid.Empty) throw new DomainException("A deactivation actor is required.");
+        if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > MaxDeactivationReasonLength)
+            throw new DomainException("A deactivation reason of 1–500 characters is required.");
+        IsActive = false;
+        DeactivatedAtUtc = DateTime.UtcNow;
+        DeactivatedById = actorId;
+        DeactivationReason = reason.Trim();
+        Version = Guid.NewGuid();
+    }
+
+    private void EnsureActive()
+    {
+        if (!IsActive) throw new DomainException("Inactive employees cannot be edited or reassigned.");
+    }
 
     /// <summary>
     /// Gets or sets the employee's full name.
@@ -93,6 +120,7 @@ public class Employee : BaseEntity
         string email,
         Guid departmentId)
     {
+        EnsureActive();
         // Validate all inputs before any mutation to ensure aggregate remains unchanged on validation failure
         ValidateIdentity(fullName, email);
         ValidateDepartment(departmentId);
@@ -109,6 +137,7 @@ public class Employee : BaseEntity
     /// <param name="managerId">Manager identifier, or null when clearing manager assignment.</param>
     public void AssignManager(Guid? managerId)
     {
+        EnsureActive();
         var effectiveManagerId = managerId == Guid.Empty ? null : managerId;
         if (ManagerId != effectiveManagerId)
         {

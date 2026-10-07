@@ -17,6 +17,10 @@ public interface IEmployeeManagementService
         Guid departmentId, IReadOnlyCollection<string> roles, ManagerAssignmentOperation managerAssignment,
         Guid? managerId, CancellationToken cancellationToken);
 
+    /// <summary>Deactivates a versioned profile and cancels pending requests atomically, preserving history.</summary>
+    Task<EmployeeDeactivationResult> DeactivateEmployeeAsync(Guid actorIdentityUserId, Guid employeeId,
+        Guid expectedVersion, string reason, CancellationToken cancellationToken);
+
     /// <summary>Rejects managers outside the effective department or in a self/cyclic reporting relationship.</summary>
     Task ValidateManagerAssignmentAsync(
         Guid? employeeId, Guid departmentId, Guid? managerId, CancellationToken cancellationToken);
