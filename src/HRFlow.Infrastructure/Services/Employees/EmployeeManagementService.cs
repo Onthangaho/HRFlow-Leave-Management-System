@@ -71,6 +71,7 @@ public sealed class EmployeeManagementService(
             }
             var effectiveRoles = await ValidateRolesAsync(roles);
             await ValidateDepartmentAsync(departmentId, token);
+            if (!employee.IsActive) throw new WriteConflictException("Inactive employees cannot be edited or reactivated through profile editing.");
             var effectiveManager = managerAssignment switch
             {
                 ManagerAssignmentOperation.Preserve when !managerId.HasValue => employee.ManagerId,
@@ -92,11 +93,10 @@ public sealed class EmployeeManagementService(
             if (currentRoles.Contains(EmployeeRoles.HrAdministrator)
                 && !effectiveRoles.Contains(EmployeeRoles.HrAdministrator))
             {
-                var hrRole = await roleManager.FindByNameAsync(EmployeeRoles.HrAdministrator);
-                var hrCount = await dbContext.UserRoles.CountAsync(r => r.RoleId == hrRole!.Id, token);
+                var hrCount = await CountActiveHrAsync(token);
                 if (hrCount <= 1)
                 {
-                    throw new WriteConflictException("The last HR Administrator cannot be removed.");
+                    throw new WriteConflictException("The last active HR Administrator cannot be removed.");
                 }
             }
 
@@ -125,6 +125,50 @@ public sealed class EmployeeManagementService(
     }
 
     /// <inheritdoc />
+    public async Task<EmployeeDeactivationResult> DeactivateEmployeeAsync(Guid actorIdentityUserId,
+        Guid employeeId, Guid expectedVersion, string reason, CancellationToken cancellationToken)
+    {
+        EmployeeDeactivationResult? result = null;
+        await writeTransaction.ExecuteAsync(async token =>
+        {
+            await EnsureCurrentHrAsync(actorIdentityUserId);
+            var actor = await dbContext.Employees.SingleAsync(e => e.IdentityUserId == actorIdentityUserId.ToString(), token);
+            var employee = await dbContext.Employees.SingleOrDefaultAsync(e => e.Id == employeeId, token)
+                ?? throw new NotFoundException("Employee was not found.");
+            if (employee.Version != expectedVersion)
+                throw new WriteConflictException("This employee changed. Reload before deactivating.");
+            if (!employee.IsActive)
+                throw new WriteConflictException("This employee is already inactive. No further cancellation was made.");
+            if (await dbContext.Employees.AnyAsync(e => e.ManagerId == employeeId && e.IsActive, token))
+                throw new WriteConflictException("Reassign all active direct reports before deactivating their manager.");
+            var identity = employee.IdentityUserId is null ? null : await userManager.FindByIdAsync(employee.IdentityUserId);
+            if (identity is not null && await userManager.IsInRoleAsync(identity, EmployeeRoles.HrAdministrator)
+                && await CountActiveHrAsync(token) <= 1)
+                throw new WriteConflictException("The last active HR Administrator cannot be deactivated.");
+            var pending = await dbContext.LeaveRequests
+                .Where(r => r.EmployeeId == employeeId && r.Status == HRFlow.Domain.Enums.LeaveRequestStatus.Pending)
+                .ToListAsync(token);
+            employee.Deactivate(actor.Id, reason);
+            foreach (var request in pending) request.Cancel(actor.Id, AuditEntry.DeactivationReasonPrefix + reason.Trim());
+            result = new EmployeeDeactivationResult(employee.Id, employee.Version, employee.IsActive, pending.Count);
+        }, cancellationToken);
+        logger.LogInformation("Employee deactivated. EmployeeId: {EmployeeId}; ActorIdentityUserId: {ActorIdentityUserId}; CancelledRequestCount: {CancelledRequestCount}",
+            employeeId, actorIdentityUserId, result!.CancelledRequestCount);
+        return result;
+    }
+
+    private async Task<int> CountActiveHrAsync(CancellationToken token)
+    {
+        var hrRole = await roleManager.FindByNameAsync(EmployeeRoles.HrAdministrator);
+        // Materialize GUIDs before formatting: SQLite stores GUIDs uppercase but profile links use .NET formatting.
+        var userIds = await dbContext.UserRoles.Where(r => r.RoleId == hrRole!.Id)
+            .Select(r => r.UserId).ToListAsync(token);
+        var identityIds = userIds.Select(id => id.ToString()).ToArray();
+        return await dbContext.Employees.CountAsync(e => e.IsActive && e.IdentityUserId != null
+            && identityIds.Contains(e.IdentityUserId.ToLower()), token);
+    }
+
+    /// <inheritdoc />
     public async Task ValidateManagerAssignmentAsync(
         Guid? employeeId, Guid departmentId, Guid? managerId, CancellationToken cancellationToken)
     {
@@ -135,6 +179,7 @@ public sealed class EmployeeManagementService(
         var manager = await dbContext.Employees.AsNoTracking()
             .SingleOrDefaultAsync(e => e.Id == managerId, cancellationToken)
             ?? throw new DomainException("Assigned manager was not found.");
+        if (!manager.IsActive) throw new DomainException("Assigned manager must be active.");
         if (manager.DepartmentId != departmentId)
         {
             throw new DomainException("Assigned manager must belong to the same department.");
@@ -164,7 +209,8 @@ public sealed class EmployeeManagementService(
     private async Task EnsureCurrentHrAsync(Guid identityId)
     {
         var actor = await userManager.FindByIdAsync(identityId.ToString());
-        if (actor is null || !await userManager.IsInRoleAsync(actor, EmployeeRoles.HrAdministrator))
+        if (actor is null || !await dbContext.Employees.AnyAsync(e => e.IdentityUserId == identityId.ToString() && e.IsActive)
+            || !await userManager.IsInRoleAsync(actor, EmployeeRoles.HrAdministrator))
         {
             throw new ForbiddenException("Current HR Administrator membership is required to manage employees.");
         }
@@ -208,7 +254,7 @@ public sealed class EmployeeManagementService(
     private async Task EnsureDirectReportsRemainValidAsync(
         Employee employee, Guid departmentId, IReadOnlyCollection<string> roles, CancellationToken cancellationToken)
     {
-        if (!await dbContext.Employees.AnyAsync(e => e.ManagerId == employee.Id, cancellationToken)) return;
+        if (!await dbContext.Employees.AnyAsync(e => e.ManagerId == employee.Id && e.IsActive, cancellationToken)) return;
         if (employee.DepartmentId != departmentId)
         {
             throw new DomainException("Reassign all direct reports before changing this manager's department.");

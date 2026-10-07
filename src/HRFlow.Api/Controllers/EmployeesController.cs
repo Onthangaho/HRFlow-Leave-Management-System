@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using HRFlow.Application.Features.Employees.Commands.DeactivateEmployee;
 using FluentValidation;
 using HRFlow.Application.Exceptions;
 using HRFlow.Application.Features.Employees.Commands.CreateEmployee;
@@ -46,6 +47,15 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
         {
             throw new ValidationException("EmployeeId must match the route.");
         }
+        command.EmployeeId = id;
+        command.ActorIdentityUserId = GetActorIdentityId();
+        return Ok(await mediator.Send(command, cancellationToken));
+    }
+
+    /// <summary>Ends access and cancels pending leave in one versioned operation without deleting history.</summary>
+    [HttpPatch("{id:guid}/deactivate")]
+    public async Task<IActionResult> DeactivateEmployee(Guid id, DeactivateEmployeeCommand command, CancellationToken cancellationToken)
+    {
         command.EmployeeId = id;
         command.ActorIdentityUserId = GetActorIdentityId();
         return Ok(await mediator.Send(command, cancellationToken));

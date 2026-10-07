@@ -137,7 +137,8 @@ public sealed class LeaveConfigurationService(
 
     private async Task EnsureHrAsync(Guid actor, CancellationToken token)
     {
-        if (!(await roles.GetRolesByIdentityUserIdAsync(actor.ToString(), token)).Contains(EmployeeRoles.HrAdministrator))
+        if (!await context.Employees.AnyAsync(e => e.IdentityUserId == actor.ToString() && e.IsActive, token)
+            || !(await roles.GetRolesByIdentityUserIdAsync(actor.ToString(), token)).Contains(EmployeeRoles.HrAdministrator))
             throw new ForbiddenException("Current HR Administrator membership is required to manage leave types and policies.");
     }
 

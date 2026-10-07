@@ -29,10 +29,12 @@ public static class DatabaseSeeder
 
         try
         {
-            await SeedIdentityAsync(serviceProvider, logger);
-            // Development configuration seeding must serialize with the new management/decision paths too.
-            await serviceProvider.GetRequiredService<ILeaveConfigurationTransaction>().ExecuteAsync(
-                _ => SeedApplicationDataAsync(serviceProvider, logger), CancellationToken.None);
+            // Account provisioning and reporting repairs serialize with lifecycle operations too.
+            await serviceProvider.GetRequiredService<ILeaveConfigurationTransaction>().ExecuteAsync(async _ =>
+            {
+                await SeedIdentityAsync(serviceProvider, logger);
+                await SeedApplicationDataAsync(serviceProvider, logger);
+            }, CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -204,7 +206,7 @@ public static class DatabaseSeeder
             seniorManagerEmployee.SetIdentityUser(seniorManagerUser.Id.ToString());
         }
 
-        if (managerEmployee.ManagerId is null)
+        if (managerEmployee.IsActive && seniorManagerEmployee.IsActive && managerEmployee.ManagerId is null)
         {
             managerEmployee.AssignManager(seniorManagerEmployee.Id);
             logger.LogInformation("Assigned senior manager to development manager.");
@@ -232,7 +234,7 @@ public static class DatabaseSeeder
             employeeToManage.SetIdentityUser(employeeUser.Id.ToString());
         }
 
-        if (employeeToManage.ManagerId is null)
+        if (employeeToManage.IsActive && managerEmployee.IsActive && employeeToManage.ManagerId is null)
         {
             employeeToManage.AssignManager(managerEmployee.Id);
             logger.LogInformation("Assigned manager to employee.");
@@ -308,6 +310,7 @@ public static class DatabaseSeeder
         else
         {
             logger.LogInformation("Development {AccountLabel} account {Email} already exists.", accountLabel, email);
+            return;
         }
 
         if (!await userManager.IsInRoleAsync(existingUser, roleName))

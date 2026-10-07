@@ -1,4 +1,5 @@
 using System.Text;
+using System.Security.Claims;
 using FluentValidation;
 using HRFlow.Application.Behaviors;
 using HRFlow.Application.Features.Employees.Commands.CreateEmployee;
@@ -82,6 +83,23 @@ builder.Services.AddAuthentication(options =>
     {
         throw new InvalidOperationException("JWT SigningKey is not configured.");
     }
+    o.Events = new JwtBearerEvents
+    {
+        OnChallenge = async context =>
+        {
+            context.HandleResponse();
+            await Results.Problem(statusCode: StatusCodes.Status401Unauthorized,
+                title: "Authentication required",
+                detail: "Sign in with an active account to access this resource.",
+                instance: context.Request.Path).ExecuteAsync(context.HttpContext);
+        },
+        OnTokenValidated = async context =>
+        {
+            var access = context.HttpContext.RequestServices.GetRequiredService<IAccountAccessService>();
+            if (!await access.IsActiveAsync(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier), context.HttpContext.RequestAborted))
+                context.Fail("This account is inactive or unavailable.");
+        }
+    };
     o.TokenValidationParameters = new TokenValidationParameters
     {
         ValidIssuer = builder.Configuration["Authentication:Jwt:Issuer"],

@@ -28,6 +28,8 @@ public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLea
 
     private async Task DecideAsync(CancelLeaveRequestCommand request, CancellationToken cancellationToken)
     {
+        if (!await _context.Employees.AnyAsync(e => e.Id == request.EmployeeId && e.IsActive, cancellationToken))
+            throw new ForbiddenException("Inactive employees cannot cancel leave requests.");
         var leaveRequest = await _context.LeaveRequests
             .SingleOrDefaultAsync(current => current.Id == request.LeaveRequestId, cancellationToken)
             ?? throw new NotFoundException("Leave request was not found.");

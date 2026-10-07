@@ -14,6 +14,10 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
     {
         builder.HasKey(employee => employee.Id);
         builder.Property(employee => employee.Version).IsConcurrencyToken();
+        builder.Property(employee => employee.IsActive).HasDefaultValue(true);
+        builder.Property(employee => employee.DeactivationReason).HasMaxLength(Employee.MaxDeactivationReasonLength);
+        builder.HasOne<Employee>().WithMany().HasForeignKey(employee => employee.DeactivatedById)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(employee => employee.FullName)
             .IsRequired()

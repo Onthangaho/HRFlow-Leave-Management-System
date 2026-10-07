@@ -32,6 +32,7 @@ public sealed class LeaveApprovalAuthorizationService : ILeaveApprovalAuthorizat
     /// <inheritdoc />
     public async Task EnsureEmployeeHasValidManagerAsync(Employee employee, CancellationToken cancellationToken)
     {
+        if (!employee.IsActive) throw new ForbiddenException("Inactive employees cannot submit leave requests.");
         if (!employee.ManagerId.HasValue)
         {
             throw new ForbiddenException(
@@ -72,7 +73,7 @@ public sealed class LeaveApprovalAuthorizationService : ILeaveApprovalAuthorizat
 
     private async Task<bool> HasManagerRoleAsync(Employee employee, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(employee.IdentityUserId))
+        if (!employee.IsActive || string.IsNullOrWhiteSpace(employee.IdentityUserId))
         {
             return false;
         }

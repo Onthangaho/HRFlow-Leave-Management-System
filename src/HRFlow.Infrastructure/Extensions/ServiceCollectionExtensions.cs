@@ -51,6 +51,7 @@ public static class ServiceCollectionExtensions
             .AddEntityFrameworkStores<HRFlowDbContext>()
             .AddDefaultTokenProviders();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAccountAccessService, AccountAccessService>();
         services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
         services.AddScoped<IEmployeeRoleLookupService, EmployeeRoleLookupService>();
         services.AddScoped<ILeaveApprovalAuthorizationService, LeaveApprovalAuthorizationService>();

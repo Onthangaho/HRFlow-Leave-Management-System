@@ -50,7 +50,7 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
   const departmentId = useWatch({ control, name: 'departmentId' });
   const managerAssignment = useWatch({ control, name: 'managerAssignment' });
   const eligibleManagers = employees.filter(candidate =>
-    candidate.id !== employee?.id && candidate.departmentId === departmentId && candidate.roles.includes('Manager'),
+    candidate.isActive && candidate.id !== employee?.id && candidate.departmentId === departmentId && candidate.roles.includes('Manager'),
   );
   const mutation = employee ? update : create;
   const busy = mutation.isPending || isSubmitting;
