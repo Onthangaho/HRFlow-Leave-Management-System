@@ -22,6 +22,10 @@ public sealed class GetEmployeesQueryHandler(
             .Include(e => e.Department).Include(e => e.Manager)
             .Where(e => !request.EmployeeId.HasValue || e.Id == request.EmployeeId)
             .OrderBy(e => e.FullName).ToListAsync(cancellationToken);
+        var actorIds = employees.Where(e => e.DeactivatedById.HasValue)
+            .Select(e => e.DeactivatedById!.Value).Distinct().ToArray();
+        var actorNames = await context.Employees.AsNoTracking().Where(e => actorIds.Contains(e.Id))
+            .ToDictionaryAsync(e => e.Id, e => e.FullName, cancellationToken);
         var results = new List<GetEmployeeDto>();
         foreach (var employee in employees)
         {
@@ -31,6 +35,13 @@ public sealed class GetEmployeesQueryHandler(
                 DepartmentId = employee.DepartmentId, DepartmentName = employee.Department.Name,
                 ManagerId = employee.ManagerId, ManagerName = employee.Manager?.FullName,
                 Version = employee.Version, IsActive = employee.IsActive,
+                IdentityUserId = employee.IdentityUserId,
+                // SQLite retains the UTC value but not DateTime.Kind; emit an explicit UTC offset for the UI.
+                DeactivatedAtUtc = employee.DeactivatedAtUtc.HasValue
+                    ? DateTime.SpecifyKind(employee.DeactivatedAtUtc.Value, DateTimeKind.Utc) : null,
+                DeactivationReason = employee.DeactivationReason,
+                DeactivatedByName = employee.DeactivatedById.HasValue
+                    ? actorNames.GetValueOrDefault(employee.DeactivatedById.Value) : null,
                 Roles = await roleLookup.GetRolesByIdentityUserIdAsync(employee.IdentityUserId, cancellationToken)
             });
         }

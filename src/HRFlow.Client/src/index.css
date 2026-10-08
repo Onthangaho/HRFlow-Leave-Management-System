@@ -23,7 +23,7 @@ body {
 .ui-input { @apply mt-2 block w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 disabled:bg-slate-100; }
 .ui-error { @apply rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-800; }
 .ui-warning { @apply rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900; }
-.confirmation { width: min(32rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; }
+.confirmation { margin: auto; width: min(32rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; }
 .confirmation::backdrop { background: rgb(15 23 42 / 55%); }
 :where(button, a, input, select, textarea):focus-visible { outline: 3px solid #4f46e5; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }

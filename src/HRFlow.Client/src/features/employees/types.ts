@@ -7,6 +7,11 @@ export type ManagerAssignment = 'Preserve' | 'Assign' | 'Clear';
 export interface Employee {
   id: string;
   isActive: boolean;
+  /** HR-only account linkage identifies self-deactivation without comparing mutable email. */
+  identityUserId: string | null;
+  deactivatedAtUtc: string | null;
+  deactivatedByName: string | null;
+  deactivationReason: string | null;
   fullName: string;
   email: string;
   departmentId: string;
@@ -32,4 +37,10 @@ export interface EmployeeFormValues {
 export interface EmployeeWriteResult {
   employeeId: string;
   version: string;
+}
+
+/** The cancellation count is authoritative only after the lifecycle transaction commits. */
+export interface EmployeeDeactivationResult extends EmployeeWriteResult {
+  isActive: boolean;
+  cancelledRequestCount: number;
 }

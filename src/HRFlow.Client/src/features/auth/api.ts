@@ -9,6 +9,13 @@ import type {
   TokenResponse,
 } from './types.ts';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Lifecycle writes must not be replayed following an authentication failure. */
+    skipAuthReplay?: boolean;
+  }
+}
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 if (!apiBaseUrl || apiBaseUrl.trim() === '') {
@@ -158,7 +165,7 @@ export function configureAuthInterceptors(
       }
 
       const isRefreshRequest = originalRequest.url?.includes('/auth/refresh');
-      if (isRefreshRequest || originalRequest._retryOnce) {
+      if (isRefreshRequest || originalRequest._retryOnce || originalRequest.skipAuthReplay) {
         clearSessionForVersion(sessionVersion);
         return Promise.reject(error);
       }
