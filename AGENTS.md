@@ -12,7 +12,8 @@ exactly as you would a real production codebase reviewed by a senior engineer �
 read by technical interviewers.
 
 Full project context lives in `docs/planning/01-discovery-and-planning.md`. Read it before generating
-anything if it's not already in context.
+anything if it's not already in context. For the authorised expansion also read the roadmap and
+South African leave requirements; qualified review is required before statutory calculation code.
 
 ## Current Project Status
 
@@ -21,10 +22,10 @@ anything if it's not already in context.
 
 | Area | Current state |
 |---|---|
-| Completed milestones | **M1: Authentication & Access Control** is complete (issues #6-#11 closed). **M0: Foundation & Setup** functionality is merged (PRs #33-#42), but tracking issue #36 remains open although its matching hardening work merged in PR #37; close or reconcile it before marking M0 fully complete. |
-| Active milestone | **M2: Leave Request Lifecycle** is in progress. Issues #12-#15 and #19-#20 are closed. |
-| Current/next work | **HR department reporting is merged through PR #72**. **Reliable leave audits and single-request history (#31/#32)** are locally implemented on `feat/leave-request-audit-timeline`: existing AuditEntry/domain persistence, new initial submission events, nullable correlation metadata, live owner/manager/HR read snapshots, HR-only sensitive context and session-scoped read-only UI. Disposable HTTP/persisted-row, injected rollback, migration-preservation and real Chromium desktop/mobile/regression checks are recorded in `docs/verification/leave-request-audit-timeline.md` with synthetic screenshots and explicit limitations. Awaiting independent review; no commit/PR/issue actions. Legacy submission events are not invented. #17 remains open although its balance/cancel scope shipped with #16 and needs reconciliation. |
-| Deferred work | Do not add **persist session across refresh** or **full department CRUD** unless explicitly re-scoped. They have no matching open/closed issue in the tracker. Also deferred: automated tests, real email/SMTP, attachments, payroll, and multi-tenancy. |
+| Completed milestones | Original authentication/administration and reporting/audit features are merged through **PR #73**, verified merged on 8 October 2026. #17/#36 have evidence-based reconciliation proposals but remain open; #21 decision notes and #22 accrual remain incomplete. Do not call every original milestone fully complete. |
+| Active milestone | **South African product planning** under umbrella **#98**. No new product feature is implemented in this phase. Preserve original milestone history; use the dependency-ordered roadmap instead of obsolete one-week estimates. |
+| Current/next work | Documentation-only review on `docs/hrflow-south-africa-product-roadmap`, based on main `f47e20c` (PR #73). Requirements, inventory, reconciliation proposals and focused issues **#74–#97** are in planning documents **04–07**. First implementation recommendation: **#74**, because JWT lifetime validation is disabled and older paths have uneven live-role checks. **#75 legal review** gates statutory rules; reuse **#21/#22**, do not duplicate them. Existing verification reports remain dated evidence, not rerun checks. No existing issues closed/edited, board actions, commits, push or product implementation in this planning phase. |
+| Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. This authorised roadmap now PLANS secure evidence/images, activation/CSV, profiles/password/preferences, notifications and professional dashboards; none are shipped by this planning work. General email/SMS delivery remains future scope; secure activation delivery requires review. Automated tests stay deferred until #76 explicitly changes that convention. |
 | Current backend | .NET 8 ASP.NET Core **Controllers** (migrated from Minimal APIs), EF Core 8 with SQLite, ASP.NET Core Identity, JWT bearer auth, MediatR, FluentValidation, Swagger, and layered Domain/Application/Infrastructure/API projects. |
 | Current frontend | React 19 + TypeScript 6 Vite SPA, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, React Hook Form, and Zod. |
 
@@ -70,10 +71,12 @@ HRFlow.Client          -> React + TypeScript SPA
 - **No automated tests yet** (unit, integration, or otherwise). This is a deliberate, later phase — do
   not generate test files or suggest test frameworks unless explicitly asked. If a change would be hard
   to test later, mention that in a comment instead of writing the test.
-- No real email/SMTP integration — implement `INotificationService` with a console/log-based
-  implementation for now; leave a clear seam (interface + DI registration) for a real provider later.
-- No multi-tenancy, no payroll integration, no file attachments — see
-  `docs/planning/01-discovery-and-planning.md` §4 for the full scope boundary.
+- General email/SMTP status notifications remain deferred; #79 plans a reviewed secure activation
+  channel and #93 durable in-app delivery. Do not claim a notification service exists from its name in
+  historical plans. No plaintext-password CSV or secrets in logs/previews/reports.
+- No multi-tenancy or payroll integration. Private documents/profile images are now explicitly planned
+  through #83/#95 with quarantine, access, retention and failure gates, not implemented yet. See
+  `docs/planning/01-discovery-and-planning.md` §4 and the roadmap for current boundaries.
 
 ## Verification (non-negotiable)
 

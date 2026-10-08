@@ -2,6 +2,11 @@
 
 **Status:** Approved · **Owner:** Solo Developer · **Input:** `docs/planning/02-requirements.md`
 
+
+> Historical initial breakdown: minute estimates and Day 1–6 targets are not current commitments.
+> See [inventory/reconciliation](06-feature-inventory-and-reconciliation.md) and [roadmap #98](05-product-roadmap.md).
+> New work uses cohesive usable slices and relative Small/Medium/Large sizing.
+
 ---
 
 ## 1. Correction Carried Forward
@@ -99,14 +104,14 @@ Not a classic 2-week Scrum sprint — a single-week Kanban-style plan sequenced 
 | 28 | Manager team summary view | User Story 8 | `client` | should | 60 min |
 | 29 | Department-level leave reporting query | User Story 9 | `application` | should | 60 min |
 | 30 | HR Admin reporting dashboard | User Story 9 | `client` | should | 90 min |
-| 31 | AuditLog entity + write-on-state-change interceptor | User Story 10 | `infrastructure` | must | 60 min |
+| 31 | Audit persistence (actual: existing AuditEntry/domain transitions, no duplicate interceptor) | User Story 10 | `infrastructure` | must | 60 min |
 | 32 | Audit history view on a leave request | User Story 10 | `client` | must | 60 min |
 
 ## 6. GitHub Projects Board Columns
 
 `Backlog` -> `Ready` -> `In Progress` -> `In Review` -> `Done`
 
-All 32 issues start in `Backlog`. Move an issue to `Ready` only once its dependency issues (same story, earlier layer) are in `Done` — e.g., don't move the API-layer issue for a story to `Ready` until its Domain-layer issue is `Done`.
+The original plan placed 32 tasks in Backlog. Current tracker state is authoritative; most are closed. Use roadmap #98 dependencies. Do not move board items or close #17/#36 without reviewed evidence; reuse #21/#22 for remaining scope.
 
 ## 7. How This Feeds the Copilot Prompts
 
