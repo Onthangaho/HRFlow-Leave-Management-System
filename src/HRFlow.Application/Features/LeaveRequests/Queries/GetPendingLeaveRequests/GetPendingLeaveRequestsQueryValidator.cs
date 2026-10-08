@@ -17,10 +17,10 @@ public class GetPendingLeaveRequestsQueryValidator : AbstractValidator<GetPendin
             .When(query => !query.IsOrganisationMonitoring)
             .WithMessage("Authenticated user is not linked to an employee record.");
 
-        RuleFor(query => query.CurrentDepartmentId)
+        RuleFor(query => query.ActorIdentityId)
             .NotEmpty()
-            .When(query => !query.IsOrganisationMonitoring)
-            .WithMessage("Authenticated manager is not linked to a department.");
+            .When(query => query.IsOrganisationMonitoring)
+            .WithMessage("A valid authenticated account is required.");
 
         RuleFor(query => query.Status)
             .NotEmpty()

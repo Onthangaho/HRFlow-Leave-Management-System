@@ -8,6 +8,11 @@ namespace HRFlow.Infrastructure.Services;
 public sealed class EmployeeRoleLookupService(HRFlowDbContext context) : IEmployeeRoleLookupService
 {
     /// <inheritdoc />
+    public async Task<IReadOnlyList<string>> GetAvailableRoleNamesAsync(CancellationToken cancellationToken) =>
+        await context.Roles.AsNoTracking().Where(role => role.Name != null).OrderBy(role => role.Name)
+            .Select(role => role.Name!).ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<string>> GetRolesByIdentityUserIdAsync(string? identityUserId, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(identityUserId, out var userId)) return [];

@@ -1,3 +1,5 @@
+using HRFlow.Application.Services;
+using HRFlow.Domain.Interfaces.Services;
 using System.Text;
 using System.Security.Claims;
 using FluentValidation;
@@ -22,6 +24,8 @@ using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 
+// Allow a small, explicit tolerance for server clock drift rather than the library's five-minute default.
+const int JwtClockSkewSeconds = 30;
 const string HrAdministratorRoleName = "HR Administrator";
 const string HrAdministratorOnlyPolicyName = "HrAdministratorOnly";
 
@@ -64,6 +68,8 @@ builder.Services.AddMediatR(configuration =>
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
+builder.Services.AddScoped<CurrentAccountAuthorization>();
+builder.Services.AddScoped<ReferenceDataService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestCorrelationContext, RequestCorrelationContext>();
 builder.Services.AddScoped<ICurrentEmployeeProvider, CurrentEmployeeProvider>();
@@ -94,11 +100,26 @@ builder.Services.AddAuthentication(options =>
                 detail: "Sign in with an active account to access this resource.",
                 instance: context.Request.Path).ExecuteAsync(context.HttpContext);
         },
+        OnForbidden = context => Results.Problem(statusCode: StatusCodes.Status403Forbidden,
+            title: "Forbidden", detail: "Your current account permissions do not allow this operation.",
+            instance: context.Request.Path).ExecuteAsync(context.HttpContext),
         OnTokenValidated = async context =>
         {
             var access = context.HttpContext.RequestServices.GetRequiredService<IAccountAccessService>();
             if (!await access.IsActiveAsync(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier), context.HttpContext.RequestAborted))
+            {
                 context.Fail("This account is inactive or unavailable.");
+                return;
+            }
+            // Role claims are only an early gate; handlers repeat live checks inside database protection.
+            var roles = context.HttpContext.RequestServices.GetRequiredService<IEmployeeRoleLookupService>();
+            var principal = context.Principal!;
+            var currentRoles = await roles.GetRolesByIdentityUserIdAsync(
+                principal.FindFirstValue(ClaimTypes.NameIdentifier)!, context.HttpContext.RequestAborted);
+            foreach (var identity in principal.Identities)
+                foreach (var claim in identity.FindAll(identity.RoleClaimType).ToArray()) identity.RemoveClaim(claim);
+            var primaryIdentity = (ClaimsIdentity)principal.Identity!;
+            primaryIdentity.AddClaims(currentRoles.Select(role => new Claim(primaryIdentity.RoleClaimType, role)));
         }
     };
     o.TokenValidationParameters = new TokenValidationParameters
@@ -108,7 +129,10 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidateLifetime = false,
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
+        RequireSignedTokens = true,
+        ClockSkew = TimeSpan.FromSeconds(JwtClockSkewSeconds),
         ValidateIssuerSigningKey = true
     };
 });

@@ -1,3 +1,6 @@
+using HRFlow.Application.Interfaces;
+using HRFlow.Application.Services;
+using HRFlow.Domain.Models.Employees;
 using HRFlow.Domain.Enums;
 using HRFlow.Domain.Interfaces;
 using MediatR;
@@ -24,13 +27,17 @@ public sealed class GetLeaveBalancesQueryHandler
     : IRequestHandler<GetLeaveBalancesQuery, IReadOnlyList<LeaveBalanceDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILeaveReportingReadTransaction _readTransaction;
+    private readonly CurrentAccountAuthorization _authorization;
 
     /// <summary>
     /// Creates the handler with access to leave policies and approved leave history.
     /// </summary>
-    public GetLeaveBalancesQueryHandler(IApplicationDbContext context)
+    public GetLeaveBalancesQueryHandler(IApplicationDbContext context, ILeaveReportingReadTransaction readTransaction, CurrentAccountAuthorization authorization)
     {
         _context = context;
+        _readTransaction = readTransaction;
+        _authorization = authorization;
     }
 
     /// <summary>
@@ -40,37 +47,43 @@ public sealed class GetLeaveBalancesQueryHandler
         GetLeaveBalancesQuery request,
         CancellationToken cancellationToken)
     {
-        var leaveTypes = await _context.LeaveTypes
-            .AsNoTracking()
-            .Include(leaveType => leaveType.LeavePolicy)
-            .OrderBy(leaveType => leaveType.Name)
-            .ToListAsync(cancellationToken);
+        return await _readTransaction.ExecuteAsync<IReadOnlyList<LeaveBalanceDto>>(async token =>
+        {
+            cancellationToken = token;
+            await _authorization.RequireEmployeeAsync(request.EmployeeId, [EmployeeRoles.Employee, EmployeeRoles.Manager], cancellationToken);
 
-        var approvedRequests = await _context.LeaveRequests
-            .AsNoTracking()
-            .Where(leaveRequest =>
-                leaveRequest.EmployeeId == request.EmployeeId
-                && leaveRequest.Status == LeaveRequestStatus.Approved)
-            .ToListAsync(cancellationToken);
+            var leaveTypes = await _context.LeaveTypes
+                .AsNoTracking()
+                .Include(leaveType => leaveType.LeavePolicy)
+                .OrderBy(leaveType => leaveType.Name)
+                .ToListAsync(cancellationToken);
 
-        return leaveTypes
-            .Select(leaveType =>
-            {
-                var approvedRequestsForType = approvedRequests
-                    .Where(leaveRequest => leaveRequest.LeaveTypeId == leaveType.Id);
-                var balance = LeaveBalanceCalculator.Calculate(
-                    leaveType.LeavePolicy.DefaultBalance,
-                    approvedRequestsForType);
+            var approvedRequests = await _context.LeaveRequests
+                .AsNoTracking()
+                .Where(leaveRequest =>
+                    leaveRequest.EmployeeId == request.EmployeeId
+                    && leaveRequest.Status == LeaveRequestStatus.Approved)
+                .ToListAsync(cancellationToken);
 
-                return new LeaveBalanceDto
+            return leaveTypes
+                .Select(leaveType =>
                 {
-                    LeaveTypeId = leaveType.Id,
-                    LeaveTypeName = leaveType.Name,
-                    EntitledDays = balance.EntitledDays,
-                    UsedDays = balance.UsedDays,
-                    RemainingDays = balance.RemainingDays
-                };
-            })
-            .ToList();
+                    var approvedRequestsForType = approvedRequests
+                        .Where(leaveRequest => leaveRequest.LeaveTypeId == leaveType.Id);
+                    var balance = LeaveBalanceCalculator.Calculate(
+                        leaveType.LeavePolicy.DefaultBalance,
+                        approvedRequestsForType);
+
+                    return new LeaveBalanceDto
+                    {
+                        LeaveTypeId = leaveType.Id,
+                        LeaveTypeName = leaveType.Name,
+                        EntitledDays = balance.EntitledDays,
+                        UsedDays = balance.UsedDays,
+                        RemainingDays = balance.RemainingDays
+                    };
+                })
+                .ToList();
+        }, cancellationToken);
     }
 }

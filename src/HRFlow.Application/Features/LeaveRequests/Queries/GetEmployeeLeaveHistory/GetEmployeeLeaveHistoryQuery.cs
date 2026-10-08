@@ -1,3 +1,6 @@
+using HRFlow.Application.Interfaces;
+using HRFlow.Application.Services;
+using HRFlow.Domain.Models.Employees;
 using HRFlow.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -24,13 +27,17 @@ public sealed class GetEmployeeLeaveHistoryQueryHandler
     : IRequestHandler<GetEmployeeLeaveHistoryQuery, IReadOnlyList<LeaveRequestHistoryDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILeaveReportingReadTransaction _readTransaction;
+    private readonly CurrentAccountAuthorization _authorization;
 
     /// <summary>
     /// Creates the handler with the database context used to read the employee's requests and audits.
     /// </summary>
-    public GetEmployeeLeaveHistoryQueryHandler(IApplicationDbContext context)
+    public GetEmployeeLeaveHistoryQueryHandler(IApplicationDbContext context, ILeaveReportingReadTransaction readTransaction, CurrentAccountAuthorization authorization)
     {
         _context = context;
+        _readTransaction = readTransaction;
+        _authorization = authorization;
     }
 
     /// <summary>
@@ -41,34 +48,40 @@ public sealed class GetEmployeeLeaveHistoryQueryHandler
         GetEmployeeLeaveHistoryQuery request,
         CancellationToken cancellationToken)
     {
-        return await _context.LeaveRequests
-            .AsNoTracking()
-            .Where(leaveRequest => leaveRequest.EmployeeId == request.EmployeeId)
-            .OrderByDescending(leaveRequest => leaveRequest.StartDate)
-            .ThenByDescending(leaveRequest => leaveRequest.Id)
-            .Select(leaveRequest => new LeaveRequestHistoryDto
-            {
-                Id = leaveRequest.Id,
-                LeaveTypeName = leaveRequest.LeaveType.Name,
-                StartDate = leaveRequest.StartDate,
-                EndDate = leaveRequest.EndDate,
-                Status = leaveRequest.Status.ToString(),
-                ProcessedOn = leaveRequest.ProcessedOn,
-                DecisionHistory = leaveRequest.AuditEntries
-                    .OrderBy(auditEntry => auditEntry.Timestamp)
-                    .ThenBy(auditEntry => auditEntry.Id)
-                    .Select(auditEntry => new LeaveRequestDecisionDto
-                    {
-                        Action = auditEntry.Action,
-                        ActorFullName = auditEntry.Actor.FullName,
-                        Timestamp = DateTime.SpecifyKind(auditEntry.Timestamp, DateTimeKind.Utc),
-                        OldStatus = auditEntry.OldStatus.HasValue
-                            ? auditEntry.OldStatus.Value.ToString()
-                            : null,
-                        NewStatus = auditEntry.NewStatus.ToString()
-                    })
-                    .ToList()
-            })
-            .ToListAsync(cancellationToken);
+        return await _readTransaction.ExecuteAsync<IReadOnlyList<LeaveRequestHistoryDto>>(async token =>
+        {
+            cancellationToken = token;
+            await _authorization.RequireEmployeeAsync(request.EmployeeId, [EmployeeRoles.Employee, EmployeeRoles.Manager], cancellationToken);
+
+            return await _context.LeaveRequests
+                .AsNoTracking()
+                .Where(leaveRequest => leaveRequest.EmployeeId == request.EmployeeId)
+                .OrderByDescending(leaveRequest => leaveRequest.StartDate)
+                .ThenByDescending(leaveRequest => leaveRequest.Id)
+                .Select(leaveRequest => new LeaveRequestHistoryDto
+                {
+                    Id = leaveRequest.Id,
+                    LeaveTypeName = leaveRequest.LeaveType.Name,
+                    StartDate = leaveRequest.StartDate,
+                    EndDate = leaveRequest.EndDate,
+                    Status = leaveRequest.Status.ToString(),
+                    ProcessedOn = leaveRequest.ProcessedOn,
+                    DecisionHistory = leaveRequest.AuditEntries
+                        .OrderBy(auditEntry => auditEntry.Timestamp)
+                        .ThenBy(auditEntry => auditEntry.Id)
+                        .Select(auditEntry => new LeaveRequestDecisionDto
+                        {
+                            Action = auditEntry.Action,
+                            ActorFullName = auditEntry.Actor.FullName,
+                            Timestamp = DateTime.SpecifyKind(auditEntry.Timestamp, DateTimeKind.Utc),
+                            OldStatus = auditEntry.OldStatus.HasValue
+                                ? auditEntry.OldStatus.Value.ToString()
+                                : null,
+                            NewStatus = auditEntry.NewStatus.ToString()
+                        })
+                        .ToList()
+                })
+                .ToListAsync(cancellationToken);
+        }, cancellationToken);
     }
 }
