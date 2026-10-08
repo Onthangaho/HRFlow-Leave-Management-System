@@ -14,11 +14,28 @@ namespace HRFlow.Application.Features.LeaveConfiguration;
 public sealed class LeaveConfigurationService(
     IApplicationDbContext context,
     ILeaveConfigurationTransaction transaction,
+    ILeaveReportingReadTransaction readTransaction,
     IEmployeeRoleLookupService roles,
     ILogger<LeaveConfigurationService> logger)
 {
-    /// <summary>Returns management snapshots with current rules and deletion consequences.</summary>
-    public async Task<IReadOnlyList<LeaveTypeManagementDto>> GetTypesAsync(Guid? id, CancellationToken token)
+    /// <summary>Checks current HR permission in the same deferred snapshot as type/reference projections.</summary>
+    public Task<IReadOnlyList<LeaveTypeManagementDto>> GetTypesAsync(Guid actor, Guid? id, CancellationToken token) =>
+        readTransaction.ExecuteAsync(async protectedToken =>
+        {
+            await EnsureHrAsync(actor, protectedToken);
+            return await ReadTypesAsync(id, protectedToken);
+        }, token);
+
+    /// <summary>Checks current HR permission in the same deferred snapshot as shared-policy projections.</summary>
+    public Task<IReadOnlyList<PolicyManagementDto>> GetPoliciesAsync(Guid actor, Guid? id, CancellationToken token) =>
+        readTransaction.ExecuteAsync(async protectedToken =>
+        {
+            await EnsureHrAsync(actor, protectedToken);
+            return await ReadPoliciesAsync(id, protectedToken);
+        }, token);
+
+    /// <summary>Projects within the caller's existing protection; writes must not open a nested read transaction.</summary>
+    private async Task<IReadOnlyList<LeaveTypeManagementDto>> ReadTypesAsync(Guid? id, CancellationToken token)
     {
         var types = await context.LeaveTypes.AsNoTracking()
             .Where(type => !id.HasValue || type.Id == id)
@@ -34,7 +51,7 @@ public sealed class LeaveConfigurationService(
     }
 
     /// <summary>Shows all linked types so HR can understand the reach of a policy edit.</summary>
-    public async Task<IReadOnlyList<PolicyManagementDto>> GetPoliciesAsync(Guid? id, CancellationToken token)
+    private async Task<IReadOnlyList<PolicyManagementDto>> ReadPoliciesAsync(Guid? id, CancellationToken token)
     {
         var policies = await context.LeavePolicies.AsNoTracking()
             .Where(policy => !id.HasValue || policy.Id == id)
@@ -70,7 +87,7 @@ public sealed class LeaveConfigurationService(
                 context.LeavePolicies.Add(policy);
             }
             await context.SaveChangesAsync(protectedToken);
-            result = (await GetPoliciesAsync(policy.Id, protectedToken)).Single();
+            result = (await ReadPoliciesAsync(policy.Id, protectedToken)).Single();
         }, token);
         logger.LogInformation("Leave policy saved. PolicyId: {PolicyId}; ActorIdentityUserId: {ActorIdentityUserId}", result!.Id, actor);
         return result;
@@ -99,7 +116,7 @@ public sealed class LeaveConfigurationService(
                 throw new WriteConflictException("A leave type with this name already exists. Choose another name.");
             if (!id.HasValue) context.LeaveTypes.Add(type);
             await context.SaveChangesAsync(protectedToken);
-            result = (await GetTypesAsync(type.Id, protectedToken)).Single();
+            result = (await ReadTypesAsync(type.Id, protectedToken)).Single();
         }, token);
         logger.LogInformation("Leave type saved. LeaveTypeId: {LeaveTypeId}; ActorIdentityUserId: {ActorIdentityUserId}", result!.Id, actor);
         return result;

@@ -1,6 +1,7 @@
 import axios, {
   AxiosError,
   AxiosHeaders,
+  CanceledError,
   type InternalAxiosRequestConfig,
 } from 'axios';
 import type {
@@ -30,6 +31,7 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _sessionVersion?: number;
 }
 
+/** Supplies live session refs so delayed responses cannot operate against a replacement login. */
 export interface AuthInterceptorControls {
   getAccessToken: () => string | null;
   getSessionVersion: () => number;
@@ -75,7 +77,8 @@ export async function refresh(
 }
 
 /**
- * Adds bearer injection and a single 401 retry; retry is skipped for /auth/refresh to avoid loops.
+ * Adds at most one same-session 401 refresh/retry while rejecting stale completions.
+ * Explicitly non-replayable operations and refresh itself never enter authentication replay.
  */
 export function configureAuthInterceptors(
   controls: AuthInterceptorControls,
@@ -132,12 +135,17 @@ export function configureAuthInterceptors(
 
   const requestInterceptorId = authHttpClient.interceptors.request.use(
     (config) => {
+      const request = config as RetryableRequestConfig;
+      const sessionVersion = controls.getSessionVersion();
+      // A retry retains its initiating epoch; never inject a new account's token into an old operation.
+      if (request._sessionVersion !== undefined && request._sessionVersion !== sessionVersion) {
+        throw new CanceledError('Authentication session changed.', config);
+      }
+      request._sessionVersion = sessionVersion;
       const token = controls.getAccessToken();
       if (!token) {
         return config;
       }
-
-      (config as RetryableRequestConfig)._sessionVersion = controls.getSessionVersion();
 
       if (config.headers instanceof AxiosHeaders) {
         config.headers.set('Authorization', `Bearer ${token}`);
@@ -149,12 +157,23 @@ export function configureAuthInterceptors(
 
       return config;
     },
+    (error) => { throw error; },
+    { synchronous: true },
   );
 
   const responseInterceptorId = authHttpClient.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      if ((response.config as RetryableRequestConfig)._sessionVersion !== controls.getSessionVersion()) {
+        throw new CanceledError('Authentication session changed.', response.config);
+      }
+      return response;
+    },
     async (error: AxiosError) => {
       const originalRequest = error.config as RetryableRequestConfig | undefined;
+      if (originalRequest?._sessionVersion !== undefined
+        && originalRequest._sessionVersion !== controls.getSessionVersion()) {
+        return Promise.reject(new CanceledError('Authentication session changed.', originalRequest));
+      }
       if (!originalRequest || error.response?.status !== 401) {
         return Promise.reject(error);
       }

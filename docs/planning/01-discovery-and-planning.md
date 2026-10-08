@@ -1,5 +1,7 @@
 # HRFlow — Phase 1: Discovery & Planning
 
+> Current-state update: PR #99 merged on 8 October 2026 after this planning baseline. JWT expiry/current-permission protection is now shipped; #74 stays open for review. Begin the next phase with #75 qualified requirements review and the explicit #76 regression-convention decision; implementation of other roadmap slices needs separate authorization.
+
 **Status:** Reconciled 8 October 2026 · **Owner:** Solo Developer (Product Owner + Engineer)
 
 The original one-week brief is historical context. Current main includes merged PR #73; the

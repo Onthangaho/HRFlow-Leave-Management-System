@@ -1,3 +1,5 @@
+using HRFlow.Application.Services;
+using HRFlow.Domain.Models.Employees;
 using HRFlow.Application.Exceptions;
 using HRFlow.Application.Interfaces;
 using HRFlow.Domain.Enums;
@@ -11,16 +13,19 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.CancelLeaveRequest;
 public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLeaveRequestCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly CurrentAccountAuthorization _authorization;
     private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveDecisionTransaction _decisionTransaction;
 
     /// <summary>Shares the scoped persistence services with the decision transaction.</summary>
     public CancelLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        CurrentAccountAuthorization authorization,
         IRequestCorrelationContext correlation,
         ILeaveDecisionTransaction decisionTransaction)
     {
         _context = context;
+        _authorization = authorization;
         _correlation = correlation;
         _decisionTransaction = decisionTransaction;
     }
@@ -31,8 +36,7 @@ public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLea
 
     private async Task DecideAsync(CancelLeaveRequestCommand request, CancellationToken cancellationToken)
     {
-        if (!await _context.Employees.AnyAsync(e => e.Id == request.EmployeeId && e.IsActive, cancellationToken))
-            throw new ForbiddenException("Inactive employees cannot cancel leave requests.");
+        await _authorization.RequireEmployeeAsync(request.EmployeeId, [EmployeeRoles.Employee, EmployeeRoles.Manager], cancellationToken);
         var leaveRequest = await _context.LeaveRequests
             .SingleOrDefaultAsync(current => current.Id == request.LeaveRequestId, cancellationToken)
             ?? throw new NotFoundException("Leave request was not found.");

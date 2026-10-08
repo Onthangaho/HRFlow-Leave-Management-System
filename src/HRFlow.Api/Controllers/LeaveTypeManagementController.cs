@@ -14,11 +14,11 @@ public sealed class LeaveTypeManagementController(LeaveConfigurationService serv
 {
     /// <summary>Returns edit snapshots and historical reference counts for future HR forms.</summary>
     [HttpGet]
-    public async Task<IActionResult> List(CancellationToken token) => Ok(await service.GetTypesAsync(null, token));
+    public async Task<IActionResult> List(CancellationToken token) => Ok(await service.GetTypesAsync(Actor(), null, token));
 
     /// <summary>Reloads one type after an edit conflict.</summary>
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Detail(Guid id, CancellationToken token) => Ok((await service.GetTypesAsync(id, token)).Single());
+    public async Task<IActionResult> Detail(Guid id, CancellationToken token) => Ok((await service.GetTypesAsync(Actor(), id, token)).Single());
 
     /// <summary>Creates a type with its explicit policy; the acting account comes only from authentication.</summary>
     [HttpPost]

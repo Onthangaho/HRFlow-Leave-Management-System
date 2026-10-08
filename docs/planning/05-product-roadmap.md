@@ -1,5 +1,7 @@
 # HRFlow phased South African product roadmap
 
+> Current-state update: PR #99 merged on 8 October 2026. Phase 0 item #74 is implemented and evidenced in the endpoint inventory and JWT verification report, but the issue remains open for independent review. References below to disabled lifetime validation describe the original PR #73 planning baseline, not current main. Next recommended gates are #75 legal review and #76 regression-convention approval. This PR publishes documentation only and implements no product features.
+
 Planning baseline: **8 October 2026**, main `f47e20c` after merged PR #73.
 Umbrella: [#98 HRFlow South African workplace product roadmap](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/98).
 This is the explicitly authorised expansion of the original portfolio MVP, not a claim that

@@ -1,3 +1,5 @@
+using HRFlow.Application.Services;
+using HRFlow.Domain.Models.Employees;
 using HRFlow.Domain.Interfaces;
 using HRFlow.Domain.Entities;
 using HRFlow.Application.Features.LeaveRequests;
@@ -14,6 +16,7 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveRequestCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
+    private readonly CurrentAccountAuthorization _authorization;
     private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveApprovalAuthorizationService _leaveApprovalAuthorizationService;
     private readonly ILeaveConfigurationTransaction _transaction;
@@ -21,11 +24,13 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
     /// <summary>Shares the context and database reservation used by policy management and approvals.</summary>
     public SubmitLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        CurrentAccountAuthorization authorization,
         IRequestCorrelationContext correlation,
         ILeaveApprovalAuthorizationService leaveApprovalAuthorizationService,
         ILeaveConfigurationTransaction transaction)
     {
         _context = context;
+        _authorization = authorization;
         _correlation = correlation;
         _leaveApprovalAuthorizationService = leaveApprovalAuthorizationService;
         _transaction = transaction;
@@ -45,6 +50,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
             .SingleOrDefaultAsync(employee => employee.Id == request.EmployeeId, cancellationToken)
             ?? throw new NotFoundException("Employee was not found.");
 
+        await _authorization.RequireEmployeeAsync(request.EmployeeId, [EmployeeRoles.Employee, EmployeeRoles.Manager], cancellationToken);
         await _leaveApprovalAuthorizationService.EnsureEmployeeHasValidManagerAsync(employee, cancellationToken);
 
         var leaveType = await _context.LeaveTypes

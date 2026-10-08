@@ -1,40 +1,23 @@
+using System.Security.Claims;
+using HRFlow.Application.Exceptions;
+using HRFlow.Application.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HRFlow.Api.Controllers;
 
-/// <summary>
-/// Provides endpoints for managing and retrieving ASP.NET Core Identity roles.
-/// </summary>
+/// <summary>Delegates protected reference-data reads and current permission checks to Application.</summary>
 [ApiController]
+[Authorize(Policy = "HrAdministratorOnly")]
 [Route("api/v1/[controller]")]
-public class RolesController : ControllerBase
+public sealed class RolesController(ReferenceDataService service) : ControllerBase
 {
-    private readonly RoleManager<IdentityRole<Guid>> _roleManager;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RolesController"/> class.
-    /// </summary>
-    /// <param name="roleManager">The role manager for querying Identity roles.</param>
-    public RolesController(RoleManager<IdentityRole<Guid>> roleManager)
-    {
-        _roleManager = roleManager;
-    }
-
-    /// <summary>
-    /// Retrieves all available roles in the system.
-    /// </summary>
-    /// <returns>A list of all role names.</returns>
-    /// <remarks>
-    /// This endpoint is restricted to users with the HR Administrator role.
-    /// </remarks>
+    /// <summary>Preserves the client selector contract without querying persistence in the controller.</summary>
     [HttpGet]
-    [Authorize(Roles = "HR Administrator")]
-    public async Task<IActionResult> GetAllRoles()
+    public async Task<IActionResult> GetAllRoles(CancellationToken cancellationToken)
     {
-        var roles = await _roleManager.Roles.Select(r => new { r.Name }).ToListAsync();
-        return Ok(roles);
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor))
+            throw new ForbiddenException("A valid authenticated account is required.");
+        return Ok(await service.GetRolesAsync(actor, cancellationToken));
     }
 }

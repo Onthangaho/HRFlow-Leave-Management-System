@@ -1,3 +1,6 @@
+using HRFlow.Application.Interfaces;
+using HRFlow.Application.Services;
+using HRFlow.Domain.Models.Employees;
 using HRFlow.Domain.Interfaces;
 using HRFlow.Domain.Interfaces.Services;
 using MediatR;
@@ -9,42 +12,51 @@ namespace HRFlow.Application.Features.Employees.Queries.GetEmployees;
 public sealed class GetEmployeesQuery : IRequest<IReadOnlyList<GetEmployeeDto>>
 {
     public Guid? EmployeeId { get; set; }
+    /// <summary>The server-derived Identity actor, not the employee being edited.</summary>
+    public Guid ActorIdentityId { get; set; }
 }
 
 /// <summary>Combines profile/reporting IDs with complete Identity roles so edits preserve existing capabilities.</summary>
 public sealed class GetEmployeesQueryHandler(
-    IApplicationDbContext context, IEmployeeRoleLookupService roleLookup) : IRequestHandler<GetEmployeesQuery, IReadOnlyList<GetEmployeeDto>>
+    IApplicationDbContext context, IEmployeeRoleLookupService roleLookup,
+    ILeaveReportingReadTransaction transaction, CurrentAccountAuthorization authorization) : IRequestHandler<GetEmployeesQuery, IReadOnlyList<GetEmployeeDto>>
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<GetEmployeeDto>> Handle(GetEmployeesQuery request, CancellationToken cancellationToken)
     {
-        var employees = await context.Employees.AsNoTracking()
-            .Include(e => e.Department).Include(e => e.Manager)
-            .Where(e => !request.EmployeeId.HasValue || e.Id == request.EmployeeId)
-            .OrderBy(e => e.FullName).ToListAsync(cancellationToken);
-        var actorIds = employees.Where(e => e.DeactivatedById.HasValue)
-            .Select(e => e.DeactivatedById!.Value).Distinct().ToArray();
-        var actorNames = await context.Employees.AsNoTracking().Where(e => actorIds.Contains(e.Id))
-            .ToDictionaryAsync(e => e.Id, e => e.FullName, cancellationToken);
-        var results = new List<GetEmployeeDto>();
-        foreach (var employee in employees)
+        return await transaction.ExecuteAsync<IReadOnlyList<GetEmployeeDto>>(async token =>
         {
-            results.Add(new GetEmployeeDto
+            cancellationToken = token;
+            await authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.HrAdministrator], token);
+
+            var employees = await context.Employees.AsNoTracking()
+                .Include(e => e.Department).Include(e => e.Manager)
+                .Where(e => !request.EmployeeId.HasValue || e.Id == request.EmployeeId)
+                .OrderBy(e => e.FullName).ToListAsync(cancellationToken);
+            var actorIds = employees.Where(e => e.DeactivatedById.HasValue)
+                .Select(e => e.DeactivatedById!.Value).Distinct().ToArray();
+            var actorNames = await context.Employees.AsNoTracking().Where(e => actorIds.Contains(e.Id))
+                .ToDictionaryAsync(e => e.Id, e => e.FullName, cancellationToken);
+            var results = new List<GetEmployeeDto>();
+            foreach (var employee in employees)
             {
-                Id = employee.Id, FullName = employee.FullName, Email = employee.Email,
-                DepartmentId = employee.DepartmentId, DepartmentName = employee.Department.Name,
-                ManagerId = employee.ManagerId, ManagerName = employee.Manager?.FullName,
-                Version = employee.Version, IsActive = employee.IsActive,
-                IdentityUserId = employee.IdentityUserId,
-                // SQLite retains the UTC value but not DateTime.Kind; emit an explicit UTC offset for the UI.
-                DeactivatedAtUtc = employee.DeactivatedAtUtc.HasValue
-                    ? DateTime.SpecifyKind(employee.DeactivatedAtUtc.Value, DateTimeKind.Utc) : null,
-                DeactivationReason = employee.DeactivationReason,
-                DeactivatedByName = employee.DeactivatedById.HasValue
-                    ? actorNames.GetValueOrDefault(employee.DeactivatedById.Value) : null,
-                Roles = await roleLookup.GetRolesByIdentityUserIdAsync(employee.IdentityUserId, cancellationToken)
-            });
-        }
-        return results;
+                results.Add(new GetEmployeeDto
+                {
+                    Id = employee.Id, FullName = employee.FullName, Email = employee.Email,
+                    DepartmentId = employee.DepartmentId, DepartmentName = employee.Department.Name,
+                    ManagerId = employee.ManagerId, ManagerName = employee.Manager?.FullName,
+                    Version = employee.Version, IsActive = employee.IsActive,
+                    IdentityUserId = employee.IdentityUserId,
+                    // SQLite retains the UTC value but not DateTime.Kind; emit an explicit UTC offset for the UI.
+                    DeactivatedAtUtc = employee.DeactivatedAtUtc.HasValue
+                        ? DateTime.SpecifyKind(employee.DeactivatedAtUtc.Value, DateTimeKind.Utc) : null,
+                    DeactivationReason = employee.DeactivationReason,
+                    DeactivatedByName = employee.DeactivatedById.HasValue
+                        ? actorNames.GetValueOrDefault(employee.DeactivatedById.Value) : null,
+                    Roles = await roleLookup.GetRolesByIdentityUserIdAsync(employee.IdentityUserId, cancellationToken)
+                });
+            }
+            return results;
+        }, cancellationToken);
     }
 }
