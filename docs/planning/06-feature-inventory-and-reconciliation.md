@@ -1,3 +1,5 @@
+> 9 October 2026 update: PR #103 is merged. #80 password change/session revocation is locally implemented for independent review on feat/password-change-session-revocation, prepared for PR review and not merged or deployed. See [ADR 0012](../adr/0012-password-change-session-revocation.md) and [executed verification/limitations](../verification/password-change-session-revocation.md). Own-account change revokes prior JWT/refresh generations atomically; broader profile/preferences remain planned. Earlier implementation notes below are dated historical status.
+
 # Feature inventory and backlog reconciliation
 
 > Current-state update: PR #99 merged on 8 October 2026. Its JWT lifetime validation, explicit 30-second skew, current active Identity permission checks and session-safe bounded refresh supersede the authentication gaps recorded at the PR #73 baseline below. See ../security/endpoint-authorization-inventory.md and ../verification/jwt-current-permissions.md. #74 remains open; historical verification is not rerun or replaced here.

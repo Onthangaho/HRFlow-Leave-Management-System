@@ -8,6 +8,8 @@ namespace HRFlow.Domain.Entities
     {
         /// <summary>Only newly provisioned accounts require activation; legacy eligibility is preserved.</summary>
         public bool RequiresActivation { get; set; }
+        /// <summary>Persisted bearer generation; password changes revoke every previously issued generation.</summary>
+        public Guid CredentialVersion { get; set; } = Guid.NewGuid();
         /// <summary>Purpose-bound opaque invitation hash; the raw secret exists only in private delivery.</summary>
         public string? ActivationTokenHash { get; set; }
         /// <summary>Exclusive UTC expiry; no invitation is accepted at or after this instant.</summary>

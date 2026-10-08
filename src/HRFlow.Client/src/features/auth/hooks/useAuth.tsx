@@ -16,6 +16,10 @@ const roleClaimType =
   'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
 
 interface AuthContextValue {
+  /** Generic completion notice contains no credentials and ends at the next login boundary. */
+  passwordChanged: boolean;
+  /** Clears the initiating session after a confirmed committed change. */
+  completePasswordChange: () => void;
   /** Logout/relogin epochs differ even for the same account; token refresh retains the epoch. */
   sessionVersion: number;
   /** Generic completion survives the route guard redirect, but is cleared by the next session. */
@@ -69,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [selfDeactivationCount, setSelfDeactivationCount] = useState<number | null>(null);
+  const [passwordChanged, setPasswordChanged] = useState(false);
   const sessionRef = useRef<AuthSession | null>(null);
   const sessionVersionRef = useRef(0);
   const refreshInFlightRef = useRef<{
@@ -81,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextUserId = newSession?.user.id;
 
     if (forceBoundary || previousUserId !== nextUserId) {
+      setPasswordChanged(false);
       setSelfDeactivationCount(null);
       sessionVersionRef.current += 1;
       void queryClient.cancelQueries();
@@ -94,6 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const completeSelfDeactivation = useCallback((cancelledRequestCount: number) => {
     updateSession(null);
     setSelfDeactivationCount(cancelledRequestCount);
+  }, [updateSession]);
+
+  const completePasswordChange = useCallback(() => {
+    updateSession(null, true);
+    setPasswordChanged(true);
   }, [updateSession]);
 
   const clearSession = useCallback(() => {
@@ -187,6 +198,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getSessionVersion = useCallback(() => sessionVersionRef.current, []);
   const value = useMemo<AuthContextValue>(
     () => ({
+      passwordChanged,
+      completePasswordChange,
       sessionVersion: sessionVersionRef.current,
       selfDeactivationCount,
       completeSelfDeactivation,
@@ -198,7 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login: loginUser,
       logout: clearSession,
     }),
-    [clearSession, completeSelfDeactivation, getSessionVersion, loginMutation.isPending, loginUser, selfDeactivationCount, session],
+    [passwordChanged, completePasswordChange, clearSession, completeSelfDeactivation, getSessionVersion, loginMutation.isPending, loginUser, selfDeactivationCount, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
