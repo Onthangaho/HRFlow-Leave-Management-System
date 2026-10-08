@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/hooks/useAuth';
 import { useConfigurationWrite, useLeaveConfiguration } from './api';
 import { LeaveTypeForm, PolicyForm } from './ConfigurationForms';
@@ -57,13 +56,13 @@ export function LeaveConfigurationPage() {
   const actions = { busy: write.isPending, error: write.error, reloadError, onReload: () => void reload(),
     onCancel: () => { setEditing(null); setNestedPolicy(false); write.reset(); setReloadError(''); } };
   const rows = active.data?.filter(row => row.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) ?? [];
-  return <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6">
-    <header className="ui-panel"><Link className="text-sm font-semibold text-indigo-700 underline" to="/">Back to dashboard</Link>
+  return <div className="workspace-page space-y-6">
+    <section className="page-intro ui-panel">
       <div className="mt-5 flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700">HR administration</p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-900">Leave policies</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Organize leave types and the rules they share. Keep entitlements and approval rules clear.</p></div>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Organize leave types and the rules they share. Keep entitlements and approval rules clear.</p></div>
         <button className="ui-primary" disabled={!!editing || !!deleting || write.isPending || active.isPending || !!active.error} onClick={() => open({ kind: tab, record: null })}>{tab === 'leave-types' ? 'New leave type' : 'New policy'}</button>
       </div>
-    </header>
+    </section>
     <nav aria-label="Leave configuration sections" className="flex gap-2 rounded-xl border border-slate-200 bg-white p-2">
       {(['leave-types', 'leave-policies'] as const).map(value => <button key={value} type="button" aria-current={tab === value ? 'page' : undefined}
         className={tab === value ? 'ui-primary' : 'ui-secondary'} onClick={() => { setTab(value); setSearch(''); }}>{value === 'leave-types' ? 'Leave types' : 'Policies'}</button>)}
@@ -97,7 +96,7 @@ export function LeaveConfigurationPage() {
               <p className="mt-2">{isType ? `${row.requestCount} requests (all statuses)` : `${row.linkedLeaveTypes.reduce((sum, type) => sum + type.requestCount, 0)} requests across linked types`}</p>
               {!row.canDelete && <p className="mt-1 text-amber-800">{isType ? 'Request history prevents deletion.' : 'Linked leave types prevent deletion.'}</p>}</div>
             <div className="flex items-start gap-2"><button className="ui-secondary" disabled={!!editing || !!deleting} onClick={() => open(isType ? { kind: 'leave-types', record: row } : { kind: 'leave-policies', record: row })}>Edit<span className="sr-only"> {row.name}</span></button>
-              <button className="ui-secondary text-rose-700" disabled={!!editing || !!deleting} onClick={event => { deleteOpener.current = event.currentTarget; setDeleting(isType ? { kind: 'leave-types', record: row } : { kind: 'leave-policies', record: row }); write.reset(); setNotice(''); }}>Delete<span className="sr-only"> {row.name}</span></button></div>
+              <button className="ui-danger" disabled={!!editing || !!deleting} onClick={event => { deleteOpener.current = event.currentTarget; setDeleting(isType ? { kind: 'leave-types', record: row } : { kind: 'leave-policies', record: row }); write.reset(); setNotice(''); }}>Delete<span className="sr-only"> {row.name}</span></button></div>
           </li>;
         })}</ul>}
     </section>
@@ -110,5 +109,5 @@ export function LeaveConfigurationPage() {
       {write.error && <div role="alert" className="ui-error">{problemMessage(write.error)}{isConflict(write.error) && <p className="mt-2">Cancel and refresh the list before starting a new deletion. This confirmation retains its original version.</p>}<button type="button" className="mt-3 ui-secondary" disabled={write.isPending} onClick={() => { setDeleting(null); write.reset(); void types.refetch(); void policies.refetch(); }}>Cancel deletion and reload lists</button></div>}
     </ConfirmationDialog>}
     <button data-focus-fallback type="button" className="ui-secondary" disabled={!!editing || !!deleting || types.isFetching || policies.isFetching} onClick={() => { void types.refetch(); void policies.refetch(); }}>Refresh lists</button>
-  </main>;
+  </div>;
 }

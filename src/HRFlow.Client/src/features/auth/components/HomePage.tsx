@@ -1,76 +1,25 @@
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth.tsx';
+import { navigationFor } from '../../../components/layout/navigation';
+import { useAuth } from '../hooks/useAuth';
 
-/**
- * Acts as a simple protected landing page to demonstrate auth-state rendering and role-gated navigation.
- */
+/** Honest quick actions for current capabilities; later dashboards supply API-backed metrics. */
 export function HomePage() {
-  const { user, logout } = useAuth();
-  const canUsePersonalLeave = user?.roles.some((role) => role === 'Employee' || role === 'Manager');
-  const canReviewLeaveRequests = user?.roles.includes('Manager');
-
-  return (
-    <main className="mx-auto mt-16 w-full max-w-3xl space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      <header className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Protected route
-        </p>
-        <h1 className="text-3xl font-bold text-slate-900">HRFlow Dashboard</h1>
-      </header>
-
-      <section className="rounded-lg bg-slate-50 p-4">
-        <p className="text-sm text-slate-600">Signed in as</p>
-        <p className="text-lg font-semibold text-slate-900">{user?.email}</p>
-        <p className="mt-2 text-sm text-slate-700">
-          Roles: {user?.roles.length ? user.roles.join(', ') : 'none'}
-        </p>
-      </section>
-
-      <nav className="flex flex-wrap gap-3">
-        {user?.roles.includes('HR Administrator') && <Link to="/admin/leave-reports" className="ui-secondary">Leave reports</Link>}
-        {canReviewLeaveRequests && <Link to="/team-leave" className="ui-secondary">Team leave</Link>}
-        {canUsePersonalLeave && <Link to="/leave-requests/new" className="ui-primary">Request leave</Link>}
-        {user?.roles.includes('HR Administrator') && <Link to="/admin/leave-policies" className="ui-primary">Leave policies</Link>}
-        {canUsePersonalLeave && (
-          <Link
-            to="/leave-requests/history"
-            className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
-          >
-            My leave
-          </Link>
-        )}
-        {user?.roles.includes('HR Administrator') && (
-          <Link
-            to="/admin/employees"
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-slate-100"
-          >
-            Employee directory
-          </Link>
-        )}
-        {canReviewLeaveRequests && (
-          <Link
-            to="/leave-requests/approvals"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
-          >
-            Review leave requests
-          </Link>
-        )}
-        {user?.roles.includes('HR Administrator') && (
-          <Link
-            to="/admin/leave-monitoring"
-            className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100"
-          >
-            Monitor pending leave
-          </Link>
-        )}
-        <button
-          type="button"
-          onClick={logout}
-          className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500"
-        >
-          Sign out
-        </button>
-      </nav>
-    </main>
-  );
+  const { user } = useAuth();
+  const groups = navigationFor(user?.roles ?? []);
+  return <div className="space-y-8">
+    <section className="ui-panel">
+      <h2 className="text-2xl font-bold text-slate-900">Welcome to HRFlow</h2>
+      <p className="mt-3 max-w-2xl leading-7 text-slate-600">Manage leave and keep your workplace moving. Choose a task below, or use the navigation to return to a workspace.</p>
+    </section>
+    {groups.filter(group => group.items.some(item => item.path !== '/')).map(group => <section key={group.label} aria-label={group.label + ' quick actions'}>
+      <h2 className="mb-4 text-lg font-bold text-slate-900">{group.label}</h2>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {group.items.filter(item => item.path !== '/').map(item => <Link key={item.path} to={item.path} className="quick-action ui-panel">
+          <span className="font-semibold text-indigo-800">{item.label}<span aria-hidden="true" className="ml-2">→</span></span>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+        </Link>)}
+      </div>
+    </section>)}
+    {groups.every(group => group.items.length === 1) && <section className="ui-panel"><h2 className="font-semibold">No workspaces available</h2><p className="mt-2 text-slate-600">Contact HR if you need access to a leave or administration workspace.</p></section>}
+  </div>;
 }

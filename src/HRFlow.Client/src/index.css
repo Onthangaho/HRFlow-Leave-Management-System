@@ -15,6 +15,41 @@ body {
   box-sizing: border-box;
 }
 
+.application-shell { min-height: 100dvh; }
+.desktop-sidebar { display: none; }
+.shell-brand { display: flex; align-items: center; gap: .75rem; padding: .5rem .75rem 1.75rem; }
+.shell-monogram, .shell-avatar { display: grid; place-items: center; flex-shrink: 0; width: 2.5rem; height: 2.5rem; border-radius: .75rem; background: #4338ca; color: white; font-weight: 700; }
+.shell-avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: #eef2ff; color: #3730a3; }
+.shell-link { display: flex; align-items: center; gap: .75rem; padding: .75rem; border-radius: .6rem; color: #475569; font-size: .875rem; font-weight: 600; transition: background-color 120ms; overflow-wrap: anywhere; }
+.shell-link:hover { background: #f1f5f9; color: #1e293b; }
+.shell-link-active { background: #eef2ff; color: #3730a3; box-shadow: inset 3px 0 #4f46e5; }
+.shell-link-active:hover { background: #e0e7ff; color: #3730a3; }
+.shell-workspace { min-width: 0; }
+.shell-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem; border-bottom: 1px solid #e2e8f0; background: white; }
+.shell-account { display: flex; align-items: center; gap: .75rem; min-width: 0; max-width: 28rem; }
+.shell-content { max-width: 90rem; min-width: 0; margin: auto; padding: 1.25rem; overflow-wrap: break-word; }
+.workspace-page { width: 100%; min-width: 0; }
+.workspace-page > div { min-width: 0; }
+.page-intro { display: flex; flex-direction: column; gap: .75rem; color: #334155; }
+.page-intro p { color: #475569; }
+.page-intro a { color: #4338ca; }
+.page-intro a.bg-white { border: 1px solid #c7d2fe; }
+.page-intro > button { align-self: flex-start; }
+.page-intro .backdrop-blur-sm { background: #f8fafc; border-color: #e2e8f0; }
+.page-intro > div.mt-6 { margin-top: 0; }
+.quick-action { display: block; transition: border-color 120ms, box-shadow 120ms; }
+.quick-action:hover { border-color: #a5b4fc; box-shadow: 0 2px 8px rgb(15 23 42 / 6%); }
+.skip-link { position: fixed; top: .5rem; left: .5rem; z-index: 100; padding: .75rem 1rem; border-radius: .5rem; background: #312e81; color: white; transform: translateY(-150%); }
+.skip-link:focus { transform: translateY(0); }
+.navigation-drawer { margin: 0; height: 100dvh; max-height: 100dvh; width: min(20rem, 88vw); max-width: 88vw; border: none; border-right: 1px solid #e2e8f0; padding: 1rem; background: white; overflow-y: auto; }
+.navigation-drawer[open] { display: flex; flex-direction: column; gap: 1rem; }
+.navigation-drawer::backdrop { background: rgb(15 23 42 / 55%); }
+@media (min-width: 640px) { .shell-header { padding: 1.5rem 2rem; } .shell-content { padding: 2rem; } }
+@media (min-width: 1024px) {
+  .desktop-sidebar { position: fixed; inset: 0 auto 0 0; display: flex; flex-direction: column; gap: 1.5rem; width: 17rem; padding: 1.5rem 1rem; overflow-y: auto; border-right: 1px solid #e2e8f0; background: white; }
+  .shell-workspace { margin-left: 17rem; }
+}
+
 .ui-panel { @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6; }
 .ui-primary { @apply rounded-lg bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50; }
 .ui-secondary { @apply rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50; }
@@ -26,4 +61,7 @@ body {
 .confirmation { margin: auto; width: min(32rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; }
 .confirmation::backdrop { background: rgb(15 23 42 / 55%); }
 :where(button, a, input, select, textarea):focus-visible { outline: 3px solid #4f46e5; outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  .application-shell [class*="hover:-translate"] { transform: none !important; translate: none !important; }
+}

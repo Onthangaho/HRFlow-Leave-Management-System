@@ -24,18 +24,18 @@ export function LeaveRequestTimelinePage() {
 function TimelineWorkspace({ requestId }: { requestId: string }) {
   const { user } = useAuth();
   const history = useRequestTimeline(requestId);
-  return <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6">
+  return <div className="workspace-page space-y-6">
     <div className="mx-auto max-w-3xl space-y-6">
-      <header className="space-y-3">
-        <Link to="/" className="font-semibold text-indigo-700 underline">Back to dashboard</Link>
+      <section className="page-intro ui-panel">
+
         <p className="pt-3 text-xs font-bold uppercase tracking-widest text-slate-500">Read-only history</p>
-        <h1 className="text-3xl font-bold text-slate-900">Request history</h1>
+
         <nav aria-label="Leave workspaces" className="flex flex-wrap gap-4 text-sm font-semibold text-indigo-700">
           {user?.roles.some(role => ['Employee', 'Manager'].includes(role)) && <Link className="underline" to="/leave-requests/history">My leave</Link>}
           {user?.roles.includes('Manager') && <Link className="underline" to="/leave-requests/approvals">Approval queue</Link>}
           {user?.roles.includes('HR Administrator') && <Link className="underline" to="/admin/leave-monitoring">Pending monitoring</Link>}
         </nav>
-      </header>
+      </section>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p role="status" aria-live="polite" className="text-sm text-slate-600">{history.isFetching ? (history.data ? 'Refreshing previously loaded history…' : 'Loading request history…') : history.isSuccess ? 'Request history loaded.' : ''}</p>
         <button className="ui-secondary" disabled={history.isFetching} onClick={() => void history.refetch()}>Refresh history</button>
@@ -44,7 +44,7 @@ function TimelineWorkspace({ requestId }: { requestId: string }) {
       {history.isError && <section className="ui-panel space-y-3" role="alert"><h2 className="text-lg font-bold">History unavailable</h2><p>{failure(history.error)}</p><button className="ui-primary" disabled={history.isFetching} onClick={() => void history.refetch()}>Try again</button></section>}
       {!history.isError && history.data && <LeaveRequestTimeline request={history.data} refreshing={history.isFetching} />}
     </div>
-  </main>;
+  </div>;
 }
 
 /** Reusable semantic ordered timeline preserves event order and labels every timestamp explicitly UTC. */

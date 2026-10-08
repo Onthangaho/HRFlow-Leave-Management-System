@@ -47,13 +47,13 @@ function EmployeeManagementWorkspace() {
       .some(value => value.toLocaleLowerCase().includes(query)),
   );
   return (
-    <main className="mx-auto my-8 w-full min-w-0 max-w-6xl space-y-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-8">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div><h1 className="text-3xl font-bold text-slate-900">Employee Management</h1>
+    <div className="workspace-page space-y-6">
+      <section className="page-intro ui-panel">
+        <div>
           <p className="mt-2 text-sm text-slate-600">Manage employee profiles, access, and reporting relationships.</p></div>
         <button type="button" data-focus-fallback disabled={editing !== undefined || employees.isPending || Boolean(employees.error)}
           onClick={() => openForm(null)} className="ui-primary">New Employee</button>
-      </header>
+      </section>
       {notice && <p role="status" className="break-words text-emerald-800">{notice}</p>}
       {editing !== undefined && <EmployeeForm employee={editing} employees={employees.data ?? []}
         onSuccess={() => { if (!currentSession()) return; setNotice(editing ? 'Employee updated.' : 'Employee created.'); setEditing(undefined); }}
@@ -83,6 +83,6 @@ function EmployeeManagementWorkspace() {
         onInactive={employee => { setDeactivating(null); setDetails(employee); }}
         onManageReports={() => { setReportsFor(deactivating); setStatus('Active'); setSearch(''); setDeactivating(null); }} />}
       {details && <EmployeeDetailsDialog employee={details} returnFocus={opener.current} onClose={() => setDetails(null)} />}
-    </main>
+    </div>
   );
 }

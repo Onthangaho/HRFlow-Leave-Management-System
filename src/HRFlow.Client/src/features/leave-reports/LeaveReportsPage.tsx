@@ -51,15 +51,15 @@ function LeaveReportsWorkspace() {
   };
   const reset = () => { const filters = currentMonth(); setDraft(filters); setApplied(filters); setValidation(''); };
 
-  return <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6">
+  return <div className="workspace-page space-y-6">
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="space-y-3">
-        <Link to="/" className="font-semibold text-indigo-700 underline">Back to dashboard</Link>
+      <section className="page-intro ui-panel">
+
         <p className="pt-3 text-xs font-bold uppercase tracking-widest text-slate-500">HR reporting</p>
-        <h1 className="text-3xl font-bold text-slate-900">Leave reports</h1>
+
         <p className="text-slate-600">Understand leave activity by current department, with preserved inactive history.</p>
         <Link to="/admin/leave-monitoring" className="inline-block font-semibold text-indigo-700 underline">Open read-only Pending monitoring</Link>
-      </header>
+      </section>
       <form className="ui-panel space-y-4" onSubmit={apply} aria-label="Report filters">
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="ui-label">Start date<input className="ui-input" type="date" required value={draft.start} onChange={event => setDraft({ ...draft, start: event.target.value })} aria-describedby="report-filter-help report-validation" /></label>
@@ -97,7 +97,7 @@ function LeaveReportsWorkspace() {
       </section>}
       {!report.isPending && !report.isError && report.data && <ReportResults report={report.data} refreshing={report.isFetching} />}
     </div>
-  </main>;
+  </div>;
 }
 
 function ReportResults({ report, refreshing }: { report: DepartmentLeaveReport; refreshing: boolean }) {

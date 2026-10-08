@@ -5,35 +5,31 @@ import { useOrganisationPendingLeaveRequests } from '../api';
  * Gives HR Administrators an organisation-wide operational view without exposing manager decision controls.
  */
 export function HrPendingLeaveMonitoringPage() {
-  const { data: leaveRequests, isLoading, error } = useOrganisationPendingLeaveRequests();
+  const { data: leaveRequests, isLoading, isFetching, error, refetch } = useOrganisationPendingLeaveRequests();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-indigo-50 via-slate-50 to-slate-100 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="workspace-page space-y-6">
       <div className="mx-auto w-full max-w-5xl space-y-6">
-        <header className="rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 p-6 text-white shadow-xl sm:p-8">
-          <Link
-            to="/"
-            className="inline-flex items-center text-sm font-semibold text-indigo-200 transition hover:text-white"
-          >
-            Back to dashboard
-          </Link>
+        <section className="page-intro ui-panel">
+
           <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-200">HR monitoring</p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Pending leave requests</h1>
+
               <p className="mt-3 max-w-2xl text-sm leading-6 text-indigo-100">
                 Monitor organisation-wide pending leave. Assigned managers make approval decisions.
               </p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-200">Pending</p>
-              <p className="mt-1 text-2xl font-bold">{leaveRequests?.length ?? 0}</p>
+              <p className="mt-1 text-2xl font-bold">{isLoading ? '…' : error ? '—' : leaveRequests?.length ?? 0}</p>
             </div>
           </div>
-        </header>
+        <button type="button" className="ui-secondary self-start" disabled={isFetching} onClick={() => void refetch()}>Refresh monitoring</button>
+        </section>
 
         {isLoading && (
-          <section aria-label="Loading pending leave monitoring" className="space-y-4">
+          <section role="status" aria-label="Loading pending leave monitoring" className="space-y-4">
             {[1, 2, 3].map((item) => (
               <div key={item} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="h-5 w-1/3 rounded bg-slate-200" />
@@ -46,7 +42,7 @@ export function HrPendingLeaveMonitoringPage() {
         {error && (
           <section role="alert" className="rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">Unable to load pending leave monitoring</h2>
-            <p className="mt-2 text-sm text-rose-600">{error.message}</p>
+            <p className="mt-2 text-sm text-rose-600">{error.message}</p><button type="button" className="ui-secondary mt-4" disabled={isFetching} onClick={() => void refetch()}>Try again</button>
           </section>
         )}
 
@@ -96,6 +92,6 @@ export function HrPendingLeaveMonitoringPage() {
           </section>
         )}
       </div>
-    </main>
+    </div>
   );
 }

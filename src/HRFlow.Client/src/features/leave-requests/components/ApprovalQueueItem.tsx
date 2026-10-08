@@ -80,7 +80,7 @@ export function ApprovalQueueItem({
             type="button"
             onClick={() => setConfirmingAction('approve')}
             disabled={isProcessing}
-            className="inline-flex min-w-28 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="ui-primary min-w-28"
           >
             {processingAction === 'approve' ? 'Approving...' : 'Approve'}
           </button>
@@ -88,7 +88,7 @@ export function ApprovalQueueItem({
             type="button"
             onClick={() => setConfirmingAction('reject')}
             disabled={isProcessing}
-            className="inline-flex min-w-28 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="ui-danger min-w-28"
           >
             {processingAction === 'reject' ? 'Rejecting...' : 'Reject'}
           </button>
@@ -113,7 +113,7 @@ export function ApprovalQueueItem({
             <button
               type="button"
               onClick={confirmAction}
-              className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className={confirmingAction === 'reject' ? 'ui-danger' : 'ui-primary'}
             >
               Confirm {confirmingAction}
             </button>
