@@ -30,6 +30,7 @@ export function navigationFor(roles: readonly string[]): NavigationGroup[] {
     { path: '/admin/leave-reports', label: 'Department leave reports', description: 'Compare leave activity for a selected period.', icon: 'chart' },
   ] });
   groups.push({ label: 'Account', items: [
+    { path: '/notifications', label: 'Notifications', description: 'Read your saved leave updates.', icon: 'history' },
     { path: '/account/password', label: 'Change password', description: 'Secure your account and end previous sessions.', icon: 'policy' },
   ] });
   return groups;

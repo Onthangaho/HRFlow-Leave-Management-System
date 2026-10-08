@@ -23,6 +23,8 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     }
 
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<LeaveNotificationEvent> LeaveNotificationEvents => Set<LeaveNotificationEvent>();
+    public DbSet<LeaveNotification> LeaveNotifications => Set<LeaveNotification>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
         public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
@@ -38,6 +40,14 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<LeaveNotificationEvent>().Property(e => e.EventKey).HasMaxLength(100);
+        modelBuilder.Entity<LeaveNotificationEvent>().Property(e => e.Kind).HasMaxLength(32);
+        modelBuilder.Entity<LeaveNotificationEvent>().HasIndex(e => new { e.EventKey, e.RecipientId }).IsUnique();
+        modelBuilder.Entity<LeaveNotificationEvent>().HasIndex(e => new { e.DeliveredAtUtc, e.CreatedAtUtc });
+        modelBuilder.Entity<LeaveNotificationEvent>().HasOne<LeaveRequest>().WithMany().HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<LeaveNotification>().HasIndex(n => new { n.EventId, n.RecipientId }).IsUnique();
+        modelBuilder.Entity<LeaveNotification>().HasIndex(n => new { n.RecipientId, n.ReadAtUtc, n.CreatedAtUtc });
+        modelBuilder.Entity<LeaveNotification>().HasOne(n => n.Event).WithMany().HasForeignKey(n => n.EventId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<ApplicationUser>().Property(u => u.RequiresActivation).HasDefaultValue(false);
         modelBuilder.Entity<ApplicationUser>().Property(u => u.InvitationDeliveryState).HasMaxLength(32).HasDefaultValue(ActivationDeliveryStates.NotRequired);
         modelBuilder.Entity<ApplicationUser>().Property(u => u.ActivationTokenHash).HasMaxLength(64);

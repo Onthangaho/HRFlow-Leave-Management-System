@@ -13,6 +13,7 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.CancelLeaveRequest;
 public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLeaveRequestCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILeaveNotificationOutbox _notifications;
     private readonly CurrentAccountAuthorization _authorization;
     private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveDecisionTransaction _decisionTransaction;
@@ -20,11 +21,13 @@ public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLea
     /// <summary>Shares the scoped persistence services with the decision transaction.</summary>
     public CancelLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        ILeaveNotificationOutbox notifications,
         CurrentAccountAuthorization authorization,
         IRequestCorrelationContext correlation,
         ILeaveDecisionTransaction decisionTransaction)
     {
         _context = context;
+        _notifications = notifications;
         _authorization = authorization;
         _correlation = correlation;
         _decisionTransaction = decisionTransaction;
@@ -52,5 +55,6 @@ public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLea
         }
 
         leaveRequest.Cancel(request.EmployeeId, correlationId: _correlation.CorrelationId);
+        await _notifications.TransitionAsync(leaveRequest, cancellationToken);
     }
 }

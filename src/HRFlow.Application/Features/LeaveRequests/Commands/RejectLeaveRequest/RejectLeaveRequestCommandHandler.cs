@@ -11,6 +11,7 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest;
 public sealed class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLeaveRequestCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILeaveNotificationOutbox _notifications;
     private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveDecisionTransaction _decisionTransaction;
     private readonly ILeaveApprovalAuthorizationService _authorization;
@@ -18,11 +19,13 @@ public sealed class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLea
     /// <summary>Shares the scoped persistence and authorization services with the decision transaction.</summary>
     public RejectLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        ILeaveNotificationOutbox notifications,
         IRequestCorrelationContext correlation,
         ILeaveDecisionTransaction decisionTransaction,
         ILeaveApprovalAuthorizationService authorization)
     {
         _context = context;
+        _notifications = notifications;
         _correlation = correlation;
         _decisionTransaction = decisionTransaction;
         _authorization = authorization;
@@ -50,5 +53,6 @@ public sealed class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLea
         }
 
         leaveRequest.Reject(request.RejectorId, _correlation.CorrelationId, request.DecisionNote);
+        await _notifications.TransitionAsync(leaveRequest, cancellationToken);
     }
 }
