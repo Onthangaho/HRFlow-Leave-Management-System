@@ -164,3 +164,13 @@ include personal submit/cancel/history/balances, Manager queue/decisions/team, H
 activation resend/configuration/monitoring/reports/references and scoped timelines. Anonymous
 login/refresh/activation retain their own serialized proof checks; migration revokes legacy
 refreshes so pre-upgrade sessions require fresh login. Existing ownership/privacy scopes remain.
+
+## Issue #93 addition — 9 October 2026
+
+The original dated endpoint count above is historical. The notification controller adds:
+
+- GET /notifications: any supported current capability, own recipient only; active/activated account and initiating credential checked in the same deferred snapshot as read filter, paging and current request-link scope.
+- GET /notifications/unread-count: same own-recipient/current-capability snapshot; unavailable unread items are counted without exposing their request IDs.
+- PATCH /notifications/{id}/read: own recipient only, current credentials and capabilities rechecked after the SQLite writer reservation; another recipient's ID and missing ID both return 404. Idempotent read time, no status/audit mutation.
+
+Authoritative service: LeaveNotificationService through CurrentAccountAuthorization, ILeaveReportingReadTransaction and IEmployeeManagementTransaction. Existing timeline deep links independently check current owner/Manager/HR scope; alerts never grant access. No client recipient or actor ID is accepted.

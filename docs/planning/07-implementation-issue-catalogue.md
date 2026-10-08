@@ -1058,7 +1058,7 @@ membership server-side. Client role guards are not authorization. Apply the narr
 above for documents, profiles, imports, notifications and exports.
 
 ## API, database and UI changes
-Transactional outbox/notification metadata persisted with the existing domain transition (not a second audit), idempotent delivery worker behind Application/Infrastructure seams, recipient-scoped APIs and client UI/preferences integration.
+Transactional outbox/notification metadata persisted with the existing domain transition (not a second audit), idempotent delivery worker behind Application/Infrastructure seams, recipient-scoped APIs and working client inbox integration. General notification preferences are a separate dependency in #94 and do not ship in #93.
 Keep Controllers delegating to Application, Domain framework-free, and provider/file handling in
 Infrastructure. Reuse versioned edits, existing AuditEntry persistence, SQLite writer reservation
 before validation reads and deferred snapshots for consistent reads. No in-memory-only safeguard,
@@ -1076,7 +1076,7 @@ docs/planning/05-product-roadmap.md (documentation review branch).
 - [ ] Only committed events deliver; late rollback delivers none and retries never duplicate a notification.
 - [ ] Current active recipients can read only their own notifications; deep links recheck current scope and can safely be unavailable after reassignment.
 - [ ] Medical content, diagnoses, raw deactivation reasons and note text do not appear in notification payloads/logs.
-- [ ] Read/unread and preference behaviour work across retries and sessions with bounded polling; no automatic replay of leave decisions.
+- [ ] Read/unread behaviour works across retries and sessions with bounded polling; general preferences remain #94; no automatic replay of leave decisions.
 
 ## Verification and failure/regression cases
 Submission/decision/owner/HR cancellation, rollback and worker restart/retry, role/lifecycle/reassignment changes, cross-user IDs and delayed session responses; inspect outbox/notification/audit uniqueness and real browser links.

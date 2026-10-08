@@ -23,6 +23,7 @@ public sealed class EmployeeManagementService(
     RoleManager<IdentityRole<Guid>> roleManager,
     IEmployeeManagementTransaction writeTransaction,
     IRequestCorrelationContext correlation,
+    ILeaveNotificationOutbox notifications,
     IAccountActivationService activation,
     ILogger<EmployeeManagementService> logger) : IEmployeeManagementService
 {
@@ -111,8 +112,10 @@ public sealed class EmployeeManagementService(
 
             // UserManager saves through the same scoped DbContext. Those saves remain inside this transaction.
             // Version rotates even for a role-only edit so stale role replacements cannot overwrite it.
+            var previousManager = employee.ManagerId;
             employee.Update(fullName, email, departmentId);
             employee.AssignManager(effectiveManager);
+            await notifications.ReassignmentAsync(employee, previousManager, actorIdentityUserId, token);
             // Changing a pending recipient invalidates the old invitation; HR must explicitly resend.
             if (identity.RequiresActivation && identity.NormalizedEmail != userManager.NormalizeEmail(email.Trim()))
             {
@@ -165,7 +168,11 @@ public sealed class EmployeeManagementService(
                 .Where(r => r.EmployeeId == employeeId && r.Status == HRFlow.Domain.Enums.LeaveRequestStatus.Pending)
                 .ToListAsync(token);
             employee.Deactivate(actor.Id, reason);
-            foreach (var request in pending) request.Cancel(actor.Id, AuditEntry.DeactivationReasonPrefix + reason.Trim(), correlation.CorrelationId);
+            foreach (var request in pending)
+            {
+                request.Cancel(actor.Id, AuditEntry.DeactivationReasonPrefix + reason.Trim(), correlation.CorrelationId);
+                await notifications.TransitionAsync(request, token);
+            }
             result = new EmployeeDeactivationResult(employee.Id, employee.Version, employee.IsActive, pending.Count);
         }, cancellationToken);
         logger.LogInformation("Employee deactivated. EmployeeId: {EmployeeId}; ActorIdentityUserId: {ActorIdentityUserId}; CancelledRequestCount: {CancelledRequestCount}",

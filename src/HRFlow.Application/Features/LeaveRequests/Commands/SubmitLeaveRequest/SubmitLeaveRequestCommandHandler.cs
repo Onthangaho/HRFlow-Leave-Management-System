@@ -16,6 +16,7 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveRequestCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILeaveNotificationOutbox _notifications;
     private readonly CurrentAccountAuthorization _authorization;
     private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveApprovalAuthorizationService _leaveApprovalAuthorizationService;
@@ -24,12 +25,14 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
     /// <summary>Shares the context and database reservation used by policy management and approvals.</summary>
     public SubmitLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        ILeaveNotificationOutbox notifications,
         CurrentAccountAuthorization authorization,
         IRequestCorrelationContext correlation,
         ILeaveApprovalAuthorizationService leaveApprovalAuthorizationService,
         ILeaveConfigurationTransaction transaction)
     {
         _context = context;
+        _notifications = notifications;
         _authorization = authorization;
         _correlation = correlation;
         _leaveApprovalAuthorizationService = leaveApprovalAuthorizationService;
@@ -80,6 +83,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
             leaveType.LeavePolicy);
 
         _context.LeaveRequests.Add(leaveRequest);
+        await _notifications.TransitionAsync(leaveRequest, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
         return leaveRequest.Id;
