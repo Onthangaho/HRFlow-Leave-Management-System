@@ -65,6 +65,7 @@ function useRefreshManagementQueries() {
       client.invalidateQueries({ queryKey: employeesQueryKey(user.id) }),
       client.invalidateQueries({ queryKey: ['pending-leave-requests', user.id] }),
       client.invalidateQueries({ queryKey: ['organisation-pending-leave-requests', user.id] }),
+      client.invalidateQueries({ queryKey: ['team-leave-summary', user.id] }),
     ]);
   };
 }
@@ -101,7 +102,7 @@ export function useDeactivateEmployee() {
       if (!user || getSessionVersion() !== sessionVersion || employee.identityUserId === user.id) return;
       await Promise.all(['employees', 'leave-balances', 'employee-leave-history', 'pending-leave-requests',
         'organisation-pending-leave-requests', 'leave-types', 'managed-leave-types', 'leave-policies',
-        'departments', 'roles'].map(key => client.invalidateQueries({ queryKey: [key, user.id] })));
+        'departments', 'roles', 'team-leave-summary'].map(key => client.invalidateQueries({ queryKey: [key, user.id] })));
     },
   });
 }
