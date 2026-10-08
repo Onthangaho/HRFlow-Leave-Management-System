@@ -16,21 +16,21 @@ export function useLeaveConfiguration() {
 }
 /** Keeps late completion callbacks in their initiating account, including during account switches. */
 export function useConfigurationWrite() {
-  const { user } = useAuth();
+  const { user, sessionVersion, getSessionVersion } = useAuth();
   const currentAccount = useRef(user?.id);
   currentAccount.current = user?.id;
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (write: ConfigurationWrite & { accountId: string }) => {
-      if (currentAccount.current !== write.accountId) throw new Error('The session changed.');
+      if (currentAccount.current !== write.accountId || getSessionVersion() !== sessionVersion) throw new Error('The session changed.');
       const url = `/management/${write.kind}${write.id ? `/${write.id}` : ''}`;
       if (write.method === 'delete') await authHttpClient.delete(url, { params: { expectedVersion: write.expectedVersion } });
       else await authHttpClient[write.method](url, write.body);
     },
     onSuccess: async (_, write) => {
-      if (currentAccount.current !== write.accountId) return;
+      if (currentAccount.current !== write.accountId || getSessionVersion() !== sessionVersion) return;
       await Promise.all(['leave-policies', 'managed-leave-types', 'leave-types', 'leave-balances',
-        'employee-leave-history', 'pending-leave-requests', 'organisation-pending-leave-requests']
+        'employee-leave-history', 'pending-leave-requests', 'organisation-pending-leave-requests', 'team-leave-summary']
         .map(key => client.invalidateQueries({ queryKey: [key, write.accountId] })));
     },
   });

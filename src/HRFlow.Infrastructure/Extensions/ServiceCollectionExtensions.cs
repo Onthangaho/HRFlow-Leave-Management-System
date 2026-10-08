@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILeaveDecisionTransaction, SqliteWriteTransaction>();
         services.AddScoped<IEmployeeManagementTransaction, SqliteWriteTransaction>();
         services.AddScoped<ILeaveConfigurationTransaction, SqliteWriteTransaction>();
+        services.AddScoped<ITeamLeaveReadTransaction, SqliteTeamLeaveReadTransaction>();
 
         return services;
     }

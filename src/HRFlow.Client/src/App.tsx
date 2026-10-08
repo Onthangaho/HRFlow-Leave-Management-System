@@ -1,4 +1,5 @@
 import { LeaveConfigurationPage } from './features/leave-configuration/LeaveConfigurationPage';
+import { TeamLeavePage } from './features/team-leave/TeamLeavePage';
 import { RequestLeavePage } from './features/leave-requests/components/RequestLeavePage';
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { HomePage } from './features/auth/components/HomePage.tsx'
@@ -29,6 +30,7 @@ function App() {
       </Route>
 
       <Route element={<ProtectedRoute requiredRoles={['Manager']} />}>
+        <Route path="/team-leave" element={<TeamLeavePage />} />
         <Route path="/leave-requests/approvals" element={<ManagerApprovalQueuePage />} />
       </Route>
 

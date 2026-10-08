@@ -50,6 +50,7 @@
 | Submit, view balances/history, cancel own Pending request | Yes | Yes | No, unless separately assigned Employee or Manager |
 | Approve/reject Pending requests | No | Only assigned same-department direct reports | No |
 | View actionable approval queue | No | Direct-report Pending requests only | No |
+| View read-only team leave summary | No | Current same-department direct reports' Approved requests, including inactive history | No, unless separately assigned Manager |
 | Monitor organisation-wide Pending requests | No | No | Yes, read-only |
 | Own employee, role, department, and leave-policy administration | No | No | Yes; employee creation/editing and reporting assignments are exposed |
 
@@ -62,6 +63,11 @@
 > and its verification record. Policy management UI (#24) now includes the connected minimal personal submission form
 > needed to verify that HR-created types appear in the real selector; see [UI verification](../verification/leave-policy-management-ui.md).
 > Backend rules are unchanged. Deactivation and full department CRUD remain separate.
+> Manager coverage planning (#27/#28) now has a locally verified API and month-based list:
+> current Manager membership and reporting scope share a read snapshot; only Approved leave
+> is shown, and distinct active people are counted once per selected month. See
+> [ADR 0006](../adr/0006-manager-team-leave-summary.md) and
+> [executed API/browser verification](../verification/manager-team-leave-summary.md).
 
 ### Personas
 

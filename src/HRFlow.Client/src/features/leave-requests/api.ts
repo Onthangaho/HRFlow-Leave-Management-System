@@ -79,14 +79,17 @@ export function useOrganisationPendingLeaveRequests() {
  */
 export function useApproveLeaveRequest() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, sessionVersion, getSessionVersion } = useAuth();
 
   return useMutation<void, Error, string>({
     mutationFn: approveLeaveRequest,
-    onSuccess: () =>
-      user?.id
-        ? queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) })
-        : Promise.resolve(),
+    onSuccess: async () => {
+      if (!user?.id || getSessionVersion() !== sessionVersion) return;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
+        queryClient.invalidateQueries({ queryKey: ['team-leave-summary', user.id] }),
+      ]);
+    },
   });
 }
 
@@ -95,14 +98,17 @@ export function useApproveLeaveRequest() {
  */
 export function useRejectLeaveRequest() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, sessionVersion, getSessionVersion } = useAuth();
 
   return useMutation<void, Error, string>({
     mutationFn: rejectLeaveRequest,
-    onSuccess: () =>
-      user?.id
-        ? queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) })
-        : Promise.resolve(),
+    onSuccess: async () => {
+      if (!user?.id || getSessionVersion() !== sessionVersion) return;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
+        queryClient.invalidateQueries({ queryKey: ['team-leave-summary', user.id] }),
+      ]);
+    },
   });
 }
 
