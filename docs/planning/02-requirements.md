@@ -1,6 +1,12 @@
 # HRFlow — Phase 2/3: Requirements
 
-**Status:** Draft  ·  **Owner:** Solo Developer (Product Owner + Engineer)  ·  **Date:** 2026-07-31
+**Status:** Original baseline, reconciled 8 October 2026; expansion requirements in documents 04–07  ·  **Owner:** Solo Developer (Product Owner + Engineer)  ·  **Date:** 2026-07-31
+
+
+> Current scope: [legal requirements](04-south-african-leave-requirements.md), [roadmap](05-product-roadmap.md)
+> and [feature inventory](06-feature-inventory-and-reconciliation.md). Original stories are intent, not
+> completion evidence. PR #73 is merged; descriptions/notes/accrual remain planned and #74 addresses
+> JWT lifetime/current-permission gaps.
 
 ---
 
@@ -10,13 +16,13 @@
 
 #### Employee
 1. FR-01: An employee can view their current leave balance and request history for each leave type.
-2. FR-02: An employee can submit a leave request with a leave type, start date, end date, and reason.
+2. FR-02: An employee can submit a leave request with a leave type, start date and end date. Configurable descriptions/evidence are planned in #84; the current minimal form has no reason.
 3. FR-03: An employee can cancel a pending leave request before it is approved or rejected.
 4. FR-04: An employee can see the current status of each request and the approval history for completed requests.
 
 #### Manager
 5. FR-05: A manager can view a queue of pending leave requests for their team.
-6. FR-06: A manager can approve or reject a pending leave request with a decision note.
+6. FR-06: A manager can approve or reject a pending leave request with an optional decision note once remaining #21 is completed; current decisions have no manager note.
 7. FR-07: A manager can view a simple team leave summary so they can plan for coverage.
 
 #### HR Administrator
@@ -26,7 +32,7 @@
 11. FR-11: An HR administrator can deactivate an employee without losing historical leave records.
 
 ### Non-Functional Requirements
-- Security: Authentication uses JWT access and refresh tokens, passwords are hashed through ASP.NET Identity, and server-side authorization enforces Employee, Manager, and HR Administrator permissions on every protected action.
+- Security requirement: Identity hashing and JWT/refresh exist, but expiry and uniform current-role enforcement need #74. Do not describe desired complete permission enforcement as already verified on every action.
 - Performance: Core screens such as login, balance view, approval queue, and reporting should load in under 2 seconds for a single-tenant deployment with up to 500 active employees and 1,000 leave requests.
 - Reliability: Leave request state changes must be saved atomically so a request cannot be partially created or approved without a valid persisted outcome.
 - Scalability: The application architecture must support the single-organization MVP and remain easy to extend to a larger tenant without rewriting the domain model.
@@ -41,7 +47,7 @@
 4. A pending request may be canceled by the employee before approval; once approved or rejected, the request becomes read-only.
 5. Leave balances are calculated from policy rules and approved leave history; no manually stored balance field is used.
 6. If an employee is deactivated, any pending request is canceled automatically and historical records remain visible for audit purposes.
-7. A new leave request requires a current valid manager assignment. The assigned manager must be an existing same-department employee with the Manager role; self-assignment and reporting cycles are rejected. Existing pending requests are preserved when HR corrects an invalid assignment and use the current valid reporting relationship.
+7. A new leave request requires a current valid active manager assignment. The assigned manager must be an existing same-department employee with the Manager role; self-assignment and reporting cycles are rejected. Existing pending requests are preserved when HR corrects an invalid assignment and use the current valid reporting relationship.
 
 ### Role Capability Matrix
 
@@ -53,7 +59,7 @@
 | View read-only team leave summary | No | Current same-department direct reports' Approved requests, including inactive history | No, unless separately assigned Manager |
 | Monitor organisation-wide Pending requests | No | No | Yes, read-only |
 | Report period leave totals by current department | No | No, unless separately assigned HR | Yes, read-only; includes inactive history |
-| Own employee, role, department, and leave-policy administration | No | No | Yes; employee creation/editing and reporting assignments are exposed |
+| Own employee, role, reporting assignment and leave-policy administration (department selection only) | No | No | Yes; employee creation/editing and reporting assignments are exposed |
 
 > Implementation note: HR employee creation and editing now use current Identity membership,
 > complete role collections, explicit Preserve/Assign/Clear reporting updates, and edit versions.
@@ -63,13 +69,13 @@
 > restricted deletion, and SQLite coordination with submissions/approvals. See [ADR 0004](../adr/0004-leave-policy-management.md)
 > and its verification record. Policy management UI (#24) now includes the connected minimal personal submission form
 > needed to verify that HR-created types appear in the real selector; see [UI verification](../verification/leave-policy-management-ui.md).
-> Backend rules are unchanged. Deactivation and full department CRUD remain separate.
-> Manager coverage planning (#27/#28) now has a locally verified API and month-based list:
+> The original form preserved backend rules. Deactivation is now merged through PRs #69/#70; full department CRUD remains excluded.
+> Manager coverage planning (#27/#28) is merged in PR #71 with a verified API and month-based list:
 > current Manager membership and reporting scope share a read snapshot; only Approved leave
 > is shown, and distinct active people are counted once per selected month. See
 > [ADR 0006](../adr/0006-manager-team-leave-summary.md) and
 > [executed API/browser verification](../verification/manager-team-leave-summary.md).
-> HR department reporting (#29/#30) is locally implemented with inclusive period intersections,
+> HR department reporting (#29/#30) is merged in PR #72 with inclusive period intersections,
 > clipped summed request-days, distinct employee/inactive-history metrics and applied-filter
 > chart/table views. Attribution uses current departments, without historical reconstruction.
 > See [ADR 0007](../adr/0007-hr-department-leave-reporting.md) and
@@ -214,7 +220,7 @@ Priority: Must  ·  Est. Size: S
 | 10 | Reporting and Auditability | Review audit history for leave requests | Must | S |
 
 ### MVP Definition
-The MVP includes a secure, role-based HRFlow experience for Employees, Managers, and HR Administrators with authentication, leave request submission and approval, automatic balance calculation, basic employee and policy administration, and a simple reporting and audit view. This stays aligned with the Phase 1 scope by excluding self-service registration, attachments, email delivery, payroll integration, and multi-tenancy, while keeping the feature set small enough to deliver within the one-week portfolio timeline.
+The original MVP baseline is merged through PR #73 with explicit gaps in the inventory. The authorised expansion now plans reviewed statutory calculations, secure supporting files, activation/CSV onboarding, professional workspaces and reliability. No self-registration, payroll or multi-tenancy is introduced. General status email and persistent sessions remain deferred; automated-test convention changes require #76 approval. The old one-week target is historical, not a current delivery commitment.
 
 ### Scope Summary
 - Epic 1 — Authentication and Access Control: 2 stories

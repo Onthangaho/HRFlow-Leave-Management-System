@@ -149,7 +149,7 @@ The Development API seeds local accounts so role boundaries can be exercised on 
 
 The passwords can be overridden through the corresponding `Seeding:*Password` configuration values. Seeding is idempotent, so restarting does not create duplicate accounts.
 
-> **Local database note:** If a database created before the migration-based startup change causes a migration error, delete that local `.db` file and restart the API. Do not delete production data.
+> **Local database note:** For a migration error on a pre-migration database, reset only a known disposable local store. If any records are needed, preserve and back up the database, stop writers, and review [migration preflight/remediation](docs/adr/0004-leave-policy-management.md#migration-and-legacy-review) before proceeding. Do not delete needed development or production data; startup does not automatically repair legacy records.
 
 ## 🧪 Quality checks
 
