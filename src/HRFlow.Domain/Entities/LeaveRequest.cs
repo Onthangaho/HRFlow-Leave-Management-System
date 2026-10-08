@@ -83,7 +83,7 @@ public class LeaveRequest : BaseEntity
     }
 
     /// <summary>Appends the manager decision to the same aggregate for atomic status/audit persistence.</summary>
-    public void Approve(Guid actorId, string? correlationId = null)
+    public void Approve(Guid actorId, string? correlationId = null, string? decisionNote = null)
     {
         if (Status != LeaveRequestStatus.Pending)
         {
@@ -95,11 +95,11 @@ public class LeaveRequest : BaseEntity
         ProcessedById = actorId;
         ProcessedOn = DateTime.UtcNow;
 
-        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Approve", oldStatus, Status, correlationId: correlationId));
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Approve", oldStatus, Status, correlationId: correlationId, decisionNote: decisionNote));
     }
 
     /// <summary>Retains the rejecting actor and diagnostic context without rewriting prior events.</summary>
-    public void Reject(Guid actorId, string? correlationId = null)
+    public void Reject(Guid actorId, string? correlationId = null, string? decisionNote = null)
     {
         if (Status != LeaveRequestStatus.Pending)
         {
@@ -111,7 +111,7 @@ public class LeaveRequest : BaseEntity
         ProcessedById = actorId;
         ProcessedOn = DateTime.UtcNow;
 
-        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Reject", oldStatus, Status, correlationId: correlationId));
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Reject", oldStatus, Status, correlationId: correlationId, decisionNote: decisionNote));
     }
 
     /// <summary>

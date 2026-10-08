@@ -118,6 +118,7 @@ export function LeaveRequestHistoryItem({
                   {' - '}
                   {decision.oldStatus ?? 'New'} to {decision.newStatus}
                   <span className="block text-xs text-slate-500">{formatDateTime(decision.timestamp)}</span>
+                  {decision.decisionNote && <span className="mt-2 block whitespace-pre-wrap break-words text-slate-700">Manager note: {decision.decisionNote}</span>}
                 </p>
               </li>
             ))}

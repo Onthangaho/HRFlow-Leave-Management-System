@@ -3,9 +3,13 @@ using HRFlow.Domain.Enums;
 
 namespace HRFlow.Domain.Entities;
 
-/// <summary>Preserves one immutable leave transition, including context for HR deactivation cancellation.</summary>
+/// <summary>Preserves one immutable leave transition with ordinary manager notes or separate HR cancellation context.</summary>
 public class AuditEntry : BaseEntity
 {
+    /// <summary>Ordinary manager notes are bounded separately from sensitive cancellation reasons.</summary>
+    public const int MaxDecisionNoteLength = 500;
+    /// <summary>Immutable optional manager context; legacy and non-decision events retain null.</summary>
+    public string? DecisionNote { get; private set; }
     public const int MaxCorrelationIdLength = 128;
     /// <summary>Optional diagnostic metadata; null accurately represents legacy events.</summary>
     public string? CorrelationId { get; private set; }
@@ -35,7 +39,7 @@ public class AuditEntry : BaseEntity
     }
 
     /// <summary>Captures actor and time at the transition without rewriting previous decisions.</summary>
-    public static AuditEntry Create(Guid leaveRequestId, Guid actorId, string action, LeaveRequestStatus? oldStatus, LeaveRequestStatus newStatus, string? reason = null, string? correlationId = null)
+    public static AuditEntry Create(Guid leaveRequestId, Guid actorId, string action, LeaveRequestStatus? oldStatus, LeaveRequestStatus newStatus, string? reason = null, string? correlationId = null, string? decisionNote = null)
     {
         if (leaveRequestId == Guid.Empty)
         {
@@ -56,6 +60,11 @@ public class AuditEntry : BaseEntity
             throw new DomainException($"Cancellation reason must contain 1–{MaxReasonLength} characters.");
         if (correlationId is not null && (string.IsNullOrWhiteSpace(correlationId) || correlationId.Length > MaxCorrelationIdLength))
             throw new DomainException("Invalid audit correlation identifier.");
-        return new AuditEntry(leaveRequestId, actorId, action, oldStatus, newStatus) { Reason = reason?.Trim(), CorrelationId = correlationId };
+        var normalizedNote = string.IsNullOrWhiteSpace(decisionNote) ? null : decisionNote.Trim();
+        if (normalizedNote?.Length > MaxDecisionNoteLength)
+            throw new DomainException($"Decision note must contain no more than {MaxDecisionNoteLength} trimmed characters.");
+        if (normalizedNote is not null && action is not ("Approve" or "Reject"))
+            throw new DomainException("Decision notes belong only to approval or rejection events.");
+        return new AuditEntry(leaveRequestId, actorId, action, oldStatus, newStatus) { Reason = reason?.Trim(), CorrelationId = correlationId, DecisionNote = normalizedNote };
     }
 }

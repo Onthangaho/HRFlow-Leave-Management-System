@@ -68,6 +68,7 @@ export function LeaveRequestTimeline({ request, refreshing = false }: { request:
           <time className="mt-2 block text-sm text-slate-600" dateTime={event.timestampUtc}>{timestampFormat.format(new Date(event.timestampUtc))} UTC</time>
           {event.action === 'Submit' && <p className="mt-2 text-sm text-slate-600">Submitted by the requesting employee. Pending requests do not reserve balance.</p>}
           {event.action === 'Cancel' && !event.explanation && <p className="mt-2 text-sm text-slate-600">Withdrawn by the request owner while Pending.</p>}
+          {event.decisionNote && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">Manager note: {event.decisionNote}</p>}
           {event.explanation && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">{event.explanation}</p>}
         </li>)}
       </ol>}

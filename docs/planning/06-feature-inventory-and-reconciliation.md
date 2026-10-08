@@ -2,7 +2,7 @@
 
 > Current-state update: PR #99 merged on 8 October 2026. Its JWT lifetime validation, explicit 30-second skew, current active Identity permission checks and session-safe bounded refresh supersede the authentication gaps recorded at the PR #73 baseline below. See ../security/endpoint-authorization-inventory.md and ../verification/jwt-current-permissions.md. #74 remains open; historical verification is not rerun or replaced here.
 
-> Local #77 implementation: `feat/responsive-application-shell` now supplies the shared authenticated layout, additive navigation, mobile drawer and honest Overview quick actions around existing workflows. See [executed browser/persisted-state verification and screenshots](../verification/responsive-application-shell.md). This supersedes the baseline shell gap below locally, but is not merged; real role dashboards remain #90–#92.
+> Current workflow update: PR #101 merged the shell #77. Optional Manager decision notes (#21) are now locally implemented for review, extending the existing queue and AuditEntry, with authorised personal/timeline display and server-confirmed outcomes. See [decision contract](../adr/0010-manager-decision-notes.md) and [verification](../verification/manager-decision-notes.md). #21 was renamed/reworded to its remaining scope and stays open. The review baseline below remains historical; no legal/test gate is bypassed.
 
 Reviewed 8 October 2026 against fetched `origin/main`, **f47e20c4245ae71384a4a7b0fcbc80a9274f750f**.
 The starting working tree was clean. Documentation branch: `docs/hrflow-south-africa-product-roadmap`.

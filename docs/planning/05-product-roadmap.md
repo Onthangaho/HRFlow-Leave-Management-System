@@ -1,5 +1,7 @@
 # HRFlow phased South African product roadmap
 
+> Implementation update: PR #101 (shell #77) is merged. #21 optional Manager decision notes are locally implemented for independent review; see [decision contract](../adr/0010-manager-decision-notes.md) and [executed verification](../verification/manager-decision-notes.md). The issue wording now specifies server-confirmed outcomes, not optimistic decisions; it remains open. No statutory calculation or automated-test convention changes.
+
 > Current-state update: PR #99 merged on 8 October 2026. Phase 0 item #74 is implemented and evidenced in the endpoint inventory and JWT verification report, but the issue remains open for independent review. References below to disabled lifetime validation describe the original PR #73 planning baseline, not current main. Next recommended gates are #75 legal review and #76 regression-convention approval. This PR publishes documentation only and implements no product features.
 
 Planning baseline: **8 October 2026**, main `f47e20c` after merged PR #73.

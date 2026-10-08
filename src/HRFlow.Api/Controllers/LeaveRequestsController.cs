@@ -12,6 +12,8 @@ using HRFlow.Application.Exceptions;
 using HRFlow.Application.Features.LeaveRequests.Queries.GetLeaveRequestTimeline;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using HRFlow.Application.Features.LeaveRequests;
 
 namespace HRFlow.Api.Controllers;
 
@@ -188,7 +190,7 @@ public class LeaveRequestsController : ControllerBase
 
     [HttpPost("{id}/approve")]
     [Authorize(Roles = ManagerRoleName)]
-    public async Task<IActionResult> ApproveLeaveRequest(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> ApproveLeaveRequest(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] LeaveDecisionDto? decision, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
         if (employee == null)
@@ -205,18 +207,24 @@ public class LeaveRequestsController : ControllerBase
             });
         }
 
-        var command = new ApproveLeaveRequestCommand { LeaveRequestId = id, ApproverId = employee.Id };
+        var command = new ApproveLeaveRequestCommand
+        {
+            LeaveRequestId = id,
+            ApproverId = employee.Id,
+            DecisionNote = decision?.DecisionNote
+        };
         await _mediator.Send(command, cancellationToken);
         _logger.LogInformation(
-            "Leave request approved. LeaveRequestId: {LeaveRequestId}; ApproverEmployeeId: {ApproverEmployeeId}",
+            "Leave request approved. LeaveRequestId: {LeaveRequestId}; ApproverEmployeeId: {ApproverEmployeeId}; CorrelationId: {CorrelationId}",
             id,
-            employee.Id);
+            employee.Id,
+            HttpContext.TraceIdentifier);
         return NoContent();
     }
 
     [HttpPost("{id}/reject")]
     [Authorize(Roles = ManagerRoleName)]
-    public async Task<IActionResult> RejectLeaveRequest(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> RejectLeaveRequest(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] LeaveDecisionDto? decision, CancellationToken cancellationToken)
     {
         var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
         if (employee == null)
@@ -233,12 +241,18 @@ public class LeaveRequestsController : ControllerBase
             });
         }
 
-        var command = new RejectLeaveRequestCommand { LeaveRequestId = id, RejectorId = employee.Id };
+        var command = new RejectLeaveRequestCommand
+        {
+            LeaveRequestId = id,
+            RejectorId = employee.Id,
+            DecisionNote = decision?.DecisionNote
+        };
         await _mediator.Send(command, cancellationToken);
         _logger.LogInformation(
-            "Leave request rejected. LeaveRequestId: {LeaveRequestId}; RejectorEmployeeId: {RejectorEmployeeId}",
+            "Leave request rejected. LeaveRequestId: {LeaveRequestId}; RejectorEmployeeId: {RejectorEmployeeId}; CorrelationId: {CorrelationId}",
             id,
-            employee.Id);
+            employee.Id,
+            HttpContext.TraceIdentifier);
         return NoContent();
     }
 
