@@ -44,6 +44,7 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
         modelBuilder.ApplyConfiguration(new LeavePolicyConfiguration());
         modelBuilder.ApplyConfiguration(new LeaveRequestConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.Entity<AuditEntry>().Property(a => a.CorrelationId).HasMaxLength(AuditEntry.MaxCorrelationIdLength);
         modelBuilder.Entity<AuditEntry>().Property(a => a.Reason).HasMaxLength(AuditEntry.MaxReasonLength);
         modelBuilder.Entity<AuditEntry>()
             .HasIndex(auditEntry => new

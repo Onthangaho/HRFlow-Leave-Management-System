@@ -26,13 +26,15 @@ public class LeaveRequest : BaseEntity
         // Required for EF Core
     }
 
-    public static LeaveRequest Create(Guid employeeId, Guid leaveTypeId, DateTime startDate, DateTime endDate)
+    /// <summary>Records the actual initial submission only for newly created requests.</summary>
+    public static LeaveRequest Create(Guid employeeId, Guid leaveTypeId, DateTime startDate, DateTime endDate, string? correlationId = null)
     {
         var leaveRequest = new LeaveRequest
         {
             Id = Guid.NewGuid()
         };
         leaveRequest.Update(employeeId, leaveTypeId, startDate, endDate);
+        leaveRequest._auditEntries.Add(AuditEntry.Create(leaveRequest.Id, employeeId, "Submit", null, LeaveRequestStatus.Pending, correlationId: correlationId));
         return leaveRequest;
     }
 
@@ -80,7 +82,8 @@ public class LeaveRequest : BaseEntity
         return StartDate <= otherEnd && otherStart <= EndDate;
     }
 
-    public void Approve(Guid actorId)
+    /// <summary>Appends the manager decision to the same aggregate for atomic status/audit persistence.</summary>
+    public void Approve(Guid actorId, string? correlationId = null)
     {
         if (Status != LeaveRequestStatus.Pending)
         {
@@ -92,10 +95,11 @@ public class LeaveRequest : BaseEntity
         ProcessedById = actorId;
         ProcessedOn = DateTime.UtcNow;
 
-        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Approve", oldStatus, Status));
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Approve", oldStatus, Status, correlationId: correlationId));
     }
 
-    public void Reject(Guid actorId)
+    /// <summary>Retains the rejecting actor and diagnostic context without rewriting prior events.</summary>
+    public void Reject(Guid actorId, string? correlationId = null)
     {
         if (Status != LeaveRequestStatus.Pending)
         {
@@ -107,14 +111,14 @@ public class LeaveRequest : BaseEntity
         ProcessedById = actorId;
         ProcessedOn = DateTime.UtcNow;
 
-        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Reject", oldStatus, Status));
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Reject", oldStatus, Status, correlationId: correlationId));
     }
 
     /// <summary>
     /// Withdraws pending leave only. HR deactivation supplies its reason and acting HR employee;
     /// ordinary owner cancellation leaves the optional reason null.
     /// </summary>
-    public void Cancel(Guid actorId, string? reason = null)
+    public void Cancel(Guid actorId, string? reason = null, string? correlationId = null)
     {
         if (Status != LeaveRequestStatus.Pending)
         {
@@ -126,7 +130,7 @@ public class LeaveRequest : BaseEntity
         ProcessedById = actorId;
         ProcessedOn = DateTime.UtcNow;
 
-        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Cancel", oldStatus, Status, reason));
+        _auditEntries.Add(AuditEntry.Create(Id, actorId, "Cancel", oldStatus, Status, reason, correlationId));
     }
 
 }

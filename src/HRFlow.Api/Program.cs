@@ -65,6 +65,7 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBeh
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IRequestCorrelationContext, RequestCorrelationContext>();
 builder.Services.AddScoped<ICurrentEmployeeProvider, CurrentEmployeeProvider>();
 builder.Services.AddScoped<HRFlow.Application.Features.LeaveConfiguration.LeaveConfigurationService>();
 

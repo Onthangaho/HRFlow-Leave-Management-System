@@ -11,16 +11,19 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.RejectLeaveRequest;
 public sealed class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLeaveRequestCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveDecisionTransaction _decisionTransaction;
     private readonly ILeaveApprovalAuthorizationService _authorization;
 
     /// <summary>Shares the scoped persistence and authorization services with the decision transaction.</summary>
     public RejectLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        IRequestCorrelationContext correlation,
         ILeaveDecisionTransaction decisionTransaction,
         ILeaveApprovalAuthorizationService authorization)
     {
         _context = context;
+        _correlation = correlation;
         _decisionTransaction = decisionTransaction;
         _authorization = authorization;
     }
@@ -46,6 +49,6 @@ public sealed class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLea
             throw new LeaveDecisionConflictException("Only pending leave requests can be decided. Refresh the request.");
         }
 
-        leaveRequest.Reject(request.RejectorId);
+        leaveRequest.Reject(request.RejectorId, _correlation.CorrelationId);
     }
 }

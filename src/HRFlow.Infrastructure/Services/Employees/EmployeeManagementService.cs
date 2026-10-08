@@ -21,6 +21,7 @@ public sealed class EmployeeManagementService(
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole<Guid>> roleManager,
     IEmployeeManagementTransaction writeTransaction,
+    IRequestCorrelationContext correlation,
     ILogger<EmployeeManagementService> logger) : IEmployeeManagementService
 {
     /// <inheritdoc />
@@ -149,7 +150,7 @@ public sealed class EmployeeManagementService(
                 .Where(r => r.EmployeeId == employeeId && r.Status == HRFlow.Domain.Enums.LeaveRequestStatus.Pending)
                 .ToListAsync(token);
             employee.Deactivate(actor.Id, reason);
-            foreach (var request in pending) request.Cancel(actor.Id, AuditEntry.DeactivationReasonPrefix + reason.Trim());
+            foreach (var request in pending) request.Cancel(actor.Id, AuditEntry.DeactivationReasonPrefix + reason.Trim(), correlation.CorrelationId);
             result = new EmployeeDeactivationResult(employee.Id, employee.Version, employee.IsActive, pending.Count);
         }, cancellationToken);
         logger.LogInformation("Employee deactivated. EmployeeId: {EmployeeId}; ActorIdentityUserId: {ActorIdentityUserId}; CancelledRequestCount: {CancelledRequestCount}",

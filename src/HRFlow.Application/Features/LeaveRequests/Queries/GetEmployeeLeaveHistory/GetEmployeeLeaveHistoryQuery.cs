@@ -56,11 +56,12 @@ public sealed class GetEmployeeLeaveHistoryQueryHandler
                 ProcessedOn = leaveRequest.ProcessedOn,
                 DecisionHistory = leaveRequest.AuditEntries
                     .OrderBy(auditEntry => auditEntry.Timestamp)
+                    .ThenBy(auditEntry => auditEntry.Id)
                     .Select(auditEntry => new LeaveRequestDecisionDto
                     {
                         Action = auditEntry.Action,
                         ActorFullName = auditEntry.Actor.FullName,
-                        Timestamp = auditEntry.Timestamp,
+                        Timestamp = DateTime.SpecifyKind(auditEntry.Timestamp, DateTimeKind.Utc),
                         OldStatus = auditEntry.OldStatus.HasValue
                             ? auditEntry.OldStatus.Value.ToString()
                             : null,

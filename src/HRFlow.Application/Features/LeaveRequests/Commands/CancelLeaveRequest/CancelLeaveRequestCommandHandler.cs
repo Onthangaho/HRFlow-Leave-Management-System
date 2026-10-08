@@ -11,14 +11,17 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.CancelLeaveRequest;
 public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLeaveRequestCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveDecisionTransaction _decisionTransaction;
 
     /// <summary>Shares the scoped persistence services with the decision transaction.</summary>
     public CancelLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        IRequestCorrelationContext correlation,
         ILeaveDecisionTransaction decisionTransaction)
     {
         _context = context;
+        _correlation = correlation;
         _decisionTransaction = decisionTransaction;
     }
 
@@ -44,6 +47,6 @@ public sealed class CancelLeaveRequestCommandHandler : IRequestHandler<CancelLea
             throw new LeaveDecisionConflictException("Only pending leave requests can be decided. Refresh the request.");
         }
 
-        leaveRequest.Cancel(request.EmployeeId);
+        leaveRequest.Cancel(request.EmployeeId, correlationId: _correlation.CorrelationId);
     }
 }
