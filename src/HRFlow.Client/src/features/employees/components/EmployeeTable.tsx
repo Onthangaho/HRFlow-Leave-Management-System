@@ -14,8 +14,8 @@ export function EmployeeTable({ employees, onEdit, editing, onDeactivate, onView
     return <p className="rounded-lg bg-slate-50 p-6 text-slate-600">No employees match this view. Adjust the search or status filter, or create an employee.</p>;
   }
   return (
-    <div className="max-w-full overflow-x-auto rounded-lg border border-slate-200">
-      <table className="min-w-full divide-y divide-slate-200">
+    <div tabIndex={0} role="region" aria-label="Employee directory table" className="max-w-full overflow-x-auto rounded-lg border border-slate-200 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-indigo-600">
+      <table className="w-full min-w-[52rem] divide-y divide-slate-200">
         <caption className="sr-only">Employees and their current departments, roles, and managers</caption>
         <thead className="bg-slate-50">
           <tr>{['Employee', 'Status', 'Department', 'Roles', 'Manager', 'Actions'].map(label =>

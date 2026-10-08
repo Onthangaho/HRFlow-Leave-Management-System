@@ -2,6 +2,8 @@
 
 > Current-state update: PR #99 merged on 8 October 2026. Its JWT lifetime validation, explicit 30-second skew, current active Identity permission checks and session-safe bounded refresh supersede the authentication gaps recorded at the PR #73 baseline below. See ../security/endpoint-authorization-inventory.md and ../verification/jwt-current-permissions.md. #74 remains open; historical verification is not rerun or replaced here.
 
+> Local #77 implementation: `feat/responsive-application-shell` now supplies the shared authenticated layout, additive navigation, mobile drawer and honest Overview quick actions around existing workflows. See [executed browser/persisted-state verification and screenshots](../verification/responsive-application-shell.md). This supersedes the baseline shell gap below locally, but is not merged; real role dashboards remain #90–#92.
+
 Reviewed 8 October 2026 against fetched `origin/main`, **f47e20c4245ae71384a4a7b0fcbc80a9274f750f**.
 The starting working tree was clean. Documentation branch: `docs/hrflow-south-africa-product-roadmap`.
 [PR #73](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/73) was verified

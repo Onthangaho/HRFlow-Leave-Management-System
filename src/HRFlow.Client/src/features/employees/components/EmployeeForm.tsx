@@ -25,7 +25,7 @@ interface EmployeeFormProps {
   reloadError: string;
 }
 
-const inputClass = 'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-slate-600';
+const inputClass = 'ui-input';
 const errorClass = 'mt-1 text-sm text-rose-700';
 
 /** Preserves the original version, roles, and reporting intent until the user explicitly reloads or saves. */
@@ -154,9 +154,9 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
               ? 'No eligible managers in this department.' : 'Choose a manager in the selected department.'}</p>
             <p id="manager-error" className={errorClass}>{errors.managerId?.message}</p></div>}
           <div className="flex flex-wrap justify-end gap-3 sm:col-span-2">
-            <button type="button" onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2">Cancel</button>
+            <button type="button" onClick={onCancel} className="ui-secondary">Cancel</button>
             <button type="submit" disabled={busy || choicesUnavailable}
-              className="rounded-lg bg-slate-900 px-4 py-2 font-semibold text-white disabled:opacity-50">{busy ? 'Saving...' : 'Save Employee'}</button>
+              className="ui-primary">{busy ? 'Saving...' : 'Save Employee'}</button>
           </div>
         </fieldset>
       </form>

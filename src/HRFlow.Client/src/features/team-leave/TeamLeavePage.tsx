@@ -38,15 +38,15 @@ function TeamLeaveWorkspace() {
   }
   const changeMonth = (offset: number) => setMonth(current => new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + offset, 1)));
 
-  return <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6">
+  return <div className="workspace-page space-y-6">
     <div className="mx-auto max-w-5xl space-y-6">
-      <header className="space-y-3">
-        <Link to="/" className="font-semibold text-indigo-700 underline">Back to dashboard</Link>
+      <section className="page-intro ui-panel">
+
         <p className="pt-3 text-xs font-bold uppercase tracking-widest text-slate-500">Coverage planning</p>
-        <h1 className="text-3xl font-bold text-slate-900">Team leave</h1>
+
         <p className="max-w-2xl text-slate-600">Approved leave for your current direct reports in your department. Dates include both endpoints and all calendar days.</p>
         <Link to="/leave-requests/approvals" className="inline-block font-semibold text-indigo-700 underline">Review Pending requests in the approval queue</Link>
-      </header>
+      </section>
 
       <section className="ui-panel space-y-4" aria-label="Selected month">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -97,5 +97,5 @@ function TeamLeaveWorkspace() {
         </section>}
       </>}
     </div>
-  </main>;
+  </div>;
 }

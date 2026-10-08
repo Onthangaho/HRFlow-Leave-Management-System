@@ -16,24 +16,19 @@ export function EmployeeLeaveHistoryPage() {
   const cancelMutation = useCancelLeaveRequest();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-indigo-50 via-slate-50 to-slate-100 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="workspace-page space-y-6">
       <div className="mx-auto w-full max-w-5xl space-y-6">
-        <header className="rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 p-6 text-white shadow-xl sm:p-8">
-          <Link
-            to="/"
-            className="inline-flex items-center text-sm font-semibold text-indigo-200 transition hover:text-white"
-          >
-            Back to dashboard
-          </Link>
+        <section className="page-intro ui-panel">
+
           <div className="mt-6">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-200">Leave management</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">My leave</h1>
+
             <Link to="/leave-requests/new" className="mt-4 inline-flex rounded-lg bg-white px-4 py-2 font-semibold text-indigo-900">Request leave</Link>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-indigo-100">
               Keep track of your available leave and follow every request from submission through its decision.
             </p>
           </div>
-        </header>
+        </section>
 
         {cancelMutation.error && (
           <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
@@ -62,7 +57,7 @@ export function EmployeeLeaveHistoryPage() {
 
           {balancesQuery.error && (
             <div role="alert" className="rounded-2xl border border-rose-200 bg-white p-6 text-sm text-rose-700 shadow-sm">
-              Unable to load leave balances: {balancesQuery.error.message}
+              Unable to load leave balances: {balancesQuery.error.message}<button type="button" className="ui-secondary mt-3 block" disabled={balancesQuery.isFetching} onClick={() => void balancesQuery.refetch()}>Retry balances</button>
             </div>
           )}
 
@@ -110,7 +105,7 @@ export function EmployeeLeaveHistoryPage() {
 
           {historyQuery.error && (
             <div role="alert" className="rounded-2xl border border-rose-200 bg-white p-6 text-sm text-rose-700 shadow-sm">
-              Unable to load leave history: {historyQuery.error.message}
+              Unable to load leave history: {historyQuery.error.message}<button type="button" className="ui-secondary mt-3 block" disabled={historyQuery.isFetching} onClick={() => void historyQuery.refetch()}>Retry history</button>
             </div>
           )}
 
@@ -140,6 +135,6 @@ export function EmployeeLeaveHistoryPage() {
           )}
         </section>
       </div>
-    </main>
+    </div>
   );
 }

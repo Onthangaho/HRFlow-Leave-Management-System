@@ -74,6 +74,10 @@ owners, signed-off categories and visible unresolved blockers. No blanket compli
 
 4. [#77 shared responsive shell](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/77)
    — **Essential / Medium**, #74. Working role menus/shared styles/accessibility, no dummy controls.
+   Local implementation on `feat/responsive-application-shell` now integrates existing routes; see
+   [actual browser/persisted-state evidence and limitations](../verification/responsive-application-shell.md).
+   Independent review is pending; #77 is not closed or described as merged. Real API-backed role
+   dashboards remain #90–#92 work, not shell metrics.
 5. [#78 employment numbers/dates/schedules](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/78)
    — **Essential / Large**, #74/#75. Versioned HR forms and honest legacy-unknown states.
 6. **Existing #22** — #75/#78. Central rule results/units/cycles/effective dates across submission,
