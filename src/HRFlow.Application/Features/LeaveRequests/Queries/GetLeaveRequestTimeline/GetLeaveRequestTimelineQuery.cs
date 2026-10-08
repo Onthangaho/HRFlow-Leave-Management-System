@@ -15,7 +15,7 @@ public sealed record GetLeaveRequestTimelineQuery(Guid ActorIdentityId, Guid Req
 
 /// <summary>Contains only transition facts, current actor display names and role-filtered context.</summary>
 public sealed record LeaveTimelineEventDto(Guid Id, Guid ActorId, string ActorName, string Action,
-    DateTime TimestampUtc, string? OldStatus, string NewStatus, string? Explanation, string? CorrelationId);
+    DateTime TimestampUtc, string? OldStatus, string NewStatus, string? Explanation, string? CorrelationId, string? DecisionNote);
 
 /// <summary>Reports missing legacy submission honestly without synthesizing events or timestamps.</summary>
 public sealed record LeaveRequestTimelineDto(Guid RequestId, string EmployeeName, bool EmployeeIsActive,
@@ -50,11 +50,11 @@ public sealed class GetLeaveRequestTimelineQueryHandler(IApplicationDbContext co
             var audits = await context.AuditEntries.AsNoTracking().Where(entry => entry.LeaveRequestId == leave.Id)
                 .OrderBy(entry => entry.Timestamp).ThenBy(entry => entry.Id)
                 .Select(entry => new { entry.Id, entry.ActorId, ActorName = entry.Actor.FullName, entry.Action,
-                    entry.Timestamp, entry.OldStatus, entry.NewStatus, entry.Reason, entry.CorrelationId }).ToListAsync(token);
+                    entry.Timestamp, entry.OldStatus, entry.NewStatus, entry.Reason, entry.CorrelationId, entry.DecisionNote }).ToListAsync(token);
             var events = audits.Select(entry => new LeaveTimelineEventDto(entry.Id, entry.ActorId, entry.ActorName,
                 entry.Action, DateTime.SpecifyKind(entry.Timestamp, DateTimeKind.Utc), entry.OldStatus?.ToString(),
                 entry.NewStatus.ToString(), entry.Reason is null ? null : hr ? entry.Reason
-                    : "Cancelled because the employee account was deactivated.", hr ? entry.CorrelationId : null)).ToList();
+                    : "Cancelled because the employee account was deactivated.", hr ? entry.CorrelationId : null, entry.DecisionNote)).ToList();
             return new LeaveRequestTimelineDto(leave.Id, leave.FullName, leave.IsActive, leave.TypeName,
                 DateOnly.FromDateTime(leave.StartDate), DateOnly.FromDateTime(leave.EndDate), leave.Status.ToString(),
                 audits.Any(entry => entry.Action == "Submit" && entry.OldStatus is null && entry.NewStatus == LeaveRequestStatus.Pending), events);

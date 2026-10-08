@@ -86,3 +86,9 @@ timeline prefix, guarded by the initiating session. Other accounts refresh on en
 refresh. No dependency, authentication replay or session persistence change is introduced.
 
 See [executed verification and limitations](../verification/leave-request-audit-timeline.md).
+
+## Optional Manager decision notes (#21 follow-up)
+
+[ADR 0010](0010-manager-decision-notes.md) adds a separate nullable DecisionNote to existing
+AuditEntry. Approve/Reject append it to the same immutable transition; Reason privacy,
+correlation filtering, read snapshots and legacy event truth remain unchanged.

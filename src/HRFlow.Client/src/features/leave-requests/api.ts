@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authHttpClient } from '../auth/api';
 import { useAuth } from '../auth/hooks/useAuth';
-import type { EmployeeLeaveRequest, LeaveBalance, PendingLeaveRequest } from './types';
+import type { EmployeeLeaveRequest, LeaveBalance, PendingLeaveRequest, LeaveDecision } from './types';
 
 const pendingLeaveRequestsQueryKey = (userId: string) =>
   ['pending-leave-requests', userId] as const;
@@ -11,16 +11,16 @@ const leaveBalancesQueryKey = (userId: string) => ['leave-balances', userId] as 
 const employeeLeaveHistoryQueryKey = (userId: string) =>
   ['employee-leave-history', userId] as const;
 
-async function getPendingLeaveRequests(): Promise<PendingLeaveRequest[]> {
+async function getPendingLeaveRequests(signal: AbortSignal): Promise<PendingLeaveRequest[]> {
   const response = await authHttpClient.get<PendingLeaveRequest[]>('/leave-requests', {
-    params: { status: 'Pending' },
+    params: { status: 'Pending' }, signal,
   });
 
   return response.data;
 }
 
-async function approveLeaveRequest(leaveRequestId: string): Promise<void> {
-  await authHttpClient.post(`/leave-requests/${leaveRequestId}/approve`);
+async function approveLeaveRequest({ requestId, decisionNote }: LeaveDecision): Promise<void> {
+  await authHttpClient.post(`/leave-requests/${requestId}/approve`, { decisionNote });
 }
 
 async function getOrganisationPendingLeaveRequests(): Promise<PendingLeaveRequest[]> {
@@ -31,8 +31,8 @@ async function getOrganisationPendingLeaveRequests(): Promise<PendingLeaveReques
   return response.data;
 }
 
-async function rejectLeaveRequest(leaveRequestId: string): Promise<void> {
-  await authHttpClient.post(`/leave-requests/${leaveRequestId}/reject`);
+async function rejectLeaveRequest({ requestId, decisionNote }: LeaveDecision): Promise<void> {
+  await authHttpClient.post(`/leave-requests/${requestId}/reject`, { decisionNote });
 }
 
 async function getLeaveBalances(): Promise<LeaveBalance[]> {
@@ -54,12 +54,13 @@ async function cancelLeaveRequest(leaveRequestId: string): Promise<void> {
  * this page as other reviewers process requests.
  */
 export function usePendingLeaveRequests() {
-  const { user } = useAuth();
+  const { user, sessionVersion } = useAuth();
 
   return useQuery<PendingLeaveRequest[], Error>({
-    queryKey: pendingLeaveRequestsQueryKey(user?.id ?? ''),
-    queryFn: getPendingLeaveRequests,
-    enabled: Boolean(user?.id),
+    queryKey: [...pendingLeaveRequestsQueryKey(user?.id ?? ''), sessionVersion],
+    queryFn: ({ signal }) => getPendingLeaveRequests(signal),
+    enabled: Boolean(user?.roles.includes('Manager')),
+    refetchOnMount: 'always', retry: false,
   });
 }
 
@@ -81,7 +82,8 @@ export function useApproveLeaveRequest() {
   const queryClient = useQueryClient();
   const { user, sessionVersion, getSessionVersion } = useAuth();
 
-  return useMutation<void, Error, string>({
+  return useMutation<void, Error, LeaveDecision>({
+    retry: false,
     mutationFn: approveLeaveRequest,
     onSuccess: async () => {
       if (!user?.id || getSessionVersion() !== sessionVersion) return;
@@ -102,7 +104,8 @@ export function useRejectLeaveRequest() {
   const queryClient = useQueryClient();
   const { user, sessionVersion, getSessionVersion } = useAuth();
 
-  return useMutation<void, Error, string>({
+  return useMutation<void, Error, LeaveDecision>({
+    retry: false,
     mutationFn: rejectLeaveRequest,
     onSuccess: async () => {
       if (!user?.id || getSessionVersion() !== sessionVersion) return;

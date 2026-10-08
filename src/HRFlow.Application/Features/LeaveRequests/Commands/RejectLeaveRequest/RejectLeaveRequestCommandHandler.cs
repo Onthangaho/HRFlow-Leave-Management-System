@@ -49,6 +49,6 @@ public sealed class RejectLeaveRequestCommandHandler : IRequestHandler<RejectLea
             throw new LeaveDecisionConflictException("Only pending leave requests can be decided. Refresh the request.");
         }
 
-        leaveRequest.Reject(request.RejectorId, _correlation.CorrelationId);
+        leaveRequest.Reject(request.RejectorId, _correlation.CorrelationId, request.DecisionNote);
     }
 }

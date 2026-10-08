@@ -62,6 +62,6 @@ public sealed class ApproveLeaveRequestCommandHandler : IRequestHandler<ApproveL
         var balance = LeaveBalanceCalculator.Calculate(leaveType.LeavePolicy.DefaultBalance, approvedRequests);
         leaveRequest.ValidateAgainstPolicy(balance.RemainingDays, approvedRequests, leaveType.LeavePolicy);
 
-        leaveRequest.Approve(request.ApproverId, _correlation.CorrelationId);
+        leaveRequest.Approve(request.ApproverId, _correlation.CorrelationId, request.DecisionNote);
     }
 }

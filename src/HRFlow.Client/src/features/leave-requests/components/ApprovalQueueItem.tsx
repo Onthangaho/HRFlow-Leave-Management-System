@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import type { PendingLeaveRequest } from '../types';
 
 interface ApprovalQueueItemProps {
   leaveRequest: PendingLeaveRequest;
   processingAction?: 'approve' | 'reject';
+  decisionPending?: boolean;
   onApprove: (leaveRequestId: string) => void;
   onReject: (leaveRequestId: string) => void;
 }
@@ -24,24 +24,12 @@ function formatDate(date: string): string {
 export function ApprovalQueueItem({
   leaveRequest,
   processingAction,
+  decisionPending,
   onApprove,
   onReject,
 }: ApprovalQueueItemProps) {
-  const [confirmingAction, setConfirmingAction] = useState<'approve' | 'reject' | null>(null);
-  const isProcessing = processingAction !== undefined;
+  const isProcessing = decisionPending || processingAction !== undefined;
   const dateRange = `${formatDate(leaveRequest.startDate)} - ${formatDate(leaveRequest.endDate)}`;
-
-  const confirmAction = () => {
-    if (confirmingAction === 'approve') {
-      onApprove(leaveRequest.id);
-    }
-
-    if (confirmingAction === 'reject') {
-      onReject(leaveRequest.id);
-    }
-
-    setConfirmingAction(null);
-  };
 
   return (
     <article className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
@@ -78,7 +66,7 @@ export function ApprovalQueueItem({
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
           <button
             type="button"
-            onClick={() => setConfirmingAction('approve')}
+            onClick={() => onApprove(leaveRequest.id)}
             disabled={isProcessing}
             className="ui-primary min-w-28"
           >
@@ -86,7 +74,7 @@ export function ApprovalQueueItem({
           </button>
           <button
             type="button"
-            onClick={() => setConfirmingAction('reject')}
+            onClick={() => onReject(leaveRequest.id)}
             disabled={isProcessing}
             className="ui-danger min-w-28"
           >
@@ -95,31 +83,6 @@ export function ApprovalQueueItem({
         </div>
       </div>
 
-      {confirmingAction && (
-        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-medium text-amber-900">
-            {confirmingAction === 'approve'
-              ? `Approve ${leaveRequest.employeeFullName}'s leave request?`
-              : `Reject ${leaveRequest.employeeFullName}'s leave request?`}
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setConfirmingAction(null)}
-              className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={confirmAction}
-              className={confirmingAction === 'reject' ? 'ui-danger' : 'ui-primary'}
-            >
-              Confirm {confirmingAction}
-            </button>
-          </div>
-        </div>
-      )}
     </article>
   );
 }

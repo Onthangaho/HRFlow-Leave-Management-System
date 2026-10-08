@@ -5,7 +5,7 @@ import { useAuth } from '../auth/hooks/useAuth';
 /** Immutable transition facts; sensitive context is already filtered by current server permissions. */
 export interface TimelineEvent {
   id: string; actorId: string; actorName: string; action: string; timestampUtc: string;
-  oldStatus: string | null; newStatus: string; explanation: string | null; correlationId: string | null;
+  oldStatus: string | null; newStatus: string; decisionNote: string | null; explanation: string | null; correlationId: string | null;
 }
 /** Minimal authorized single-request summary, with an honest legacy submission indicator. */
 export interface RequestTimeline {

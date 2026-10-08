@@ -25,6 +25,7 @@ export interface LeaveBalance {
 
 /** Represents one recorded status transition in an employee's request timeline. */
 export interface LeaveRequestDecision {
+  decisionNote: string | null;
   action: string;
   actorFullName: string;
   timestamp: string;
@@ -42,3 +43,8 @@ export interface EmployeeLeaveRequest {
   processedOn: string | null;
   decisionHistory: LeaveRequestDecision[];
 }
+
+/** A decision carries context only; the server derives actor and validates the current request. */
+export interface LeaveDecision { requestId: string; decisionNote?: string | null }
+/** Mirrors the documented domain bound; whitespace-only notes are omitted. */
+export const MAX_DECISION_NOTE_LENGTH = 500;

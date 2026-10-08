@@ -72,6 +72,7 @@ public sealed class GetEmployeeLeaveHistoryQueryHandler
                         .Select(auditEntry => new LeaveRequestDecisionDto
                         {
                             Action = auditEntry.Action,
+                            DecisionNote = auditEntry.DecisionNote,
                             ActorFullName = auditEntry.Actor.FullName,
                             Timestamp = DateTime.SpecifyKind(auditEntry.Timestamp, DateTimeKind.Utc),
                             OldStatus = auditEntry.OldStatus.HasValue

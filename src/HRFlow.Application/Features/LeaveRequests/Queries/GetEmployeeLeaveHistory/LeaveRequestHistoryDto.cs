@@ -48,6 +48,8 @@ public sealed class LeaveRequestHistoryDto
 /// </summary>
 public sealed class LeaveRequestDecisionDto
 {
+    /// <summary>Ordinary manager context, separate from sensitive HR cancellation reasons.</summary>
+    public string? DecisionNote { get; set; }
     /// <summary>
     /// Gets or sets the action that caused the request status transition.
     /// </summary>
