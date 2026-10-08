@@ -90,13 +90,13 @@ Final git diff --check exited 0. Both instruction files were checked byte-for-by
 Backend: dotnet build HRFlow.sln --no-restore succeeded, 0 warnings, 0 errors.
 The cached restore assets were used; a fresh online restore was not executed.
 
-## Unexecuted browser scenarios and screenshots
+## Initial browser blocker (2026-10-07; superseded below)
 
 The computer-use inventory returned no apps or browsers. Opening the in-app browser returned
 "Browser is not available: iab". Therefore **no real browser workflows or screenshots were
 executed/produced for this follow-up**. Prior screenshots are not reused as new evidence.
 
-Still requiring independent browser verification: reason validation and duplicate clicks;
+At that time, the following browser scenarios were unexecuted: reason validation and duplicate clicks;
 stale/already-inactive reload/discard; active-report/last-HR/contention permission messages;
 self-deactivation sign-out/count; direct HR URL denial; deliberately delayed completion during
 logout/account switching (including same-account relogin); search/filter; Tab/Escape/focus
@@ -104,5 +104,115 @@ restoration; desktop/mobile overflow and readability; screen-reader announcement
 employee creation/editing and leave forms. Source/render/build/API checks do not prove these
 interactions. No Safari/Firefox, accessibility assistive-device or production load checks.
 
-The implementation is reviewable but browser acceptance is not complete. No reactivation,
+At the initial review, browser acceptance was not complete. Subsequent real-browser evidence follows below. No reactivation,
 hard deletion, unrelated redesign, dependency upgrade or new issue number is included.
+
+
+## Real Chromium follow-up ? 2026-10-08
+
+The connected browser inventory still had no browser, but the explicitly requested isolated
+Playwright option successfully launched installed Chromium 154.0.8037.98 headlessly. It used
+the real Vite client and API with a new disposable SQLite database, synthetic accounts and
+requests. Existing databases were not modified. Temporary tooling, private credentials,
+tokens and logs remain outside the repository; no dependency or automated-test files were added.
+The HTTP/SQLite, static-render and Axios-adapter evidence above remains distinct from these
+actual browser interactions.
+
+### Discovered defects fixed
+
+- Escape from the inline discard prompt retained the reason but left focus on BODY. It now
+  returns focus to the reason textarea. The final keyboard run asserted the focused element.
+- Shared native dialogs were pinned to the top-left after the CSS reset. Explicit auto margins
+  now center them; desktop/mobile browser bounds and screenshots confirm the placement.
+- After successful self-deactivation, the protected-route redirect overwrote login navigation
+  state, hiding the returned cancellation count. The generic count-only confirmation now
+  lives in in-memory auth state, survives that redirect and clears on the next login/logout.
+  No employee name, email, reason, token or persisted session is added to this notice.
+
+### Executed interaction and persistence evidence
+
+- Desktop 1440x1050 and mobile-width 390x844: directory search, All/Active/Inactive filters,
+  empty results, text badges, Active Edit/Deactivate and inactive read-only details passed.
+  Browser assertions found no page-level horizontal overflow. The table intentionally scrolls
+  horizontally inside its container on narrow screens. Read-only details include lifecycle
+  time, actor and reason and offer no edit/reactivation action.
+- Dialog initial focus was Cancel. Forward and backward Tab wrapped through the reason
+  textarea, reporting action and footer buttons. Blank reason validation focused the textarea.
+  Escape closed a clean dialog and restored its opener; a dirty reason prompted discard.
+  Keep reason and Escape from discard retained input and restored reason focus. Explicit
+  discard closed the dialog and restored the invoking Deactivate action. Details Escape
+  restored View details focus. Centered modal bounds were asserted at both viewport widths.
+- A real API profile update made the loaded deactivation version stale. The attempted PATCH
+  returned 409 with the original version, leaving the reason and active state unchanged.
+  Keep reason retained input; explicit discard/reload cleared the reason and loaded the new
+  version. Only a deliberate new submission then succeeded using that returned version.
+- External deactivation while the dialog was open caused a real conflict. Explicit reload
+  switched to inactive details and updated directory actions without replaying the PATCH.
+- Two click events produced exactly one PATCH. Its real server response was held in Playwright
+  after commit; saving controls stayed disabled and Escape could not dismiss the dialog.
+  Releasing the response produced one success. This is real API transport gating, not a
+  fabricated success response or static-render check.
+- Active-report 409 retained the reason; reporting navigation opened the active direct-report
+  view for existing edits. An independent SQLite BEGIN IMMEDIATE caused a real contention
+  409 that displayed recoverable feedback and retained input. No automatic replay occurred.
+- An actual browser deactivation displayed the server count of 2. Independent SQLite reads
+  confirmed two Cancelled requests, each with exactly one Pending -> Cancelled audit and
+  the correct acting HR employee, timestamp and full synthetic reason. Inactive details
+  showed the preserved lifecycle information.
+- Actual successful PATCH responses were held across SPA logout/login as another Employee
+  account and, separately, as the same HR account. No full reload or auth-state injection was
+  used. DOM observation found no old success notices/protected-content leaks; request counts
+  showed no old-session employee refetch. The same-account fresh directory read showed the
+  now-inactive record. These delay scenarios were repeated after the final auth fix.
+- Successful HR self-deactivation with one Pending request reached login, displayed count 1,
+  removed protected employee/account content and denied browser Back. Logging in and out as
+  another account cleared the generic confirmation rather than carrying it into a later session.
+- External HR deactivation while its browser dialog was open caused a real server 401.
+  Exactly one PATCH and zero refresh calls were observed; no replay occurred, access ended
+  and protected content disappeared. Separately, removing current HR membership caused a
+  real 403 with clear permission feedback and the entered reason preserved.
+- A disposable-only setup left one active HR administrator. The actual self-deactivation
+  form returned last-active-HR 409, retained its reason and left the account active/access intact.
+- Existing employee create/edit forms saved via the real APIs. Reloaded data confirmed both
+  Employee/Manager roles were prefilled and retained, manager Preserve kept the relationship,
+  and the edit version rotated. Policy create, dirty-discard and unused-delete dialogs worked;
+  initial focus, Tab/Shift+Tab, Escape, draft retention and delete opener restoration passed.
+  API reads confirmed the created policy was deleted after explicit confirmation.
+- Authenticated Employee and Manager SPA navigation to the HR route showed denial. This used
+  browser history navigation, not auth-state injection; address-bar full reload is intentionally
+  a different case because sessions remain in memory only. The actual leave form submitted,
+  personal history loaded, HR monitoring displayed the request, and its assigned manager
+  approved it; SQLite confirmed Approved with exactly one matching manager approval audit.
+
+### Final checks and iteration notes
+
+Frontend build passed after the fixes: TypeScript and Vite, 233 modules transformed.
+Frontend lint exited 0 with the existing useAuth Fast Refresh warning and no errors.
+No backend files changed in this follow-up; backend build was not rerun. Final diff checks
+and identical instruction-file checks were performed before committing.
+
+Temporary verification iterations corrected an ESM file URL, an ambiguous Manager label
+locator and a details lookup hidden by the retained Active filter. An incomplete intermediate
+auth edit was caught by compilation, corrected, and followed by the passing build/browser
+runs above. These failed attempts are not counted as passing checks.
+
+### Screenshots and limitations
+
+All seven PNGs were visually reviewed: only synthetic names/example.invalid addresses and
+synthetic reasons are present; no credentials, tokens, real personal data or machine paths.
+Desktop images are 1440x1050; mobile images are 390x844. Individual files are below 150 KB.
+
+- [Desktop directory](screenshots/employee-deactivation-ui/directory-desktop.png)
+- [Mobile directory](screenshots/employee-deactivation-ui/directory-mobile.png)
+- [Desktop deactivation](screenshots/employee-deactivation-ui/deactivation-desktop.png)
+- [Mobile deactivation](screenshots/employee-deactivation-ui/deactivation-mobile.png)
+- [Desktop inactive details](screenshots/employee-deactivation-ui/inactive-details-desktop.png)
+- [Mobile inactive details](screenshots/employee-deactivation-ui/inactive-details-mobile.png)
+- [Completed offboarding details](screenshots/employee-deactivation-ui/completed-inactive-details.png)
+
+This verifies headless installed Chromium and responsive viewport behavior, not a physical
+mobile device, touch/soft-keyboard behavior, Safari/Firefox, screen-reader/assistive-device
+compatibility, all zoom settings or production load. Delays held an actual successful response
+after server commit; every possible network failure/ordering is not claimed. Protected cache
+clearing was checked through resulting DOM, access and fresh request behavior, not private
+TanStack internals. Keep PR #70 draft for independent review; do not infer readiness or merge.

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ConfirmationDialog } from '../../../components/ConfirmationDialog';
 import { useAuth } from '../../auth/hooks/useAuth';
@@ -30,8 +29,7 @@ export function EmployeeDeactivationDialog({ employee, returnFocus, onClose, onS
   const reloadController = useRef<AbortController | null>(null);
   const mutation = useDeactivateEmployee();
   const queryClient = useQueryClient();
-  const { user, sessionVersion, getSessionVersion, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, sessionVersion, getSessionVersion, completeSelfDeactivation } = useAuth();
   const currentSession = () => getSessionVersion() === sessionVersion;
   const busy = mutation.isPending || reloading;
   useEffect(() => () => reloadController.current?.abort(), []);
@@ -64,7 +62,11 @@ export function EmployeeDeactivationDialog({ employee, returnFocus, onClose, onS
   };
   const requestAction = (action: 'close' | 'reload' | 'reports') => {
     if (busy || inFlight.current) return;
-    if (discard) { setDiscard(null); return; }
+    if (discard) {
+      setDiscard(null);
+      requestAnimationFrame(() => document.getElementById('deactivation-reason')?.focus());
+      return;
+    }
     if (reason.length) setDiscard(action); else act(action);
   };
   const submit = async () => {
@@ -79,8 +81,7 @@ export function EmployeeDeactivationDialog({ employee, returnFocus, onClose, onS
       const result = await mutation.mutateAsync({ employee: snapshot, reason: trimmed });
       if (!currentSession()) return;
       if (snapshot.identityUserId === user?.id) {
-        logout();
-        navigate('/login', { replace: true, state: { selfDeactivated: true, cancelledRequestCount: result.cancelledRequestCount } });
+        completeSelfDeactivation(result.cancelledRequestCount);
       } else onSuccess(result.cancelledRequestCount);
     } catch {
       // Safe server errors remain in mutation state; the reason and original version are retained.

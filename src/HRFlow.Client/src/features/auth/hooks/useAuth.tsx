@@ -18,6 +18,9 @@ const roleClaimType =
 interface AuthContextValue {
   /** Logout/relogin epochs differ even for the same account; token refresh retains the epoch. */
   sessionVersion: number;
+  /** Generic completion survives the route guard redirect, but is cleared by the next session. */
+  selfDeactivationCount: number | null;
+  completeSelfDeactivation: (cancelledRequestCount: number) => void;
   getSessionVersion: () => number;
   session: AuthSession | null;
   user: AuthUser | null;
@@ -65,6 +68,7 @@ function createSession(tokenResponse: TokenResponse): AuthSession {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [selfDeactivationCount, setSelfDeactivationCount] = useState<number | null>(null);
   const sessionRef = useRef<AuthSession | null>(null);
   const sessionVersionRef = useRef(0);
   const refreshInFlightRef = useRef<{
@@ -77,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextUserId = newSession?.user.id;
 
     if (previousUserId !== nextUserId) {
+      setSelfDeactivationCount(null);
       sessionVersionRef.current += 1;
       void queryClient.cancelQueries();
       queryClient.clear();
@@ -86,7 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(newSession);
   }, [queryClient]);
 
+  const completeSelfDeactivation = useCallback((cancelledRequestCount: number) => {
+    updateSession(null);
+    setSelfDeactivationCount(cancelledRequestCount);
+  }, [updateSession]);
+
   const clearSession = useCallback(() => {
+    setSelfDeactivationCount(null);
     updateSession(null);
   }, [updateSession]);
 
@@ -170,6 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       sessionVersion: sessionVersionRef.current,
+      selfDeactivationCount,
+      completeSelfDeactivation,
       getSessionVersion,
       session,
       user: session?.user ?? null,
@@ -178,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login: loginUser,
       logout: clearSession,
     }),
-    [clearSession, getSessionVersion, loginMutation.isPending, loginUser, session],
+    [clearSession, completeSelfDeactivation, getSessionVersion, loginMutation.isPending, loginUser, selfDeactivationCount, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
