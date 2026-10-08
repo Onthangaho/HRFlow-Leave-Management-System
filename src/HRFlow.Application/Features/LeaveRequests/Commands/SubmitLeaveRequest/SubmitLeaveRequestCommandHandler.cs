@@ -14,16 +14,19 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveRequestCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveApprovalAuthorizationService _leaveApprovalAuthorizationService;
     private readonly ILeaveConfigurationTransaction _transaction;
 
     /// <summary>Shares the context and database reservation used by policy management and approvals.</summary>
     public SubmitLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        IRequestCorrelationContext correlation,
         ILeaveApprovalAuthorizationService leaveApprovalAuthorizationService,
         ILeaveConfigurationTransaction transaction)
     {
         _context = context;
+        _correlation = correlation;
         _leaveApprovalAuthorizationService = leaveApprovalAuthorizationService;
         _transaction = transaction;
     }
@@ -59,7 +62,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
             request.EmployeeId,
             request.LeaveTypeId,
             request.StartDate,
-            request.EndDate);
+            request.EndDate, _correlation.CorrelationId);
 
         var balance = LeaveBalanceCalculator.Calculate(
             leaveType.LeavePolicy.DefaultBalance,

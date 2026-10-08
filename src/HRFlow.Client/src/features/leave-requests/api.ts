@@ -89,6 +89,7 @@ export function useApproveLeaveRequest() {
         queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
         queryClient.invalidateQueries({ queryKey: ['team-leave-summary', user.id] }),
         queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['leave-request-timeline', user.id] }),
       ]);
     },
   });
@@ -109,6 +110,7 @@ export function useRejectLeaveRequest() {
         queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
         queryClient.invalidateQueries({ queryKey: ['team-leave-summary', user.id] }),
         queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['leave-request-timeline', user.id] }),
       ]);
     },
   });
@@ -152,6 +154,7 @@ export function useCancelLeaveRequest() {
         queryClient.invalidateQueries({ queryKey: employeeLeaveHistoryQueryKey(user.id) }),
         queryClient.invalidateQueries({ queryKey: leaveBalancesQueryKey(user.id) }),
         queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['leave-request-timeline', user.id] }),
       ]);
     },
   });

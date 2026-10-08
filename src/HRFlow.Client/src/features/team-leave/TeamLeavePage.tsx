@@ -90,6 +90,7 @@ function TeamLeaveWorkspace() {
               {group.map(entry => <li key={entry.requestId} className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
                 <p className="min-w-0 break-words font-medium text-slate-800">{entry.leaveTypeName}</p>
                 <p className="text-sm text-slate-600"><time dateTime={entry.startDate.slice(0, 10)}>{formatDate(entry.startDate)}</time> – <time dateTime={entry.endDate.slice(0, 10)}>{formatDate(entry.endDate)}</time></p>
+                <Link className="font-semibold text-indigo-700 underline" to={`/leave-requests/${entry.requestId}/history`}>View history</Link>
               </li>)}
             </ul>
           </article>)}

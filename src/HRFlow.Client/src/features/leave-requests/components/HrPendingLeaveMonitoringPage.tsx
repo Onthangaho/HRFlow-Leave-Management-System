@@ -90,6 +90,7 @@ export function HrPendingLeaveMonitoringPage() {
                     </span>
                   </div>
                 </div>
+                <Link className="mt-4 inline-block font-semibold text-indigo-700 underline" to={`/leave-requests/${leaveRequest.id}/history`}>View history</Link>
               </article>
             ))}
           </section>

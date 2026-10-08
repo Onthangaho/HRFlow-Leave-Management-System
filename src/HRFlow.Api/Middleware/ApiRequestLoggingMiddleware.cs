@@ -39,6 +39,7 @@ public sealed class ApiRequestLoggingMiddleware
         }
 
         var correlationId = GetCorrelationId(context);
+        context.TraceIdentifier = correlationId;
         context.Response.Headers[CorrelationIdHeaderName] = correlationId;
 
         var stopwatch = Stopwatch.StartNew();
@@ -100,8 +101,9 @@ public sealed class ApiRequestLoggingMiddleware
     private static string GetCorrelationId(HttpContext context)
     {
         var suppliedCorrelationId = context.Request.Headers[CorrelationIdHeaderName].FirstOrDefault();
-        return string.IsNullOrWhiteSpace(suppliedCorrelationId)
-            ? context.TraceIdentifier
-            : suppliedCorrelationId;
+        // Bound diagnostic metadata and reject whitespace/control characters before logging or auditing.
+        return suppliedCorrelationId is { Length: > 0 and <= 128 }
+            && suppliedCorrelationId.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_' or '.' or ':')
+            ? suppliedCorrelationId : context.TraceIdentifier;
     }
 }

@@ -12,16 +12,19 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.ApproveLeaveRequest
 public sealed class ApproveLeaveRequestCommandHandler : IRequestHandler<ApproveLeaveRequestCommand>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveDecisionTransaction _decisionTransaction;
     private readonly ILeaveApprovalAuthorizationService _authorization;
 
     /// <summary>Shares the scoped persistence and authorization services with the decision transaction.</summary>
     public ApproveLeaveRequestCommandHandler(
         IApplicationDbContext context,
+        IRequestCorrelationContext correlation,
         ILeaveDecisionTransaction decisionTransaction,
         ILeaveApprovalAuthorizationService authorization)
     {
         _context = context;
+        _correlation = correlation;
         _decisionTransaction = decisionTransaction;
         _authorization = authorization;
     }
@@ -59,6 +62,6 @@ public sealed class ApproveLeaveRequestCommandHandler : IRequestHandler<ApproveL
         var balance = LeaveBalanceCalculator.Calculate(leaveType.LeavePolicy.DefaultBalance, approvedRequests);
         leaveRequest.ValidateAgainstPolicy(balance.RemainingDays, approvedRequests, leaveType.LeavePolicy);
 
-        leaveRequest.Approve(request.ApproverId);
+        leaveRequest.Approve(request.ApproverId, _correlation.CorrelationId);
     }
 }

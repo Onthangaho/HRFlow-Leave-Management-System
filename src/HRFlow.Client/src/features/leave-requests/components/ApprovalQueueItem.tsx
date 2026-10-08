@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import type { PendingLeaveRequest } from '../types';
 
@@ -44,6 +45,7 @@ export function ApprovalQueueItem({
 
   return (
     <article className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+      <Link className="mb-4 inline-block font-semibold text-indigo-700 underline" to={`/leave-requests/${leaveRequest.id}/history`}>View history</Link>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-3">
           <div className="flex flex-wrap items-center gap-3">

@@ -7,6 +7,9 @@ using HRFlow.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
 using HRFlow.Application.Features.LeaveRequests.Queries.GetLeaveBalances;
 using HRFlow.Application.Interfaces;
 using MediatR;
+using System.Security.Claims;
+using HRFlow.Application.Exceptions;
+using HRFlow.Application.Features.LeaveRequests.Queries.GetLeaveRequestTimeline;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +20,15 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/leave-requests")]
 public class LeaveRequestsController : ControllerBase
 {
+    /// <summary>Returns read-only facts under live owner/manager/HR authorization in one snapshot.</summary>
+    [HttpGet("{id:guid}/timeline")]
+    public async Task<ActionResult<LeaveRequestTimelineDto>> GetTimeline(Guid id, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor))
+            throw new ForbiddenException("A valid authenticated account is required.");
+        return Ok(await _mediator.Send(new GetLeaveRequestTimelineQuery(actor, id), cancellationToken));
+    }
+
     private const string HrAdministratorOnlyPolicy = "HrAdministratorOnly";
     private const string ManagerRoleName = "Manager";
     private const string PersonalLeaveRoles = "Employee,Manager";

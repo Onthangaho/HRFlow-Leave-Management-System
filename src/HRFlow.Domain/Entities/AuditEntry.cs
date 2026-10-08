@@ -6,6 +6,9 @@ namespace HRFlow.Domain.Entities;
 /// <summary>Preserves one immutable leave transition, including context for HR deactivation cancellation.</summary>
 public class AuditEntry : BaseEntity
 {
+    public const int MaxCorrelationIdLength = 128;
+    /// <summary>Optional diagnostic metadata; null accurately represents legacy events.</summary>
+    public string? CorrelationId { get; private set; }
     public const string DeactivationReasonPrefix = "Employee deactivation: ";
     public static readonly int MaxReasonLength = Employee.MaxDeactivationReasonLength + DeactivationReasonPrefix.Length;
     public Guid LeaveRequestId { get; private set; }
@@ -32,7 +35,7 @@ public class AuditEntry : BaseEntity
     }
 
     /// <summary>Captures actor and time at the transition without rewriting previous decisions.</summary>
-    public static AuditEntry Create(Guid leaveRequestId, Guid actorId, string action, LeaveRequestStatus? oldStatus, LeaveRequestStatus newStatus, string? reason = null)
+    public static AuditEntry Create(Guid leaveRequestId, Guid actorId, string action, LeaveRequestStatus? oldStatus, LeaveRequestStatus newStatus, string? reason = null, string? correlationId = null)
     {
         if (leaveRequestId == Guid.Empty)
         {
@@ -51,6 +54,8 @@ public class AuditEntry : BaseEntity
 
         if (reason is not null && (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > MaxReasonLength))
             throw new DomainException($"Cancellation reason must contain 1–{MaxReasonLength} characters.");
-        return new AuditEntry(leaveRequestId, actorId, action, oldStatus, newStatus) { Reason = reason?.Trim() };
+        if (correlationId is not null && (string.IsNullOrWhiteSpace(correlationId) || correlationId.Length > MaxCorrelationIdLength))
+            throw new DomainException("Invalid audit correlation identifier.");
+        return new AuditEntry(leaveRequestId, actorId, action, oldStatus, newStatus) { Reason = reason?.Trim(), CorrelationId = correlationId };
     }
 }

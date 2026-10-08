@@ -31,7 +31,7 @@ export function RequestLeavePage() {
     onSuccess: async (_, values) => {
       if (account.current !== values.accountId || getSessionVersion() !== sessionVersion) return;
       setSuccess(true);
-      await Promise.all(['employee-leave-history', 'leave-balances', 'pending-leave-requests', 'organisation-pending-leave-requests', 'managed-leave-types', 'leave-policies', 'department-leave-report']
+      await Promise.all(['employee-leave-history', 'leave-balances', 'pending-leave-requests', 'organisation-pending-leave-requests', 'managed-leave-types', 'leave-policies', 'department-leave-report', 'leave-request-timeline']
         .map(key => client.invalidateQueries({ queryKey: [key, values.accountId] })));
     },
   });

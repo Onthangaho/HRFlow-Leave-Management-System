@@ -1,3 +1,4 @@
+import { LeaveRequestTimelinePage } from './features/leave-timeline/LeaveRequestTimelinePage';
 import { LeaveConfigurationPage } from './features/leave-configuration/LeaveConfigurationPage';
 import { lazy, Suspense } from 'react';
 import { TeamLeavePage } from './features/team-leave/TeamLeavePage';
@@ -20,6 +21,11 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
+
+      </Route>
+
+      <Route element={<ProtectedRoute requiredRoles={['Employee', 'Manager', 'HR Administrator']} />}>
+        <Route path="/leave-requests/:id/history" element={<LeaveRequestTimelinePage />} />
       </Route>
 
       <Route element={<ProtectedRoute requiredRoles={['Employee', 'Manager']} />}>

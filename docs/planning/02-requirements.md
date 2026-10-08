@@ -75,6 +75,11 @@
 > See [ADR 0007](../adr/0007-hr-department-leave-reporting.md) and
 > [executed verification and limitations](../verification/hr-department-leave-reporting.md).
 
+> Single-request audit history (#31/#32) reuses existing domain transitions and atomic persistence,
+> adds truthful initial events only for new submissions, and provides live owner/manager/HR scopes
+> with HR-only deactivation context. See [ADR 0008](../adr/0008-leave-request-audit-timeline.md) and
+> [executed verification/limitations](../verification/leave-request-audit-timeline.md).
+
 ### Personas
 
 #### Employee
