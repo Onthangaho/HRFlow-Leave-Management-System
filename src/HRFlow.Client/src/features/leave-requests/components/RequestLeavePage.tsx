@@ -7,7 +7,7 @@ import { problemMessage } from '../../leave-configuration/problems';
 
 /** Minimal personal submission connects HR-created types to real requests without duplicating policy calculations. */
 export function RequestLeavePage() {
-  const { user } = useAuth();
+  const { user, sessionVersion, getSessionVersion } = useAuth();
   const account = useRef(user?.id); account.current = user?.id;
   const client = useQueryClient();
   const submitting = useRef(false);
@@ -24,14 +24,14 @@ export function RequestLeavePage() {
   const submit = useMutation({
     onSettled: () => { submitting.current = false; },
     mutationFn: async (values: { accountId: string; leaveTypeId: string; startDate: string; endDate: string }) => {
-      if (account.current !== values.accountId) throw new Error('The session changed.');
+      if (account.current !== values.accountId || getSessionVersion() !== sessionVersion) throw new Error('The session changed.');
       return (await authHttpClient.post<string>('/leave-requests', { leaveTypeId: values.leaveTypeId,
         startDate: `${values.startDate}T00:00:00`, endDate: `${values.endDate}T00:00:00` })).data;
     },
     onSuccess: async (_, values) => {
-      if (account.current !== values.accountId) return;
+      if (account.current !== values.accountId || getSessionVersion() !== sessionVersion) return;
       setSuccess(true);
-      await Promise.all(['employee-leave-history', 'leave-balances', 'pending-leave-requests', 'organisation-pending-leave-requests', 'managed-leave-types', 'leave-policies']
+      await Promise.all(['employee-leave-history', 'leave-balances', 'pending-leave-requests', 'organisation-pending-leave-requests', 'managed-leave-types', 'leave-policies', 'department-leave-report']
         .map(key => client.invalidateQueries({ queryKey: [key, values.accountId] })));
     },
   });

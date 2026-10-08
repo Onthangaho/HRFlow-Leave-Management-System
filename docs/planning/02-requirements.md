@@ -52,6 +52,7 @@
 | View actionable approval queue | No | Direct-report Pending requests only | No |
 | View read-only team leave summary | No | Current same-department direct reports' Approved requests, including inactive history | No, unless separately assigned Manager |
 | Monitor organisation-wide Pending requests | No | No | Yes, read-only |
+| Report period leave totals by current department | No | No, unless separately assigned HR | Yes, read-only; includes inactive history |
 | Own employee, role, department, and leave-policy administration | No | No | Yes; employee creation/editing and reporting assignments are exposed |
 
 > Implementation note: HR employee creation and editing now use current Identity membership,
@@ -68,6 +69,11 @@
 > is shown, and distinct active people are counted once per selected month. See
 > [ADR 0006](../adr/0006-manager-team-leave-summary.md) and
 > [executed API/browser verification](../verification/manager-team-leave-summary.md).
+> HR department reporting (#29/#30) is locally implemented with inclusive period intersections,
+> clipped summed request-days, distinct employee/inactive-history metrics and applied-filter
+> chart/table views. Attribution uses current departments, without historical reconstruction.
+> See [ADR 0007](../adr/0007-hr-department-leave-reporting.md) and
+> [executed verification and limitations](../verification/hr-department-leave-reporting.md).
 
 ### Personas
 
