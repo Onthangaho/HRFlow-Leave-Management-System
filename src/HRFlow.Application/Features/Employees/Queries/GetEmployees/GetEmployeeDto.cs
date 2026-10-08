@@ -3,6 +3,12 @@ namespace HRFlow.Application.Features.Employees.Queries.GetEmployees;
 /// <summary>Provides a complete editable snapshot; no Identity credentials or tokens are exposed.</summary>
 public sealed class GetEmployeeDto
 {
+    /// <summary>Independent from employment lifecycle; legacy activation dates are not fabricated.</summary>
+    public bool RequiresActivation { get; set; }
+    /// <summary>Safe invitation feedback; never exposes a token or private pickup location.</summary>
+    public string InvitationDeliveryState { get; set; } = "NotRequired";
+    /// <summary>Actual UTC first-password establishment time; legacy dates remain unknown.</summary>
+    public DateTime? ActivatedAtUtc { get; set; }
     /// <summary>Inactive records remain visible for history but cannot be edited or assigned as managers.</summary>
     public bool IsActive { get; set; }
     /// <summary>HR-only account linkage lets the client end its own session after self-deactivation.</summary>

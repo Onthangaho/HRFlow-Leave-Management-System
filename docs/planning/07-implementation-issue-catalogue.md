@@ -312,7 +312,7 @@ docs/planning/05-product-roadmap.md (documentation review branch).
 
 ## Acceptance criteria
 - [ ] Tokens are purpose/account-bound, expiring and single-use; repeated/concurrent redemption yields one safe outcome.
-- [ ] Activation/resend requires current active HR; cannot overwrite, reactivate or restore roles to an existing account.
+- [ ] Creation/resend require current active HR. Intended recipients redeem anonymously using a valid account-bound invitation, without HR membership or login. Activation cannot overwrite a password, reactivate an employee or grant/restore roles.
 - [ ] No credential in preview/report/log; activation secrets are delivered only via the approved channel, not downloadable CSV.
 - [ ] Document delivery failure/retry and account state; initial credential flow forces password establishment before normal access.
 

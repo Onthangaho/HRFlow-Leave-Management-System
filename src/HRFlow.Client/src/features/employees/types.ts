@@ -7,6 +7,9 @@ export type ManagerAssignment = 'Preserve' | 'Assign' | 'Clear';
 export interface Employee {
   id: string;
   isActive: boolean;
+  requiresActivation: boolean;
+  invitationDeliveryState: string;
+  activatedAtUtc: string | null;
   /** HR-only account linkage identifies self-deactivation without comparing mutable email. */
   identityUserId: string | null;
   deactivatedAtUtc: string | null;
@@ -26,7 +29,6 @@ export interface Employee {
 export interface EmployeeFormValues {
   fullName: string;
   email: string;
-  password?: string;
   departmentId: string;
   roles: EmployeeRole[];
   managerAssignment: ManagerAssignment;
@@ -35,6 +37,7 @@ export interface EmployeeFormValues {
 
 /** Only a created/updated employee ID and its accepted version are returned by writes. */
 export interface EmployeeWriteResult {
+  invitationDeliveryState?: string | null;
   employeeId: string;
   version: string;
 }

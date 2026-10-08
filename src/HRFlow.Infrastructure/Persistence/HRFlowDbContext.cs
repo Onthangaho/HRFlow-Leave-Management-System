@@ -1,3 +1,4 @@
+using HRFlow.Domain.Models.Auth;
 using HRFlow.Domain.Interfaces;
 using HRFlow.Domain.Entities;
 using HRFlow.Infrastructure.Configurations;
@@ -37,6 +38,10 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<ApplicationUser>().Property(u => u.RequiresActivation).HasDefaultValue(false);
+        modelBuilder.Entity<ApplicationUser>().Property(u => u.InvitationDeliveryState).HasMaxLength(32).HasDefaultValue(ActivationDeliveryStates.NotRequired);
+        modelBuilder.Entity<ApplicationUser>().Property(u => u.ActivationTokenHash).HasMaxLength(64);
+        modelBuilder.Entity<ApplicationUser>().HasIndex(u => u.ActivationTokenHash).IsUnique();
 
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
         modelBuilder.ApplyConfiguration(new DepartmentConfiguration());

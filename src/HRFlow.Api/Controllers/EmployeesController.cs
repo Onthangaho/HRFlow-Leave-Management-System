@@ -31,7 +31,7 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>Creates the profile and linked login account through the authorized application command.</summary>
-    [HttpPost]
+    [HttpPost, RequestSizeLimit(4096)]
     public async Task<IActionResult> CreateEmployee(CreateEmployeeCommand command, CancellationToken cancellationToken)
     {
         command.ActorIdentityUserId = GetActorIdentityId();

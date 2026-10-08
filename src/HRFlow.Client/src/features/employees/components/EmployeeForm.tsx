@@ -1,3 +1,4 @@
+import { useAuth } from '../../auth/hooks/useAuth';
 import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +10,6 @@ import { employeeRoles, type Employee, type EmployeeFormValues } from '../types'
 const schema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required').max(200),
   email: z.string().trim().email('Enter a valid email address').max(256),
-  password: z.string().optional(),
   departmentId: z.string().min(1, 'Select a department'),
   roles: z.array(z.enum(employeeRoles)).min(1, 'Select at least one role'),
   managerAssignment: z.enum(['Preserve', 'Assign', 'Clear']),
@@ -19,7 +19,7 @@ const schema = z.object({
 interface EmployeeFormProps {
   employee: Employee | null;
   employees: Employee[];
-  onSuccess: () => void;
+  onSuccess: (deliveryState?: string | null) => void;
   onCancel: () => void;
   onReload: () => Promise<void>;
   reloadError: string;
@@ -30,27 +30,25 @@ const errorClass = 'mt-1 text-sm text-rose-700';
 
 /** Preserves the original version, roles, and reporting intent until the user explicitly reloads or saves. */
 export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReload, reloadError }: EmployeeFormProps) {
+  const { sessionVersion, getSessionVersion } = useAuth();
   const isEditing = Boolean(employee);
   const departments = useDepartments();
   const availableRoles = useRoles();
   const create = useCreateEmployee();
   const update = useUpdateEmployee();
   const formSchema = schema.superRefine((values, context) => {
-    if (!isEditing && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/.test(values.password ?? '')) {
-      context.addIssue({ code: 'custom', path: ['password'], message: 'Use at least 8 characters with uppercase, lowercase, a number, and a symbol.' });
-    }
     if (isEditing && values.managerAssignment === 'Assign' && !values.managerId) {
       context.addIssue({ code: 'custom', path: ['managerId'], message: 'Select a manager to assign.' });
     }
   });
   const { register, handleSubmit, reset, control, setValue, formState: { errors, isSubmitting } } = useForm<EmployeeFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { fullName: '', email: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '', password: '' },
+    defaultValues: { fullName: '', email: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '' },
   });
   const departmentId = useWatch({ control, name: 'departmentId' });
   const managerAssignment = useWatch({ control, name: 'managerAssignment' });
   const eligibleManagers = employees.filter(candidate =>
-    candidate.isActive && candidate.id !== employee?.id && candidate.departmentId === departmentId && candidate.roles.includes('Manager'),
+    candidate.isActive && !candidate.requiresActivation && candidate.id !== employee?.id && candidate.departmentId === departmentId && candidate.roles.includes('Manager'),
   );
   const mutation = employee ? update : create;
   const busy = mutation.isPending || isSubmitting;
@@ -61,7 +59,7 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
     reset(employee ? {
       fullName: employee.fullName, email: employee.email, departmentId: employee.departmentId,
       roles: [...employee.roles], managerAssignment: 'Preserve', managerId: '',
-    } : { fullName: '', email: '', password: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '' });
+    } : { fullName: '', email: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '' });
   }, [employee, reset]);
 
   let failure = '';
@@ -82,9 +80,8 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
   const submit = handleSubmit(async values => {
     if (mutation.isPending) return;
     try {
-      if (employee) await update.mutateAsync({ ...values, id: employee.id, expectedVersion: employee.version });
-      else await create.mutateAsync(values);
-      onSuccess();
+      const result = employee ? await update.mutateAsync({ ...values, id: employee.id, expectedVersion: employee.version }) : await create.mutateAsync(values);
+      if (getSessionVersion() === sessionVersion) onSuccess(result.invitationDeliveryState);
     } catch {
       // Mutation state displays the safe server error and keeps the user's unsaved input available.
     }
@@ -119,11 +116,7 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
             <input id="employee-email" type="email" autoComplete="off" className={inputClass} aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? 'email-error' : undefined} {...register('email')} />
             {errors.email && <p id="email-error" className={errorClass}>{errors.email.message}</p>}</div>
-          {!employee && <div className="sm:col-span-2"><label htmlFor="employee-password" className="text-sm font-medium">Initial password</label>
-            <input id="employee-password" type="password" autoComplete="new-password" className={inputClass}
-              aria-invalid={Boolean(errors.password)} aria-describedby="password-help password-error" {...register('password')} />
-            <p id="password-help" className="mt-1 text-xs text-slate-600">At least 8 characters, including uppercase, lowercase, a number, and a symbol.</p>
-            <p id="password-error" className={errorClass}>{errors.password?.message}</p></div>}
+          {!employee && <p className="sm:col-span-2 text-sm text-slate-600">The employee sets their own password using a private invitation. They cannot sign in until activation. Development uses private local pickup, not email delivery.</p>}
           <div><label htmlFor="employee-department" className="text-sm font-medium">Department</label>
             <select id="employee-department" className={inputClass} aria-invalid={Boolean(errors.departmentId)}
               aria-describedby={errors.departmentId ? 'department-error' : undefined} {...departmentRegistration}

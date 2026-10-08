@@ -9,9 +9,9 @@ const rolesQueryKey = (userId: string) => ['roles', userId] as const;
 
 const createEmployee = async (values: EmployeeFormValues): Promise<EmployeeWriteResult> => {
   const response = await authHttpClient.post<EmployeeWriteResult>('/employees', {
-    fullName: values.fullName, email: values.email, password: values.password,
+    fullName: values.fullName, email: values.email,
     departmentId: values.departmentId, roles: values.roles, managerId: values.managerId || null,
-  });
+  }, { skipAuthReplay: true });
   return response.data;
 };
 
@@ -76,7 +76,7 @@ function useRefreshManagementQueries() {
 export function useCreateEmployee() {
   const refresh = useRefreshManagementQueries();
   return useMutation<EmployeeWriteResult, Error, EmployeeFormValues>({
-    mutationFn: createEmployee, onSuccess: refresh,
+    mutationFn: createEmployee, onSuccess: refresh, retry: false,
   });
 }
 

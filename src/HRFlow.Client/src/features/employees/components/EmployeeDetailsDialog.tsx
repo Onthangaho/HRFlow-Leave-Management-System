@@ -7,6 +7,8 @@ export function EmployeeDetailsDialog({ employee, returnFocus, onClose }: {
 }) {
   const fields = [
     ['Name', employee.fullName], ['Email', employee.email], ['Status', employee.isActive ? 'Active' : 'Inactive'],
+    ['Activation', employee.requiresActivation ? 'Pending activation' : 'Activated'],
+    ['Activated at', employee.activatedAtUtc ? new Date(employee.activatedAtUtc).toLocaleString() : 'Not recorded for existing accounts'],
     ['Department', employee.departmentName], ['Roles', employee.roles.join(', ') || 'No roles'],
     ['Manager', employee.managerName || 'No manager'],
     ['Deactivated at', employee.deactivatedAtUtc ? new Date(employee.deactivatedAtUtc).toLocaleString() : 'Not recorded'],

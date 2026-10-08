@@ -1,3 +1,4 @@
+using HRFlow.Domain.Models.Auth;
 using HRFlow.Application.Exceptions;
 using HRFlow.Application.Interfaces;
 using HRFlow.Domain.Common;
@@ -22,14 +23,18 @@ public sealed class EmployeeManagementService(
     RoleManager<IdentityRole<Guid>> roleManager,
     IEmployeeManagementTransaction writeTransaction,
     IRequestCorrelationContext correlation,
+    IAccountActivationService activation,
     ILogger<EmployeeManagementService> logger) : IEmployeeManagementService
 {
     /// <inheritdoc />
     public async Task<EmployeeManagementResult> CreateEmployeeAsync(
-        Guid actorIdentityUserId, string fullName, string email, string password,
+        Guid actorIdentityUserId, string fullName, string email,
         Guid departmentId, IReadOnlyCollection<string> roles, Guid? managerId,
         CancellationToken cancellationToken)
     {
+        activation.EnsureDeliveryConfigured();
+        Guid accountId = default;
+        string invitation = "";
         EmployeeManagementResult? result = null;
         await writeTransaction.ExecuteAsync(async token =>
         {
@@ -39,10 +44,12 @@ public sealed class EmployeeManagementService(
             await EnsureEmailAvailableAsync(email.Trim(), null);
             await ValidateManagerAssignmentAsync(null, departmentId, managerId, token);
 
-            var identity = new ApplicationUser { UserName = email.Trim(), Email = email.Trim() };
-            EnsureIdentitySucceeded(await userManager.CreateAsync(identity, password));
+            var identity = new ApplicationUser { UserName = email.Trim(), Email = email.Trim(), RequiresActivation = true };
+            EnsureIdentitySucceeded(await userManager.CreateAsync(identity));
             EnsureIdentitySucceeded(await userManager.AddToRolesAsync(identity, effectiveRoles));
 
+            accountId = identity.Id;
+            invitation = activation.Prepare(identity);
             var employee = Employee.Create(fullName, email, departmentId);
             employee.SetIdentityUser(identity.Id.ToString());
             employee.AssignManager(managerId);
@@ -51,6 +58,7 @@ public sealed class EmployeeManagementService(
         }, cancellationToken);
         logger.LogInformation("Employee created. EmployeeId: {EmployeeId}; ActorIdentityUserId: {ActorIdentityUserId}",
             result!.EmployeeId, actorIdentityUserId);
+        result!.InvitationDeliveryState = await activation.DeliverAsync(accountId, invitation, cancellationToken);
         return result;
     }
 
@@ -91,7 +99,7 @@ public sealed class EmployeeManagementService(
             }
             await EnsureEmailAvailableAsync(email.Trim(), identity.Id);
             var currentRoles = await userManager.GetRolesAsync(identity);
-            if (currentRoles.Contains(EmployeeRoles.HrAdministrator)
+            if (!identity.RequiresActivation && currentRoles.Contains(EmployeeRoles.HrAdministrator)
                 && !effectiveRoles.Contains(EmployeeRoles.HrAdministrator))
             {
                 var hrCount = await CountActiveHrAsync(token);
@@ -105,6 +113,13 @@ public sealed class EmployeeManagementService(
             // Version rotates even for a role-only edit so stale role replacements cannot overwrite it.
             employee.Update(fullName, email, departmentId);
             employee.AssignManager(effectiveManager);
+            // Changing a pending recipient invalidates the old invitation; HR must explicitly resend.
+            if (identity.RequiresActivation && identity.NormalizedEmail != userManager.NormalizeEmail(email.Trim()))
+            {
+                identity.ActivationTokenHash = null;
+                identity.ActivationExpiresAtUtc = null;
+                identity.InvitationDeliveryState = ActivationDeliveryStates.DeliveryFailed;
+            }
             identity.Email = email.Trim();
             identity.UserName = email.Trim();
             EnsureIdentitySucceeded(await userManager.UpdateAsync(identity));
@@ -143,7 +158,7 @@ public sealed class EmployeeManagementService(
             if (await dbContext.Employees.AnyAsync(e => e.ManagerId == employeeId && e.IsActive, token))
                 throw new WriteConflictException("Reassign all active direct reports before deactivating their manager.");
             var identity = employee.IdentityUserId is null ? null : await userManager.FindByIdAsync(employee.IdentityUserId);
-            if (identity is not null && await userManager.IsInRoleAsync(identity, EmployeeRoles.HrAdministrator)
+            if (identity is not null && !identity.RequiresActivation && await userManager.IsInRoleAsync(identity, EmployeeRoles.HrAdministrator)
                 && await CountActiveHrAsync(token) <= 1)
                 throw new WriteConflictException("The last active HR Administrator cannot be deactivated.");
             var pending = await dbContext.LeaveRequests
@@ -162,7 +177,7 @@ public sealed class EmployeeManagementService(
     {
         var hrRole = await roleManager.FindByNameAsync(EmployeeRoles.HrAdministrator);
         // Materialize GUIDs before formatting: SQLite stores GUIDs uppercase but profile links use .NET formatting.
-        var userIds = await dbContext.UserRoles.Where(r => r.RoleId == hrRole!.Id)
+        var userIds = await dbContext.UserRoles.Where(r => r.RoleId == hrRole!.Id && dbContext.Users.Any(u => u.Id == r.UserId && !u.RequiresActivation))
             .Select(r => r.UserId).ToListAsync(token);
         var identityIds = userIds.Select(id => id.ToString()).ToArray();
         return await dbContext.Employees.CountAsync(e => e.IsActive && e.IdentityUserId != null
@@ -187,7 +202,7 @@ public sealed class EmployeeManagementService(
         }
         var identity = string.IsNullOrWhiteSpace(manager.IdentityUserId)
             ? null : await userManager.FindByIdAsync(manager.IdentityUserId);
-        if (identity is null || !await userManager.IsInRoleAsync(identity, EmployeeRoles.Manager))
+        if (identity is null || identity.RequiresActivation || !await userManager.IsInRoleAsync(identity, EmployeeRoles.Manager))
         {
             throw new DomainException("Assigned manager must have the current Manager role.");
         }
@@ -210,7 +225,7 @@ public sealed class EmployeeManagementService(
     private async Task EnsureCurrentHrAsync(Guid identityId)
     {
         var actor = await userManager.FindByIdAsync(identityId.ToString());
-        if (actor is null || !await dbContext.Employees.AnyAsync(e => e.IdentityUserId == identityId.ToString() && e.IsActive)
+        if (actor is null || actor.RequiresActivation || !await dbContext.Employees.AnyAsync(e => e.IdentityUserId == identityId.ToString() && e.IsActive)
             || !await userManager.IsInRoleAsync(actor, EmployeeRoles.HrAdministrator))
         {
             throw new ForbiddenException("Current HR Administrator membership is required to manage employees.");

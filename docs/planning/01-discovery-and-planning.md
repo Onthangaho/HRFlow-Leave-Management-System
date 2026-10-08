@@ -44,7 +44,7 @@ As a portfolio project, HRFlow is deliberately chosen because it lets a single d
 ## 4. Scope
 
 **Original baseline, with current corrections:**
-- Employee self-registration is out. HR currently creates accounts with an initial password; secure activation/invitations are planned in #79, not implemented.
+- Employee self-registration is out. #79 now locally replaces initial-password creation with pending one-time activation and private Development pickup; review and a real production delivery provider remain outstanding. See ADR 0011 and its verification report.
 - Leave request submission, approval/rejection workflow, and automatic balance calculation.
 - Three roles: Employee, Manager, HR Administrator, enforced via RBAC.
 - Employee, reporting assignment and leave-type/policy management (HR Admin); department selection, not full department CRUD.

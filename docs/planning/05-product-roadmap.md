@@ -1,6 +1,6 @@
 # HRFlow phased South African product roadmap
 
-> Implementation update: PR #101 (shell #77) is merged. #21 optional Manager decision notes are locally implemented for independent review; see [decision contract](../adr/0010-manager-decision-notes.md) and [executed verification](../verification/manager-decision-notes.md). The issue wording now specifies server-confirmed outcomes, not optimistic decisions; it remains open. No statutory calculation or automated-test convention changes.
+> Implementation update: PR #102 merged Manager decision notes (#21). Secure HR-created account activation (#79) is locally implemented on feat/secure-account-activation for independent review. Passwordless pending accounts, private Development pickup, one-time token redemption and explicit resend are documented in [ADR 0011](../adr/0011-secure-account-activation.md) and the [verification report](../verification/secure-account-activation.md). Production invitation delivery remains disabled; #79 remains open.
 
 > Current-state update: PR #99 merged on 8 October 2026. Phase 0 item #74 is implemented and evidenced in the endpoint inventory and JWT verification report, but the issue remains open for independent review. References below to disabled lifetime validation describe the original PR #73 planning baseline, not current main. Next recommended gates are #75 legal review and #76 regression-convention approval. This PR publishes documentation only and implements no product features.
 
