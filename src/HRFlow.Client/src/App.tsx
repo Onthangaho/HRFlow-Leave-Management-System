@@ -1,4 +1,5 @@
 import { LeaveConfigurationPage } from './features/leave-configuration/LeaveConfigurationPage';
+import { lazy, Suspense } from 'react';
 import { TeamLeavePage } from './features/team-leave/TeamLeavePage';
 import { RequestLeavePage } from './features/leave-requests/components/RequestLeavePage';
 import { Navigate, Route, Routes } from 'react-router-dom'
@@ -9,6 +10,8 @@ import { EmployeeManagementPage } from './features/employees/components/Employee
 import { ManagerApprovalQueuePage } from './features/leave-requests/components/ManagerApprovalQueuePage.tsx';
 import { EmployeeLeaveHistoryPage } from './features/leave-requests/components/EmployeeLeaveHistoryPage.tsx';
 import { HrPendingLeaveMonitoringPage } from './features/leave-requests/components/HrPendingLeaveMonitoringPage.tsx';
+
+const LeaveReportsPage = lazy(() => import('./features/leave-reports/LeaveReportsPage').then(module => ({ default: module.LeaveReportsPage })));
 
 function App() {
   return (
@@ -25,6 +28,7 @@ function App() {
       </Route>
 
       <Route element={<ProtectedRoute requiredRoles={['HR Administrator']} />}>
+        <Route path="/admin/leave-reports" element={<Suspense fallback={<p role="status" className="p-8">Loading leave reports…</p>}><LeaveReportsPage /></Suspense>} />
         <Route path="/admin/leave-policies" element={<LeaveConfigurationPage />} />
         <Route path="/admin/employees" element={<EmployeeManagementPage />} />
       </Route>

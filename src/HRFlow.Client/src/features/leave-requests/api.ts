@@ -88,6 +88,7 @@ export function useApproveLeaveRequest() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
         queryClient.invalidateQueries({ queryKey: ['team-leave-summary', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
       ]);
     },
   });
@@ -107,6 +108,7 @@ export function useRejectLeaveRequest() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
         queryClient.invalidateQueries({ queryKey: ['team-leave-summary', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
       ]);
     },
   });
@@ -137,18 +139,19 @@ export function useEmployeeLeaveHistory() {
 /** Refreshes history and balances after cancellation so the employee sees the authoritative state. */
 export function useCancelLeaveRequest() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, sessionVersion, getSessionVersion } = useAuth();
 
   return useMutation<void, Error, string>({
     mutationFn: cancelLeaveRequest,
     onSuccess: async () => {
-      if (!user?.id) {
+      if (!user?.id || getSessionVersion() !== sessionVersion) {
         return;
       }
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: employeeLeaveHistoryQueryKey(user.id) }),
         queryClient.invalidateQueries({ queryKey: leaveBalancesQueryKey(user.id) }),
+        queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
       ]);
     },
   });
