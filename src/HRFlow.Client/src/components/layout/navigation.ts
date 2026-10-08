@@ -29,6 +29,9 @@ export function navigationFor(roles: readonly string[]): NavigationGroup[] {
     { path: '/admin/leave-monitoring', label: 'Pending leave monitoring', description: 'Follow organisation-wide requests, read-only.', icon: 'history' },
     { path: '/admin/leave-reports', label: 'Department leave reports', description: 'Compare leave activity for a selected period.', icon: 'chart' },
   ] });
+  groups.push({ label: 'Account', items: [
+    { path: '/account/password', label: 'Change password', description: 'Secure your account and end previous sessions.', icon: 'policy' },
+  ] });
   return groups;
 }
 

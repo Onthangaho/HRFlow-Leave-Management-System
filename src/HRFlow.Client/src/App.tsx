@@ -1,3 +1,4 @@
+import { ChangePasswordPage } from './features/auth/components/ChangePasswordPage';
 import { ActivationPage } from './features/auth/components/ActivationPage';
 import { ApplicationShell } from './components/layout/ApplicationShell';
 import { LeaveRequestTimelinePage } from './features/leave-timeline/LeaveRequestTimelinePage';
@@ -24,6 +25,7 @@ function App() {
     <Route element={<ProtectedRoute />}>
       <Route element={<ApplicationShell />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/account/password" element={<ChangePasswordPage />} />
         <Route element={<ProtectedRoute requiredRoles={['Employee', 'Manager', 'HR Administrator']} />}>
           <Route path="/leave-requests/:id/history" element={<LeaveRequestTimelinePage />} />
         </Route>

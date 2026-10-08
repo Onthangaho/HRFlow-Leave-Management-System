@@ -54,6 +54,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAccountActivationService, AccountActivationService>();
         services.AddScoped<IActivationDelivery, DevelopmentActivationDelivery>();
         services.AddScoped<IAccountAccessService, AccountAccessService>();
+        services.AddScoped<IRequestCredentialValidator, RequestCredentialValidator>();
+        services.AddScoped<IPasswordChangeService, PasswordChangeService>();
         services.AddScoped<IEmployeeManagementService, EmployeeManagementService>();
         services.AddScoped<IEmployeeRoleLookupService, EmployeeRoleLookupService>();
         services.AddScoped<ILeaveApprovalAuthorizationService, LeaveApprovalAuthorizationService>();

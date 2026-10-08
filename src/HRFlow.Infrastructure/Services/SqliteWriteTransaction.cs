@@ -11,7 +11,7 @@ namespace HRFlow.Infrastructure.Services;
 /// Acquires SQLite's database-wide writer reservation before write-validation reads, including across
 /// processes. Explicit non-deferred transactions avoid validating against a stale read snapshot.
 /// </summary>
-public sealed class SqliteWriteTransaction(HRFlowDbContext context) : ILeaveDecisionTransaction, IEmployeeManagementTransaction, ILeaveConfigurationTransaction
+public sealed class SqliteWriteTransaction(HRFlowDbContext context, IRequestCredentialValidator credentials) : ILeaveDecisionTransaction, IEmployeeManagementTransaction, ILeaveConfigurationTransaction
 {
     private const int LockTimeoutSeconds = 3;
     private const int SqliteBusy = 5;
@@ -45,6 +45,7 @@ public sealed class SqliteWriteTransaction(HRFlowDbContext context) : ILeaveDeci
             // Controllers may already have resolved an employee using this scoped context.
             // Detach that snapshot so all decision and Identity reads occur after acquiring the lock.
             context.ChangeTracker.Clear();
+            await credentials.RequireCurrentAsync(cancellationToken);
             await operation(cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
             await transaction!.CommitAsync(cancellationToken);

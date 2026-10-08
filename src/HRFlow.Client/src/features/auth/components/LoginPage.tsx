@@ -24,7 +24,7 @@ interface LoginLocationState {
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoggingIn, isAuthenticated, selfDeactivationCount } = useAuth();
+  const { login, isLoggingIn, isAuthenticated, selfDeactivationCount, passwordChanged } = useAuth();
   const [authError, setAuthError] = useState<string | null>(null);
 
   const fromPath =
@@ -58,6 +58,7 @@ export function LoginPage() {
         Use your account to access protected HR pages.
       </p>
 
+      {!isAuthenticated && passwordChanged && <p role="status" className="mt-4 text-emerald-800">Your password was changed and all previous sessions ended. Sign in with your new password.</p>}
       {!isAuthenticated && selfDeactivationCount !== null && <p role="status" className="mt-4 text-slate-700">
         Your account has been deactivated and you have been signed out.
         {' '}{selfDeactivationCount} Pending requests were cancelled.

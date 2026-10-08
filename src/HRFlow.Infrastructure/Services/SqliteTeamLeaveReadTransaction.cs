@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HRFlow.Infrastructure.Services;
 
 /// <summary>Starts a deferred, read-only snapshot; unlike protected writes this does not issue BEGIN IMMEDIATE.</summary>
-public sealed class SqliteTeamLeaveReadTransaction(HRFlowDbContext context) : ITeamLeaveReadTransaction, ILeaveReportingReadTransaction
+public sealed class SqliteTeamLeaveReadTransaction(HRFlowDbContext context, IRequestCredentialValidator credentials) : ITeamLeaveReadTransaction, ILeaveReportingReadTransaction
 {
     private const int TimeoutSeconds = 3;
     private const int SqliteBusy = 5;
@@ -31,6 +31,7 @@ public sealed class SqliteTeamLeaveReadTransaction(HRFlowDbContext context) : IT
             using var snapshot = connection.BeginTransaction(deferred: true);
             await using var transaction = await context.Database.UseTransactionAsync(snapshot, cancellationToken);
             // The first authoritative SELECT establishes the snapshot; no tracked controller entity is reused.
+            await credentials.RequireCurrentAsync(cancellationToken);
             var result = await read(cancellationToken);
             if (context.ChangeTracker.HasChanges())
                 throw new InvalidOperationException("Leave reporting snapshots must not contain writes.");

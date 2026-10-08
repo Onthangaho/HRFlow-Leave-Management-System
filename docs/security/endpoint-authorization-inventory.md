@@ -148,3 +148,19 @@ the API remains authoritative and returns 403 for lost capability, never a refre
 
 See [design decisions](../adr/0009-jwt-current-permissions.md) and
 [executed verification and limitations](../verification/jwt-current-permissions.md).
+
+## Password-change revocation extension — #80
+
+Checked 9 October 2026. POST /auth/password is authenticated own-account only, active and
+activated; no target ID or HR override. PasswordChangeService uses Identity and rechecks
+original credential_version inside IEmployeeManagementTransaction. Status 204 means all
+prior access/refresh proof revoked, including caller. Body/password/rate bounds are documented
+in [ADR 0012](../adr/0012-password-change-session-revocation.md).
+
+Every protected endpoint listed above now additionally checks persisted credential_version
+at the bearer gate AND at the beginning of its shared read snapshot/write reservation.
+Missing/mismatched generations deny 401; current capability loss remains 403. These checks
+include personal submit/cancel/history/balances, Manager queue/decisions/team, HR employees/
+activation resend/configuration/monitoring/reports/references and scoped timelines. Anonymous
+login/refresh/activation retain their own serialized proof checks; migration revokes legacy
+refreshes so pre-upgrade sessions require fresh login. Existing ownership/privacy scopes remain.

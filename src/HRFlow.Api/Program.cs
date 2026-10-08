@@ -73,6 +73,7 @@ builder.Services.AddScoped<ReferenceDataService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestCorrelationContext, RequestCorrelationContext>();
 builder.Services.AddScoped<ICurrentEmployeeProvider, CurrentEmployeeProvider>();
+builder.Services.AddScoped<IInitiatingCredential, InitiatingCredential>();
 builder.Services.AddScoped<HRFlow.Application.Features.LeaveConfiguration.LeaveConfigurationService>();
 
 
@@ -106,7 +107,7 @@ builder.Services.AddAuthentication(options =>
         OnTokenValidated = async context =>
         {
             var access = context.HttpContext.RequestServices.GetRequiredService<IAccountAccessService>();
-            if (!await access.IsActiveAsync(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier), context.HttpContext.RequestAborted))
+            if (!await access.IsCurrentAsync(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier), context.Principal?.FindFirstValue(CredentialClaims.Version), context.HttpContext.RequestAborted))
             {
                 context.Fail("This account is inactive or unavailable.");
                 return;
@@ -149,7 +150,10 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = (context, token) => new ValueTask(Results.Problem(statusCode: StatusCodes.Status429TooManyRequests,
-        title: "Too many invitation attempts", detail: "Wait a minute before trying again.").ExecuteAsync(context.HttpContext));
+        title: "Too many attempts", detail: "Wait a minute before trying again.").ExecuteAsync(context.HttpContext));
+    options.AddPolicy("password-change", context => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+        { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     options.AddPolicy("activation", context => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
         { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));

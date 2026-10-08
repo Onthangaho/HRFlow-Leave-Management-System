@@ -8,6 +8,12 @@ namespace HRFlow.Infrastructure.Services;
 public sealed class AccountAccessService(HRFlowDbContext context) : IAccountAccessService
 {
     /// <inheritdoc />
+    public Task<bool> IsCurrentAsync(string? identityUserId, string? version, CancellationToken cancellationToken) =>
+        Guid.TryParse(identityUserId, out var id) && Guid.TryParse(version, out var generation)
+            ? context.Employees.AsNoTracking().AnyAsync(e => e.IdentityUserId == identityUserId && e.IsActive
+                && context.Users.Any(user => user.Id == id && !user.RequiresActivation && user.CredentialVersion == generation), cancellationToken)
+            : Task.FromResult(false);
+    /// <inheritdoc />
     public Task<bool> IsActiveAsync(string? identityUserId, CancellationToken cancellationToken) =>
         Guid.TryParse(identityUserId, out var id)
             ? context.Employees.AsNoTracking().AnyAsync(e => e.IdentityUserId == identityUserId && e.IsActive
