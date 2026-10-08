@@ -14,11 +14,11 @@ public sealed class LeavePolicyManagementController(LeaveConfigurationService se
 {
     /// <summary>Returns shared-rule snapshots with linked types and deletion consequences.</summary>
     [HttpGet]
-    public async Task<IActionResult> List(CancellationToken token) => Ok(await service.GetPoliciesAsync(null, token));
+    public async Task<IActionResult> List(CancellationToken token) => Ok(await service.GetPoliciesAsync(Actor(), null, token));
 
     /// <summary>Reloads one shared policy after an edit conflict.</summary>
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Detail(Guid id, CancellationToken token) => Ok((await service.GetPoliciesAsync(id, token)).Single());
+    public async Task<IActionResult> Detail(Guid id, CancellationToken token) => Ok((await service.GetPoliciesAsync(Actor(), id, token)).Single());
 
     /// <summary>Creates current rules without accepting an actor identifier from JSON.</summary>
     [HttpPost]

@@ -69,7 +69,7 @@ public class LeaveRequestsController : ControllerBase
         {
             Status = status,
             CurrentEmployeeId = employee.Id,
-            CurrentDepartmentId = employee.DepartmentId
+            ActorIdentityId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!)
         };
 
         var leaveRequests = await _mediator.Send(query, cancellationToken);
@@ -91,7 +91,8 @@ public class LeaveRequestsController : ControllerBase
             new GetPendingLeaveRequestsQuery
             {
                 Status = PendingStatus,
-                IsOrganisationMonitoring = true
+                IsOrganisationMonitoring = true,
+                ActorIdentityId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!)
             },
             cancellationToken);
 

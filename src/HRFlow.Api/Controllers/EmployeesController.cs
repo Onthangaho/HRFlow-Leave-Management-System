@@ -20,13 +20,13 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
     /// <summary>Returns complete edit snapshots for the HR directory and reporting selectors.</summary>
     [HttpGet]
     public async Task<IActionResult> GetEmployees(CancellationToken cancellationToken) =>
-        Ok(await mediator.Send(new GetEmployeesQuery(), cancellationToken));
+        Ok(await mediator.Send(new GetEmployeesQuery { ActorIdentityId = GetActorIdentityId() }, cancellationToken));
 
     /// <summary>Allows clients to reload a resource after a stale-edit conflict.</summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetEmployee(Guid id, CancellationToken cancellationToken)
     {
-        var employee = (await mediator.Send(new GetEmployeesQuery { EmployeeId = id }, cancellationToken)).SingleOrDefault();
+        var employee = (await mediator.Send(new GetEmployeesQuery { EmployeeId = id, ActorIdentityId = GetActorIdentityId() }, cancellationToken)).SingleOrDefault();
         return employee is null ? throw new NotFoundException("Employee was not found.") : Ok(employee);
     }
 

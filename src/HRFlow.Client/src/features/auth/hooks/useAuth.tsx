@@ -76,11 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     promise: Promise<string | null>;
   } | null>(null);
 
-  const updateSession = useCallback((newSession: AuthSession | null) => {
+  const updateSession = useCallback((newSession: AuthSession | null, forceBoundary = false) => {
     const previousUserId = sessionRef.current?.user.id;
     const nextUserId = newSession?.user.id;
 
-    if (previousUserId !== nextUserId) {
+    if (forceBoundary || previousUserId !== nextUserId) {
       setSelfDeactivationCount(null);
       sessionVersionRef.current += 1;
       void queryClient.cancelQueries();
@@ -98,7 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearSession = useCallback(() => {
     setSelfDeactivationCount(null);
-    updateSession(null);
+    // Logout also invalidates a pending login when there is no established account yet.
+    updateSession(null, true);
   }, [updateSession]);
 
   const refreshAccessToken = useCallback(async () => {
@@ -153,9 +154,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [updateSession]);
 
   const loginMutation = useMutation({
-    mutationFn: login,
-    onSuccess: (tokenResponse) => {
-      updateSession(createSession(tokenResponse));
+    mutationFn: async (request: LoginRequest) => {
+      const sessionVersion = sessionVersionRef.current;
+      const tokenResponse = await login(request);
+      return { tokenResponse, sessionVersion };
+    },
+    onSuccess: ({ tokenResponse, sessionVersion }) => {
+      if (sessionVersionRef.current !== sessionVersion) return;
+      // A fresh login is a new session even when it uses the same Identity account.
+      updateSession(createSession(tokenResponse), true);
     },
   });
 
