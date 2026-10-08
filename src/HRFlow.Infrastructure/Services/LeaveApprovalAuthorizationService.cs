@@ -79,6 +79,6 @@ public sealed class LeaveApprovalAuthorizationService : ILeaveApprovalAuthorizat
         }
 
         var identityUser = await _userManager.FindByIdAsync(employee.IdentityUserId);
-        return identityUser is not null && await _userManager.IsInRoleAsync(identityUser, ManagerRoleName);
+        return identityUser is not null && !identityUser.RequiresActivation && await _userManager.IsInRoleAsync(identityUser, ManagerRoleName);
     }
 }

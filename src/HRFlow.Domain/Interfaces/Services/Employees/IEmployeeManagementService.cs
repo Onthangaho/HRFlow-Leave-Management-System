@@ -7,7 +7,7 @@ public interface IEmployeeManagementService
 {
     /// <summary>Creates a linked account and profile atomically, with all selected capabilities.</summary>
     Task<EmployeeManagementResult> CreateEmployeeAsync(
-        Guid actorIdentityUserId, string fullName, string email, string password,
+        Guid actorIdentityUserId, string fullName, string email,
         Guid departmentId, IReadOnlyCollection<string> roles, Guid? managerId,
         CancellationToken cancellationToken);
 

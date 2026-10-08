@@ -9,7 +9,10 @@ The starting working tree was clean. Documentation branch: `docs/hrflow-south-af
 [PR #73](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/73) was verified
 **MERGED**, 8 October 2026 at 17:21:34 UTC. This review does not rerun earlier product verification.
 
-## Shipped capabilities confirmed in source
+## Historical baseline capabilities confirmed in source (PR #73)
+
+The following evidence describes the original review, not current-main regressions. See
+the implementation updates above for JWT validation, shell, notes and local activation.
 
 - Identity login/rotating hashed refresh tokens; in-memory client sessions; logout clears protected
   caches; Axios can refresh an expired access token and retry once in the same session; invalid refresh

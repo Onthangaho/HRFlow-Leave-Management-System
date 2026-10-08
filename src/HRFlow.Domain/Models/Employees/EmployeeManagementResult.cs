@@ -14,4 +14,6 @@ public sealed class EmployeeManagementResult
     /// Returns the version of the accepted edit without exposing account credentials or Identity internals.
     /// </summary>
     public Guid Version { get; set; }
+    /// <summary>Safe invitation feedback; never includes a link or token.</summary>
+    public string? InvitationDeliveryState { get; set; }
 }

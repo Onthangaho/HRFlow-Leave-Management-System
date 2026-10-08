@@ -27,7 +27,6 @@ public sealed class CreateEmployeeCommandHandler : IRequestHandler<CreateEmploye
             request.ActorIdentityUserId,
             request.FullName,
             request.Email,
-            request.Password,
             request.DepartmentId,
             request.Roles,
             request.ManagerId,

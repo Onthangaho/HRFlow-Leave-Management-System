@@ -17,11 +17,6 @@ public sealed class CreateEmployeeCommandValidator : AbstractValidator<CreateEmp
         RuleForEach(command => command.Roles)
             .Must(role => role is not null && EmployeeRoles.All.Contains(role.Trim(), StringComparer.OrdinalIgnoreCase))
             .WithMessage("Select only Employee, Manager, or HR Administrator roles.");
-        RuleFor(command => command.Password).NotEmpty().MinimumLength(8)
-            .Matches("[0-9]").WithMessage("Password must contain a digit.")
-            .Matches("[a-z]").WithMessage("Password must contain a lowercase letter.")
-            .Matches("[A-Z]").WithMessage("Password must contain an uppercase letter.")
-            .Matches("[^a-zA-Z0-9]").WithMessage("Password must contain a symbol.");
         RuleFor(command => command.ManagerId)
             .Must(id => !id.HasValue || id.Value != Guid.Empty)
             .WithMessage("ManagerId must be a non-empty GUID when provided.");

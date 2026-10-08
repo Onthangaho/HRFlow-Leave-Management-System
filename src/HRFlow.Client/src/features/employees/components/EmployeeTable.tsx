@@ -2,6 +2,7 @@ import type { Employee } from '../types';
 
 interface EmployeeTableProps {
   employees: Employee[];
+  onResend: (employee: Employee) => void;
   onEdit: (employee: Employee) => void;
   editing: boolean;
   onDeactivate: (employee: Employee) => void;
@@ -9,7 +10,7 @@ interface EmployeeTableProps {
 }
 
 /** Shows complete roles and current reporting with accessible actions and a scrollable narrow-screen layout. */
-export function EmployeeTable({ employees, onEdit, editing, onDeactivate, onView }: EmployeeTableProps) {
+export function EmployeeTable({ onResend, employees, onEdit, editing, onDeactivate, onView }: EmployeeTableProps) {
   if (employees.length === 0) {
     return <p className="rounded-lg bg-slate-50 p-6 text-slate-600">No employees match this view. Adjust the search or status filter, or create an employee.</p>;
   }
@@ -33,12 +34,15 @@ export function EmployeeTable({ employees, onEdit, editing, onDeactivate, onView
                   ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
                   {employee.isActive ? 'Active' : 'Inactive'}
                 </span>
+                <p className="mt-2 text-xs text-slate-600">{employee.requiresActivation ? 'Pending activation' : 'Activated'}</p>
+                {employee.requiresActivation && <p className="text-xs">{employee.invitationDeliveryState === 'PickupReady' ? 'Private pickup ready' : employee.invitationDeliveryState === 'Expired' ? 'Invitation expired' : employee.invitationDeliveryState === 'DeliveryFailed' ? 'Delivery failed' : 'Delivery pending'}</p>}
               </td>
               <td className="px-4 py-4 text-sm">{employee.departmentName}</td>
               <td className="px-4 py-4 text-sm">{employee.roles.join(', ') || 'No roles'}</td>
               <td className="px-4 py-4 text-sm">{employee.managerName || 'No manager'}</td>
               <td className="px-4 py-4">
                 <div className="flex flex-wrap gap-2">
+                  {employee.isActive && employee.requiresActivation && <button type="button" disabled={editing} className="ui-secondary" onClick={() => onResend(employee)}>Resend invitation</button>}
                   {employee.isActive ? <>
                     <button type="button" disabled={editing} aria-label={`Edit ${employee.fullName}`} onClick={() => onEdit(employee)} className="ui-secondary">Edit</button>
                     <button type="button" disabled={editing} aria-label={`Deactivate ${employee.fullName}`} onClick={() => onDeactivate(employee)} className="ui-danger">Deactivate</button>

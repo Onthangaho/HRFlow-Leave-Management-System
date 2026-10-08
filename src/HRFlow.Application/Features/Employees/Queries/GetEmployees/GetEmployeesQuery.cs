@@ -19,7 +19,7 @@ public sealed class GetEmployeesQuery : IRequest<IReadOnlyList<GetEmployeeDto>>
 /// <summary>Combines profile/reporting IDs with complete Identity roles so edits preserve existing capabilities.</summary>
 public sealed class GetEmployeesQueryHandler(
     IApplicationDbContext context, IEmployeeRoleLookupService roleLookup,
-    ILeaveReportingReadTransaction transaction, CurrentAccountAuthorization authorization) : IRequestHandler<GetEmployeesQuery, IReadOnlyList<GetEmployeeDto>>
+    ILeaveReportingReadTransaction transaction, CurrentAccountAuthorization authorization, IAccountActivationService activation) : IRequestHandler<GetEmployeesQuery, IReadOnlyList<GetEmployeeDto>>
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<GetEmployeeDto>> Handle(GetEmployeesQuery request, CancellationToken cancellationToken)
@@ -40,8 +40,10 @@ public sealed class GetEmployeesQueryHandler(
             var results = new List<GetEmployeeDto>();
             foreach (var employee in employees)
             {
+                var state = await activation.GetStatusAsync(employee.IdentityUserId, cancellationToken);
                 results.Add(new GetEmployeeDto
                 {
+                    RequiresActivation = state.RequiresActivation, InvitationDeliveryState = state.DeliveryState, ActivatedAtUtc = state.ActivatedAtUtc,
                     Id = employee.Id, FullName = employee.FullName, Email = employee.Email,
                     DepartmentId = employee.DepartmentId, DepartmentName = employee.Department.Name,
                     ManagerId = employee.ManagerId, ManagerName = employee.Manager?.FullName,

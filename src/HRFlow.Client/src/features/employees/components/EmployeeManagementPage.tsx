@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useEmployees } from '../api';
 import { useAuth } from '../../auth/hooks/useAuth';
 import type { Employee } from '../types';
+import { ResendActivationDialog } from './ResendActivationDialog';
 import { EmployeeForm } from './EmployeeForm';
 import { EmployeeTable } from './EmployeeTable';
 import { EmployeeDeactivationDialog } from './EmployeeDeactivationDialog';
@@ -20,6 +21,7 @@ function EmployeeManagementWorkspace() {
   const [editing, setEditing] = useState<Employee | null | undefined>(undefined);
   const [deactivating, setDeactivating] = useState<Employee | null>(null);
   const [details, setDetails] = useState<Employee | null>(null);
+  const [inviting, setInviting] = useState<Employee | null>(null);
   const [notice, setNotice] = useState('');
   const [reloadError, setReloadError] = useState('');
   const [search, setSearch] = useState('');
@@ -56,7 +58,7 @@ function EmployeeManagementWorkspace() {
       </section>
       {notice && <p role="status" className="break-words text-emerald-800">{notice}</p>}
       {editing !== undefined && <EmployeeForm employee={editing} employees={employees.data ?? []}
-        onSuccess={() => { if (!currentSession()) return; setNotice(editing ? 'Employee updated.' : 'Employee created.'); setEditing(undefined); }}
+        onSuccess={delivery => { if (!currentSession()) return; setNotice(editing ? 'Employee updated.' : delivery === 'PickupReady' ? 'Employee created. Private development invitation is ready for pickup.' : 'Employee created, but invitation delivery failed. Use Resend invitation to recover.'); setEditing(undefined); }}
         onCancel={() => setEditing(undefined)} onReload={reload} reloadError={reloadError} />}
       <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
         <div><label htmlFor="employee-search" className="mb-1 block text-sm font-semibold">Search employees</label>
@@ -74,7 +76,7 @@ function EmployeeManagementWorkspace() {
         employees.error ? <div role="alert" className="text-rose-800">
           Unable to load employees. You may no longer have HR access. <button type="button" className="underline" onClick={() => void employees.refetch()}>Try again</button>
         </div> : <><p role="status" className="text-sm text-slate-600">{filtered.length} employee{filtered.length === 1 ? '' : 's'} shown</p>
-          <EmployeeTable employees={filtered} onEdit={openForm} editing={editing !== undefined}
+          <EmployeeTable onResend={employee => { setNotice(''); setInviting(employee); }} employees={filtered} onEdit={openForm} editing={editing !== undefined}
             onDeactivate={employee => { rememberFocus(); setNotice(''); setDeactivating(employee); }}
             onView={employee => { rememberFocus(); setDetails(employee); }} /></>}
       {deactivating && <EmployeeDeactivationDialog employee={deactivating} returnFocus={opener.current}
@@ -82,6 +84,7 @@ function EmployeeManagementWorkspace() {
         onSuccess={count => { if (!currentSession()) return; setDeactivating(null); setNotice(`Employee deactivated. ${count} Pending request${count === 1 ? '' : 's'} cancelled.`); }}
         onInactive={employee => { setDeactivating(null); setDetails(employee); }}
         onManageReports={() => { setReportsFor(deactivating); setStatus('Active'); setSearch(''); setDeactivating(null); }} />}
+      {inviting && <ResendActivationDialog employee={inviting} onClose={() => setInviting(null)} onSuccess={state => { if (!currentSession()) return; setInviting(null); setNotice(state === 'PickupReady' ? 'New private development invitation ready for pickup.' : 'Invitation delivery failed. You can explicitly resend.'); }} />}
       {details && <EmployeeDetailsDialog employee={details} returnFocus={opener.current} onClose={() => setDetails(null)} />}
     </div>
   );

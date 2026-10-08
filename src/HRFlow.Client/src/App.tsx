@@ -1,3 +1,4 @@
+import { ActivationPage } from './features/auth/components/ActivationPage';
 import { ApplicationShell } from './components/layout/ApplicationShell';
 import { LeaveRequestTimelinePage } from './features/leave-timeline/LeaveRequestTimelinePage';
 import { LeaveConfigurationPage } from './features/leave-configuration/LeaveConfigurationPage';
@@ -18,6 +19,7 @@ const LeaveReportsPage = lazy(() => import('./features/leave-reports/LeaveReport
 /** Keeps one stable shell beneath authentication and preserves each existing capability guard. */
 function App() {
   return <Routes>
+    <Route path="/activate" element={<ActivationPage />} />
     <Route path="/login" element={<LoginPage />} />
     <Route element={<ProtectedRoute />}>
       <Route element={<ApplicationShell />}>

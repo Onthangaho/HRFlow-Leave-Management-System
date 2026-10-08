@@ -145,6 +145,16 @@ builder.Services.AddAuthorizationBuilder()
         HrAdministratorOnlyPolicyName,
         policy => policy.RequireRole(HrAdministratorRoleName));
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = (context, token) => new ValueTask(Results.Problem(statusCode: StatusCodes.Status429TooManyRequests,
+        title: "Too many invitation attempts", detail: "Wait a minute before trying again.").ExecuteAsync(context.HttpContext));
+    options.AddPolicy("activation", context => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+        { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -179,6 +189,7 @@ app.UseWhen(context => context.Request.Path.StartsWithSegments("/api/v1/manageme
                 instance: statusContext.HttpContext.Request.Path).ExecuteAsync(statusContext.HttpContext);
         }
     }));
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

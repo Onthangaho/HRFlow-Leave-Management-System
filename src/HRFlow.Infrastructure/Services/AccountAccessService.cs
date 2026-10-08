@@ -11,6 +11,6 @@ public sealed class AccountAccessService(HRFlowDbContext context) : IAccountAcce
     public Task<bool> IsActiveAsync(string? identityUserId, CancellationToken cancellationToken) =>
         Guid.TryParse(identityUserId, out var id)
             ? context.Employees.AsNoTracking().AnyAsync(e => e.IdentityUserId == identityUserId && e.IsActive
-                && context.Users.Any(user => user.Id == id), cancellationToken)
+                && context.Users.Any(user => user.Id == id && !user.RequiresActivation), cancellationToken)
             : Task.FromResult(false);
 }

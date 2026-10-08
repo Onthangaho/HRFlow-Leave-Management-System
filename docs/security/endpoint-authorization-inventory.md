@@ -105,6 +105,29 @@ historical requests/audits and existing calculation semantics are unchanged.
 Save responses reuse private projection methods within the already-held write transaction,
 rather than opening nested read transactions. Public management reads always authorize.
 
+## Activation follow-up (#79)
+
+`POST /employees` now creates a passwordless pending account. Existing current-HR validation
+inside writer protection remains; no password/token is returned. HR directory/detail reads
+project safe activation status in the same deferred snapshot.
+
+`POST /employees/{id}/activation/resend`: current active, activated HR; target original
+version, active profile and pending passwordless Identity checked by AccountActivationService
+after the existing SQLite writer reservation. No automatic auth replay.
+
+`POST /auth/activation`: anonymous account-bound opaque invitation proof, no client actor ID;
+active target, UTC expiry, pending state and absent password checked inside that reservation.
+Identity password save and invitation consumption are atomic; no role restoration or login.
+Redemption/resend have bounded bodies and per-process/IP limits.
+
+IAccountAccessService now requires activated eligibility as well as active employment.
+Bearer validation and CurrentAccountAuthorization repeat this guard; pending accounts
+cannot issue/refresh tokens or use protected operations. Existing roles remain visible to HR
+without treating pending users as available Managers/last administrators.
+
+See [activation design](../adr/0011-secure-account-activation.md) and
+[executed checks](../verification/secure-account-activation.md).
+
 ## Anonymous endpoints and limits
 
 `POST /auth/login` and `POST /auth/refresh` deliberately do not require an access JWT.

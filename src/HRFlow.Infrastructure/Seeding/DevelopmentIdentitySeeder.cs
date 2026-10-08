@@ -285,7 +285,8 @@ public static class DevelopmentIdentitySeeder
         }
         else
         {
-            logger.LogInformation("Development {AccountLabel} account {Email} already exists.", accountLabel, email);
+            logger.LogInformation("Development {AccountLabel} account already exists; preserving its credentials, activation and roles.", accountLabel);
+            return;
         }
 
         if (!await userManager.IsInRoleAsync(existingUser, roleName))
