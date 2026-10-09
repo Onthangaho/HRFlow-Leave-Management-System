@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
-import type { LeavePolicy, ManagedLeaveType, PolicyInput, TypeInput } from './types';
+import type { LeavePolicy, ManagedLeaveType, PolicyInput, TypeInput, RequirementMode, EvidenceClass } from './types';
 import { problemMessage, isConflict } from './problems';
 import { ConfirmationDialog } from '../../components/ConfirmationDialog';
 
@@ -65,14 +65,19 @@ export function LeaveTypeForm({ type, policies, policiesUnavailable, onCreatePol
   const [name, setName] = useState(type?.name ?? '');
   const [policyId, setPolicyId] = useState(type?.leavePolicyId ?? '');
   const [validation, setValidation] = useState('');
+  const [descriptionMode, setDescriptionMode] = useState<RequirementMode>(type?.descriptionMode ?? 'NotRequested');
+  const [evidenceMode, setEvidenceMode] = useState<RequirementMode>(type?.evidenceMode ?? 'Optional');
+  const [evidenceClass, setEvidenceClass] = useState<EvidenceClass>(type?.evidenceClass ?? 'Medical');
+  const [instructions, setInstructions] = useState(type?.requirementInstructions ?? '');
   const selected = policies.find(policy => policy.id === policyId);
-  const dirty = name !== (type?.name ?? '') || policyId !== (type?.leavePolicyId ?? '');
+  const dirty = name !== (type?.name ?? '') || policyId !== (type?.leavePolicyId ?? '') || descriptionMode !== (type?.descriptionMode ?? 'NotRequested') || evidenceMode !== (type?.evidenceMode ?? 'Optional') || evidenceClass !== (type?.evidenceClass ?? 'Medical') || instructions !== (type?.requirementInstructions ?? '');
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (actions.busy) return;
     if (!name.trim() || name.trim().length > 100 || Array.from(name).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)) { setValidation('Enter a name of 1–100 characters without control characters.'); return; }
     if (policiesUnavailable || !selected) { setValidation('Choose an available policy before saving.'); return; }
-    setValidation(''); onSave({ name: name.trim(), leavePolicyId: policyId });
+    if (instructions.trim().length > 1000 || (evidenceClass === 'Medical' && evidenceMode === 'Required')) { setValidation('Medical evidence must remain Optional or Not requested so absence can be reported. Instructions are limited to 1000 trimmed characters.'); return; }
+    setValidation(''); onSave({ name: name.trim(), leavePolicyId: policyId, descriptionMode, evidenceMode, evidenceClass, requirementInstructions: instructions.trim() || null });
   };
   return <section className="ui-panel" aria-labelledby="type-form-title">
     <h2 id="type-form-title" className="break-words text-xl font-bold">{type ? `Edit leave type: ${type.name}` : 'New leave type'}</h2>
@@ -86,6 +91,13 @@ export function LeaveTypeForm({ type, policies, policiesUnavailable, onCreatePol
         </select></label>
         {policiesUnavailable ? <p role="alert">Policies could not be loaded. <button type="button" className="underline" onClick={onRetryPolicies}>Retry policies</button></p>
           : policies.length === 0 && <p className="text-sm text-slate-600">Create a policy first to define entitlement and overlap rules.</p>}
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="ui-label">Description requirement<select className="ui-input" value={descriptionMode} onChange={e => setDescriptionMode(e.target.value as RequirementMode)}>{['NotRequested', 'Optional', 'Required'].map(mode => <option key={mode} value={mode}>{mode === 'NotRequested' ? 'Not requested' : mode}</option>)}</select></label>
+          <label className="ui-label">Evidence requirement<select className="ui-input" value={evidenceMode} onChange={e => setEvidenceMode(e.target.value as RequirementMode)}>{['NotRequested', 'Optional', 'Required'].map(mode => <option key={mode} value={mode}>{mode === 'NotRequested' ? 'Not requested' : mode}</option>)}</select></label>
+          <label className="ui-label">Configured evidence class<select className="ui-input" value={evidenceClass} onChange={e => setEvidenceClass(e.target.value as EvidenceClass)}><option value="Medical">Medical (owner and HR only)</option><option value="Ordinary">Ordinary (eligible manager access)</option></select></label>
+        </div>
+        <label className="ui-label">Submission instructions (optional)<textarea className="ui-input" rows={3} maxLength={1000} value={instructions} onChange={e => setInstructions(e.target.value)} aria-describedby="requirements-help" /></label>
+        <p id="requirements-help" className="text-sm text-slate-600">Company requirements apply to future submissions for this type only, not other types sharing its policy. Do not request diagnoses or describe these settings as law. Sick or medical absence must use Medical classification and cannot require an upload to report absence. Later proof for payment is not implemented. Existing requests retain their submitted requirements.</p>
         <button type="button" className="ui-secondary" onClick={onCreatePolicy}>Create a policy</button>
       </fieldset>
       {selected && !policiesUnavailable && <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">

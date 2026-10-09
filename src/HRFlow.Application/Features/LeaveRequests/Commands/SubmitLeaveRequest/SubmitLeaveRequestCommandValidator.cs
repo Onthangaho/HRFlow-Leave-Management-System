@@ -10,6 +10,9 @@ public class SubmitLeaveRequestCommandValidator : AbstractValidator<SubmitLeaveR
     /// <summary>Checks identifiers and dates without reading an unprotected policy/type snapshot.</summary>
     public SubmitLeaveRequestCommandValidator()
     {
+        RuleFor(v => v.ExpectedTypeVersion).NotEmpty();
+        RuleFor(v => v.ExpectedPolicyVersion).NotEmpty();
+        RuleFor(v => v.Description).Must(text => text == null || text.Trim().Length <= 1000).WithMessage("Description must contain at most 1000 trimmed characters.");
         RuleFor(v => v.DocumentIds).NotNull().Must(ids => ids != null && ids.Count <= HRFlow.Domain.Entities.SupportingDocumentLimits.MaxRequestDocuments && ids.Distinct().Count() == ids.Count).WithMessage("Choose at most five distinct clean documents.");
         RuleFor(v => v.LeaveTypeId)
             .NotEmpty();

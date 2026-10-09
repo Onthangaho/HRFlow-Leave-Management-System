@@ -1,3 +1,5 @@
+> 9 October 2026: PR #109 is merged. The authorised #84 company-configuration/submission-snapshot slice is locally implemented for review; see [ADR 0016](../adr/0016-request-evidence-requirements.md) and [verification/limitations](../verification/request-evidence-requirements.md). #22/#75 statutory/payment dependencies remain unimplemented; no legal-compliance or deployment claim.
+
 # HRFlow — Phase 1: Discovery & Planning
 
 > Current-state update: PR #99 merged on 8 October 2026 after this planning baseline. JWT expiry/current-permission protection is now shipped; #74 stays open for review. Begin the next phase with #75 qualified requirements review and the explicit #76 regression-convention decision; implementation of other roadmap slices needs separate authorization.

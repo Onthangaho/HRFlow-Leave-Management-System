@@ -87,7 +87,7 @@ public sealed class SupportingDocumentService(IApplicationDocumentContext db, Cu
     }
 
     /// <summary>Binds only owned clean uploads inside submission's existing reservation, without another transition audit.</summary>
-    public async Task BindAsync(Guid employee, Guid request, IReadOnlyCollection<Guid> ids, IReadOnlyDictionary<Guid, Guid> verified, CancellationToken ct)
+    public async Task BindAsync(Guid employee, Guid request, IReadOnlyCollection<Guid> ids, IReadOnlyDictionary<Guid, Guid> verified, CancellationToken ct, string? requiredClass = null)
     {
         if (ids.Count > SupportingDocumentLimits.MaxRequestDocuments || ids.Distinct().Count() != ids.Count) throw new FluentValidation.ValidationException("Choose at most five distinct documents.");
         foreach (var id in ids)
@@ -96,6 +96,8 @@ public sealed class SupportingDocumentService(IApplicationDocumentContext db, Cu
             if (document.Status != SupportingDocumentStatus.Clean || document.RequestId != null) throw new WriteConflictException("Only clean, unbound owned documents may be attached.");
             if (!verified.TryGetValue(id, out var version) || version != document.Version)
                 throw new WriteConflictException("Document changed. Refresh evidence before submitting.");
+            if (requiredClass == SupportingDocumentClass.Medical && document.Class != SupportingDocumentClass.Medical)
+                throw new FluentValidation.ValidationException("This type requires Medical classification. Ordinary drafts cannot be attached; upload correctly classified evidence without downgrading privacy.");
             document.RequestId = request; document.Version = Guid.NewGuid(); document.UpdatedUtc = DateTime.UtcNow;
             document.BoundUtc = DateTime.UtcNow;
         }

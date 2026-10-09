@@ -7,6 +7,9 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 /// </summary>
 public class SubmitLeaveRequestCommand : IRequest<Guid>
 {
+    public Guid ExpectedTypeVersion { get; set; }
+    public Guid ExpectedPolicyVersion { get; set; }
+    public string? Description { get; set; }
     public Guid EmployeeId { get; set; }
     public Guid LeaveTypeId { get; set; }
     public DateTime StartDate { get; set; }

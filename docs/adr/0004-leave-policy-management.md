@@ -1,3 +1,5 @@
+> #84 follow-up: the selector now also exposes requirement/type/policy versions for reviewed submission; type configuration includes company requirements. See [ADR 0016](0016-request-evidence-requirements.md). The original contract below describes the #23 baseline.
+
 # Leave type and shared-policy management on SQLite
 
 ## Scope and contract

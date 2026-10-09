@@ -15,6 +15,10 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
     public void Configure(EntityTypeBuilder<LeaveRequest> builder)
     {
         builder.HasKey(lr => lr.Id);
+        builder.Property(lr => lr.Description).HasMaxLength(RequirementModes.MaxTextLength);
+        builder.Property(lr => lr.SubmissionRequirements).HasConversion(
+            value => System.Text.Json.JsonSerializer.Serialize(value, (System.Text.Json.JsonSerializerOptions?)null),
+            value => System.Text.Json.JsonSerializer.Deserialize<RequestRequirementsSnapshot>(value, (System.Text.Json.JsonSerializerOptions?)null));
 
         builder.Property(lr => lr.StartDate)
             .IsRequired();

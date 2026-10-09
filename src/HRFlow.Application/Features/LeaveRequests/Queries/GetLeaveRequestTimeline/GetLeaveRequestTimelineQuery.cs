@@ -20,7 +20,7 @@ public sealed record LeaveTimelineEventDto(Guid Id, Guid ActorId, string ActorNa
 /// <summary>Reports missing legacy submission honestly without synthesizing events or timestamps.</summary>
 public sealed record LeaveRequestTimelineDto(Guid RequestId, string EmployeeName, bool EmployeeIsActive,
     string LeaveTypeName, DateOnly StartDate, DateOnly EndDate, string Status, bool SubmissionRecorded,
-    IReadOnlyList<LeaveTimelineEventDto> Events);
+    IReadOnlyList<LeaveTimelineEventDto> Events, string? Description, RequestRequirementsSnapshot? SubmissionRequirements);
 
 /// <summary>Applies live owner, reporting and HR scopes in the same deferred snapshot as the timeline.</summary>
 public sealed class GetLeaveRequestTimelineQueryHandler(IApplicationDbContext context,
@@ -44,8 +44,8 @@ public sealed class GetLeaveRequestTimelineQueryHandler(IApplicationDbContext co
                     || (personal && leave.EmployeeId == actor.Id)
                     || (manager && leave.EmployeeId != actor.Id && leave.Employee.ManagerId == actor.Id
                         && leave.Employee.DepartmentId == actor.DepartmentId)))
-                .Select(leave => new { leave.Id, leave.Employee.FullName, leave.Employee.IsActive,
-                    TypeName = leave.LeaveType.Name, leave.StartDate, leave.EndDate, leave.Status })
+                .Select(leave => new { leave.Id, leave.EmployeeId, leave.Employee.FullName, leave.Employee.IsActive,
+                    TypeName = leave.LeaveType.Name, leave.StartDate, leave.EndDate, leave.Status, leave.Description, leave.SubmissionRequirements })
                 .SingleOrDefaultAsync(token) ?? throw new NotFoundException("Leave request was not found or is not available to your account.");
             var audits = await context.AuditEntries.AsNoTracking().Where(entry => entry.LeaveRequestId == leave.Id)
                 .OrderBy(entry => entry.Timestamp).ThenBy(entry => entry.Id)
@@ -57,6 +57,6 @@ public sealed class GetLeaveRequestTimelineQueryHandler(IApplicationDbContext co
                     : "Cancelled because the employee account was deactivated.", hr ? entry.CorrelationId : null, entry.DecisionNote)).ToList();
             return new LeaveRequestTimelineDto(leave.Id, leave.FullName, leave.IsActive, leave.TypeName,
                 DateOnly.FromDateTime(leave.StartDate), DateOnly.FromDateTime(leave.EndDate), leave.Status.ToString(),
-                audits.Any(entry => entry.Action == "Submit" && entry.OldStatus is null && entry.NewStatus == LeaveRequestStatus.Pending), events);
+                audits.Any(entry => entry.Action == "Submit" && entry.OldStatus is null && entry.NewStatus == LeaveRequestStatus.Pending), events, leave.SubmissionRequirements?.EvidenceClass == SupportingDocumentClass.Medical && !hr && leave.EmployeeId != actor.Id ? null : leave.Description, leave.SubmissionRequirements);
         }, cancellationToken);
 }
