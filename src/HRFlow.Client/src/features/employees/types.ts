@@ -5,6 +5,8 @@ export type ManagerAssignment = 'Preserve' | 'Assign' | 'Clear';
 
 /** Complete editable snapshot, including the version used to detect stale forms. */
 export interface Employee {
+  employeeNumber: string | null;
+  employmentStartDate: string | null;
   id: string;
   isActive: boolean;
   requiresActivation: boolean;
@@ -27,6 +29,9 @@ export interface Employee {
 
 /** Form state keeps manager intent separate from its ID so a profile edit never accidentally clears reporting. */
 export interface EmployeeFormValues {
+  confirmEmploymentFacts: boolean;
+  employeeNumber: string;
+  employmentStartDate: string;
   fullName: string;
   email: string;
   departmentId: string;

@@ -1,3 +1,4 @@
+import { ScheduleRevisions } from '../employees/components/ScheduleWorkspace';
 import { useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -68,10 +69,11 @@ function ProfileForm({ initial }: { initial: OwnProfile }) {
   return <>
     <section className="ui-panel space-y-4"><h2 className="text-xl font-bold">Employment details</h2><p className="text-sm text-slate-600">HR controls these records. Contact HR to correct them. Audit history uses your canonical name.</p>
       <dl className="grid gap-4 sm:grid-cols-2">{[
-        ['Canonical name', initial.canonicalName], ['Email', initial.email], ['Roles', initial.roles.join(', ')], ['Department', initial.departmentName],
+        ['Employee number', initial.employeeNumber ?? 'Unknown'], ['Employment start', initial.employmentStartDate ?? 'Unknown'], ['Canonical name', initial.canonicalName], ['Email', initial.email], ['Roles', initial.roles.join(', ')], ['Department', initial.departmentName],
         ['Manager', initial.managerName ?? 'Not assigned'], ['Employment status', initial.isActive ? 'Active' : 'Inactive'], ['Account status', initial.isActivated ? 'Activated' : 'Pending activation'],
       ].map(([label, value]) => <div key={label}><dt className="text-sm font-semibold text-slate-500">{label}</dt><dd className="mt-1 break-words text-slate-900">{value}</dd></div>)}</dl>
     </section>
+    <ScheduleRevisions history={snapshot.scheduleHistory} />
     <form className="ui-panel space-y-4" onSubmit={save}><h2 className="text-xl font-bold">Personal display and contact</h2>
       <p id="profile-purpose" className="text-sm text-slate-600">Preferred name personalises your header only. Phone is optional and private to this account profile; it is not used for sign-in or password recovery. Leave out information you do not want stored.</p>
       <label className="ui-label">Preferred display name (optional)<input className="ui-input" value={name} maxLength={preferredNameLimit} disabled={saving} aria-describedby="profile-purpose profile-name-help profile-feedback" autoComplete="nickname" onChange={e => setName(e.target.value)} /></label>

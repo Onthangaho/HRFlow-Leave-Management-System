@@ -68,6 +68,13 @@ public sealed class SqliteWriteTransaction(HRFlowDbContext context, IRequestCred
         {
             throw new WriteConflictException("A leave type with this name already exists. Choose another name.");
         }
+        catch (DbUpdateException exception) when (exception.InnerException is SqliteException unique
+            && unique.SqliteExtendedErrorCode == SqliteUniqueConstraint
+            && (unique.Message.Contains("Employees.EmployeeNumber", StringComparison.Ordinal)
+                || unique.Message.Contains("WeeklyScheduleRevisions.EmployeeId", StringComparison.Ordinal)))
+        {
+            throw new WriteConflictException("Employee number or schedule effective date is already assigned. Reload and review before saving.");
+        }
         catch (DbUpdateException exception) when (exception.InnerException is SqliteException reference && IsReferenceConstraint(reference)
             && exception.Entries.Any(entry => entry.Entity is LeaveType or LeavePolicy or LeaveRequest))
         {

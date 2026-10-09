@@ -30,7 +30,7 @@ public sealed class EmployeeManagementService(
     /// <inheritdoc />
     public async Task<EmployeeManagementResult> CreateEmployeeAsync(
         Guid actorIdentityUserId, string fullName, string email,
-        Guid departmentId, IReadOnlyCollection<string> roles, Guid? managerId,
+        Guid departmentId, IReadOnlyCollection<string> roles, Guid? managerId, string? employeeNumber, DateOnly? employmentStartDate,
         CancellationToken cancellationToken)
     {
         activation.EnsureDeliveryConfigured();
@@ -44,6 +44,7 @@ public sealed class EmployeeManagementService(
             await ValidateDepartmentAsync(departmentId, token);
             await EnsureEmailAvailableAsync(email.Trim(), null);
             await ValidateManagerAssignmentAsync(null, departmentId, managerId, token);
+            var number = await ValidateEmploymentAsync(null, employeeNumber, employmentStartDate, token);
 
             var identity = new ApplicationUser { UserName = email.Trim(), Email = email.Trim(), RequiresActivation = true };
             EnsureIdentitySucceeded(await userManager.CreateAsync(identity));
@@ -52,6 +53,7 @@ public sealed class EmployeeManagementService(
             accountId = identity.Id;
             invitation = activation.Prepare(identity);
             var employee = Employee.Create(fullName, email, departmentId);
+            employee.ConfirmEmployment(number, employmentStartDate!.Value);
             employee.SetIdentityUser(identity.Id.ToString());
             employee.AssignManager(managerId);
             dbContext.Employees.Add(employee);
@@ -67,7 +69,7 @@ public sealed class EmployeeManagementService(
     public async Task<EmployeeManagementResult> UpdateEmployeeAsync(
         Guid actorIdentityUserId, Guid employeeId, Guid expectedVersion, string fullName, string email,
         Guid departmentId, IReadOnlyCollection<string> roles, ManagerAssignmentOperation managerAssignment,
-        Guid? managerId, CancellationToken cancellationToken)
+        Guid? managerId, bool confirmEmploymentFacts, string? employeeNumber, DateOnly? employmentStartDate, CancellationToken cancellationToken)
     {
         EmployeeManagementResult? result = null;
         await writeTransaction.ExecuteAsync(async token =>
@@ -82,6 +84,13 @@ public sealed class EmployeeManagementService(
             var effectiveRoles = await ValidateRolesAsync(roles);
             await ValidateDepartmentAsync(departmentId, token);
             if (!employee.IsActive) throw new WriteConflictException("Inactive employees cannot be edited or reactivated through profile editing.");
+            if (confirmEmploymentFacts)
+            {
+                var number = await ValidateEmploymentAsync(employee.Id, employeeNumber, employmentStartDate, token);
+                employee.ConfirmEmployment(number, employmentStartDate!.Value);
+            }
+            else if (employeeNumber is not null || employmentStartDate.HasValue)
+                throw new DomainException("Employment fields require explicit ConfirmEmploymentFacts; omit them to preserve existing or Unknown facts.");
             var effectiveManager = managerAssignment switch
             {
                 ManagerAssignmentOperation.Preserve when !managerId.HasValue => employee.ManagerId,
@@ -178,6 +187,16 @@ public sealed class EmployeeManagementService(
         logger.LogInformation("Employee deactivated. EmployeeId: {EmployeeId}; ActorIdentityUserId: {ActorIdentityUserId}; CancelledRequestCount: {CancelledRequestCount}",
             employeeId, actorIdentityUserId, result!.CancelledRequestCount);
         return result;
+    }
+
+    private async Task<string> ValidateEmploymentAsync(Guid? employeeId, string? number, DateOnly? date, CancellationToken token)
+    {
+        var normalized = EmploymentFacts.NormalizeNumber(number);
+        if (!date.HasValue) throw new DomainException("A confirmed employment start date is required.");
+        EmploymentFacts.ValidateDate(date.Value);
+        if (await dbContext.Employees.AnyAsync(e => e.Id != employeeId && e.EmployeeNumber == normalized, token))
+            throw new WriteConflictException("This employee number is already assigned, including inactive records. Choose a unique number.");
+        return normalized;
     }
 
     private async Task<int> CountActiveHrAsync(CancellationToken token)

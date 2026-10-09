@@ -1,3 +1,5 @@
+> 9 October 2026: PR #110 is merged. #78 confirmed employment facts and fixed weekly schedule history are locally implemented for review on feat/employment-data-foundation. [ADR 0017](../adr/0017-confirmed-employment-data.md), [API/operations](../operations/employment-data-foundation.md), [actual evidence and limits](../verification/employment-data-foundation.md). Legacy values remain Unknown; calendar-day charging is unchanged. #78 stays open for #75/#22-dependent statutory/cycle/holiday scope. Prepared for independent PR review; no CSV onboarding or deployment. Earlier entries are historical status.
+
 > 9 October 2026: PR #109 is merged. The authorised #84 company-configuration/submission-snapshot slice is locally implemented for review; see [ADR 0016](../adr/0016-request-evidence-requirements.md) and [verification/limitations](../verification/request-evidence-requirements.md). #22/#75 statutory/payment dependencies remain unimplemented; no legal-compliance or deployment claim.
 
 # HRFlow — Phase 1: Discovery & Planning

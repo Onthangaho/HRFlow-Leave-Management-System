@@ -27,7 +27,7 @@ export function EmployeeTable({ onResend, employees, onEdit, editing, onDeactiva
           {employees.map(employee => (
             <tr key={employee.id}>
               <th scope="row" className="px-4 py-4 text-left font-medium">
-                <div className="max-w-60 break-words">{employee.fullName}</div><div className="max-w-60 break-words text-sm font-normal text-slate-600">{employee.email}</div>
+                <div className="max-w-60 break-words">{employee.fullName}</div><p className="text-xs">Number: {employee.employeeNumber ?? 'Unknown'} ? Start: {employee.employmentStartDate ?? 'Unknown'}</p><div className="max-w-60 break-words text-sm font-normal text-slate-600">{employee.email}</div>
               </th>
               <td className="px-4 py-4 text-sm">
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${employee.isActive

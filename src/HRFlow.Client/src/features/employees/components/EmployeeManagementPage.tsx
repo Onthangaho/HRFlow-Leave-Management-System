@@ -45,7 +45,7 @@ function EmployeeManagementWorkspace() {
   const filtered = (employees.data ?? []).filter(employee =>
     (status === 'All' || employee.isActive === (status === 'Active')) &&
     (!reportsFor || employee.managerId === reportsFor.id) &&
-    [employee.fullName, employee.email, employee.departmentName, employee.managerName ?? '', ...employee.roles]
+    [employee.fullName, employee.employeeNumber ?? '', employee.email, employee.departmentName, employee.managerName ?? '', ...employee.roles]
       .some(value => value.toLocaleLowerCase().includes(query)),
   );
   return (

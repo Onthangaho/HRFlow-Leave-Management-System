@@ -18,7 +18,7 @@ public interface IOwnAccountService
 /// <summary>Own-account projection only; phone and preferred name never enter existing public employee DTOs.</summary>
 public sealed record OwnProfileDto(string CanonicalName, string Email, IReadOnlyList<string> Roles,
     string DepartmentName, string? ManagerName, bool IsActive, bool IsActivated,
-    string? PreferredDisplayName, string? ContactPhone, Guid ProfileVersion);
+    string? PreferredDisplayName, string? ContactPhone, Guid ProfileVersion, string? EmployeeNumber, DateOnly? EmploymentStartDate, HRFlow.Application.Services.ScheduleHistoryDto ScheduleHistory);
 
 /// <summary>Server-confirmed private field generation after a save.</summary>
 public sealed record PrivateProfileDto(string? PreferredDisplayName, string? ContactPhone, Guid ProfileVersion);

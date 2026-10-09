@@ -11,6 +11,7 @@ const createEmployee = async (values: EmployeeFormValues): Promise<EmployeeWrite
   const response = await authHttpClient.post<EmployeeWriteResult>('/employees', {
     fullName: values.fullName, email: values.email,
     departmentId: values.departmentId, roles: values.roles, managerId: values.managerId || null,
+    employeeNumber: values.employeeNumber, employmentStartDate: values.employmentStartDate,
   }, { skipAuthReplay: true });
   return response.data;
 };
@@ -20,9 +21,11 @@ const updateEmployee = async (
 ): Promise<EmployeeWriteResult> => {
   const response = await authHttpClient.put<EmployeeWriteResult>(`/employees/${id}`, {
     fullName: values.fullName, email: values.email, departmentId: values.departmentId,
+    confirmEmploymentFacts: values.confirmEmploymentFacts,
+    ...(values.confirmEmploymentFacts ? { employeeNumber: values.employeeNumber, employmentStartDate: values.employmentStartDate } : {}),
     roles: values.roles, expectedVersion, managerAssignment: values.managerAssignment,
     ...(values.managerAssignment === 'Assign' ? { managerId: values.managerId } : {}),
-  });
+  }, { skipAuthReplay: true });
   return response.data;
 };
 

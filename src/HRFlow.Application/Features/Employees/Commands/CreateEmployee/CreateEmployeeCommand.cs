@@ -10,6 +10,9 @@ public sealed class CreateEmployeeCommand : IRequest<EmployeeManagementResult>
     /// <summary>The API supplies this identity from the authenticated caller, never from JSON.</summary>
     [JsonIgnore]
     public Guid ActorIdentityUserId { get; set; }
+    /// <summary>Explicit confirmation on edit; omission preserves legacy unknown facts.</summary>
+    public string? EmployeeNumber { get; set; }
+    public DateOnly? EmploymentStartDate { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public Guid DepartmentId { get; set; }

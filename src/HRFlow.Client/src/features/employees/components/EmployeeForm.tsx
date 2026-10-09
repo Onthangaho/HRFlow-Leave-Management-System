@@ -1,3 +1,4 @@
+import { ScheduleWorkspace } from './ScheduleWorkspace';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -8,6 +9,7 @@ import { useCreateEmployee, useUpdateEmployee, useDepartments, useRoles } from '
 import { employeeRoles, type Employee, type EmployeeFormValues } from '../types';
 
 const schema = z.object({
+  confirmEmploymentFacts: z.boolean(), employeeNumber: z.string(), employmentStartDate: z.string(),
   fullName: z.string().trim().min(1, 'Full name is required').max(200),
   email: z.string().trim().email('Enter a valid email address').max(256),
   departmentId: z.string().min(1, 'Select a department'),
@@ -37,15 +39,21 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
   const create = useCreateEmployee();
   const update = useUpdateEmployee();
   const formSchema = schema.superRefine((values, context) => {
+    if (!isEditing || values.confirmEmploymentFacts) {
+      if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$/.test(values.employeeNumber.trim())) context.addIssue({ code: 'custom', path: ['employeeNumber'], message: 'Use 1-32 ASCII letters, digits, hyphens or underscores, starting with a letter or digit.' });
+      const date = values.employmentStartDate;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < '1900-01-01' || date > '2100-12-31' || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0,10) !== date) context.addIssue({code:'custom',path:['employmentStartDate'],message:'Enter a valid confirmed date between 1900 and 2100.'});
+    }
     if (isEditing && values.managerAssignment === 'Assign' && !values.managerId) {
       context.addIssue({ code: 'custom', path: ['managerId'], message: 'Select a manager to assign.' });
     }
   });
   const { register, handleSubmit, reset, control, setValue, formState: { errors, isSubmitting } } = useForm<EmployeeFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { fullName: '', email: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '' },
+    defaultValues: { confirmEmploymentFacts: false, employeeNumber: '', employmentStartDate: '', fullName: '', email: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '' },
   });
   const departmentId = useWatch({ control, name: 'departmentId' });
+  const confirmFacts = useWatch({ control, name: 'confirmEmploymentFacts' });
   const managerAssignment = useWatch({ control, name: 'managerAssignment' });
   const eligibleManagers = employees.filter(candidate =>
     candidate.isActive && !candidate.requiresActivation && candidate.id !== employee?.id && candidate.departmentId === departmentId && candidate.roles.includes('Manager'),
@@ -57,9 +65,10 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
 
   useEffect(() => {
     reset(employee ? {
+      confirmEmploymentFacts: false, employeeNumber: employee.employeeNumber ?? '', employmentStartDate: employee.employmentStartDate ?? '',
       fullName: employee.fullName, email: employee.email, departmentId: employee.departmentId,
       roles: [...employee.roles], managerAssignment: 'Preserve', managerId: '',
-    } : { fullName: '', email: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '' });
+    } : { confirmEmploymentFacts: false, employeeNumber: '', employmentStartDate: '', fullName: '', email: '', departmentId: '', roles: [], managerAssignment: 'Clear', managerId: '' });
   }, [employee, reset]);
 
   let failure = '';
@@ -108,6 +117,12 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
       <form onSubmit={submit} className="mt-6">
         <fieldset disabled={busy} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <legend className="sr-only">Employee details</legend>
+          <div className="sm:col-span-2 space-y-3">
+            <h3 className="font-semibold">Confirmed employment facts</h3>
+            {employee && <><p>Number: {employee.employeeNumber ?? 'Unknown'}; start date: {employee.employmentStartDate ?? 'Unknown'}. Omission preserves these facts.</p><label className="flex gap-2"><input type="checkbox" {...register('confirmEmploymentFacts')} />Confirm or revise employment facts</label></>}
+            {(!employee || confirmFacts) && <div className="grid gap-4 sm:grid-cols-2"><label className="ui-label">Employee number<input className="ui-input" maxLength={32} {...register('employeeNumber')} aria-describedby="employment-help" />{errors.employeeNumber && <span role="alert">{errors.employeeNumber.message}</span>}</label><label className="ui-label">Confirmed employment start date<input className="ui-input" type="date" min="1900-01-01" max="2100-12-31" {...register('employmentStartDate')} aria-describedby="employment-help" />{errors.employmentStartDate && <span role="alert">{errors.employmentStartDate.message}</span>}</label></div>}
+            <p id="employment-help" className="text-sm">Confirm from employment records, not account creation. Future start dates do not delay activated account access. Leave still uses inclusive calendar days.</p>
+          </div>
           <div><label htmlFor="employee-full-name" className="text-sm font-medium">Full name</label>
             <input id="employee-full-name" autoComplete="name" className={inputClass} aria-invalid={Boolean(errors.fullName)}
               aria-describedby={errors.fullName ? 'full-name-error' : undefined} {...register('fullName')} />
@@ -119,7 +134,7 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
           {!employee && <p className="sm:col-span-2 text-sm text-slate-600">The employee sets their own password using a private invitation. They cannot sign in until activation. Development uses private local pickup, not email delivery.</p>}
           <div><label htmlFor="employee-department" className="text-sm font-medium">Department</label>
             <select id="employee-department" className={inputClass} aria-invalid={Boolean(errors.departmentId)}
-              aria-describedby={errors.departmentId ? 'department-error' : undefined} {...departmentRegistration}
+              aria-describedby={errors.departmentId ? 'department-error' : undefined} {...departmentRegistration} value={departmentId}
               onChange={event => { void departmentRegistration.onChange(event); setValue('managerId', ''); }}>
               <option value="">Select a department</option>
               {departments.data?.map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
@@ -153,6 +168,7 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
           </div>
         </fieldset>
       </form>
+      {employee && <ScheduleWorkspace employeeId={employee.id} />}
     </section>
   );
 }

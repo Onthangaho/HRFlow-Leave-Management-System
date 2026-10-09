@@ -14,6 +14,10 @@ public sealed class UpdateEmployeeCommand : IRequest<EmployeeManagementResult>
     public Guid? EmployeeId { get; set; }
     /// <summary>The version loaded with the edit form; never silently merges a stale replacement.</summary>
     public Guid ExpectedVersion { get; set; }
+    /// <summary>Explicit confirmation on edit; omission preserves legacy unknown facts.</summary>
+    public bool ConfirmEmploymentFacts { get; set; }
+    public string? EmployeeNumber { get; set; }
+    public DateOnly? EmploymentStartDate { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public Guid DepartmentId { get; set; }

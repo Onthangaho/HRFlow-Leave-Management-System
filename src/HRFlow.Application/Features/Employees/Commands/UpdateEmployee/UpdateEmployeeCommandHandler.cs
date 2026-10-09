@@ -31,7 +31,6 @@ public sealed class UpdateEmployeeCommandHandler : IRequestHandler<UpdateEmploye
             request.DepartmentId,
             request.Roles,
             request.ManagerAssignment,
-            request.ManagerId,
-            cancellationToken);
+            request.ManagerId, request.ConfirmEmploymentFacts, request.EmployeeNumber, request.EmploymentStartDate, cancellationToken);
     }
 }

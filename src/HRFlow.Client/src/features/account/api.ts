@@ -4,6 +4,7 @@ import { useAuth } from '../auth/hooks/useAuth';
 
 /** Private own-account contract; canonical fields are read-only and HR versions are not included. */
 export interface OwnProfile {
+  employeeNumber: string | null; employmentStartDate: string | null; scheduleHistory: import('../employees/components/ScheduleWorkspace').ScheduleHistory;
   canonicalName: string; email: string; roles: string[]; departmentName: string; managerName: string | null;
   isActive: boolean; isActivated: boolean; preferredDisplayName: string | null; contactPhone: string | null; profileVersion: string;
 }

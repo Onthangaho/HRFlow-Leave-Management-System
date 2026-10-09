@@ -179,3 +179,9 @@ Authoritative service: LeaveNotificationService through CurrentAccountAuthorizat
 
 - GET `/api/v1/me` and GET `/api/v1/me/preferences`: own authenticated identity only; any current Employee/Manager/HR capability. Current active/activated state, credential proof, membership and metadata share the existing deferred read snapshot. No target-ID lookup or public private-field projection.
 - PUT `/api/v1/me/profile` and PUT `/api/v1/me/preferences`: the same current own-account requirements after SQLite writer reservation; independent expected versions, unknown-field rejection, atomic persistence, no callback replay. Canonical employment/roles/credentials remain outside the allowlist.
+
+## Employment foundation (#78)
+
+GET /api/v1/employees/{id}/schedules: current active/activated HR only; EmploymentScheduleService.GetAsync rechecks membership and reads target/history in one deferred snapshot.
+POST to the same route: current active/activated HR only; AppendAsync rechecks under the existing SQLite writer reservation, with credential-generation protection, active target and original schedule version. No arbitrary actor accepted.
+Employee create/update retain current transactional HR checks; employment confirmation joins the existing atomic Identity/profile/role/manager write. GET /api/v1/me adds only the server-derived account own read-only employment/schedule projection in its current protected read snapshot.

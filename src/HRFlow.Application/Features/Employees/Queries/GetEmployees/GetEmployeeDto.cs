@@ -19,6 +19,9 @@ public sealed class GetEmployeeDto
     public string? DeactivatedByName { get; set; }
     /// <summary>Allows authorized HR to understand the lifecycle decision without exposing it publicly.</summary>
     public string? DeactivationReason { get; set; }
+    /// <summary>Null is explicitly unconfirmed legacy information.</summary>
+    public string? EmployeeNumber { get; set; }
+    public DateOnly? EmploymentStartDate { get; set; }
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
