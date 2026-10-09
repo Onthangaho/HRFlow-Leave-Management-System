@@ -8,14 +8,14 @@ public interface IEmployeeManagementService
     /// <summary>Creates a linked account and profile atomically, with all selected capabilities.</summary>
     Task<EmployeeManagementResult> CreateEmployeeAsync(
         Guid actorIdentityUserId, string fullName, string email,
-        Guid departmentId, IReadOnlyCollection<string> roles, Guid? managerId,
+        Guid departmentId, IReadOnlyCollection<string> roles, Guid? managerId, string? employeeNumber, DateOnly? employmentStartDate,
         CancellationToken cancellationToken);
 
     /// <summary>Replaces roles explicitly and rejects stale versions; omitted manager changes preserve reporting.</summary>
     Task<EmployeeManagementResult> UpdateEmployeeAsync(
         Guid actorIdentityUserId, Guid employeeId, Guid expectedVersion, string fullName, string email,
         Guid departmentId, IReadOnlyCollection<string> roles, ManagerAssignmentOperation managerAssignment,
-        Guid? managerId, CancellationToken cancellationToken);
+        Guid? managerId, bool confirmEmploymentFacts, string? employeeNumber, DateOnly? employmentStartDate, CancellationToken cancellationToken);
 
     /// <summary>Deactivates a versioned profile and cancels pending requests atomically, preserving history.</summary>
     Task<EmployeeDeactivationResult> DeactivateEmployeeAsync(Guid actorIdentityUserId, Guid employeeId,

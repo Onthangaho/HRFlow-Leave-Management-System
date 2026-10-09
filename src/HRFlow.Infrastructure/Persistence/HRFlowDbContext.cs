@@ -22,6 +22,7 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     {
     }
 
+    public DbSet<WeeklyScheduleRevision> WeeklyScheduleRevisions => Set<WeeklyScheduleRevision>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<SupportingDocument> SupportingDocuments => Set<SupportingDocument>();
     public DbSet<DocumentAccessEntry> DocumentAccessEntries => Set<DocumentAccessEntry>();
@@ -43,6 +44,10 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<WeeklyScheduleRevision>().HasIndex(s => new { s.EmployeeId, s.EffectiveFrom }).IsUnique();
+        modelBuilder.Entity<WeeklyScheduleRevision>().Property(s => s.Name).HasMaxLength(100);
+        modelBuilder.Entity<WeeklyScheduleRevision>().HasOne<Employee>().WithMany().HasForeignKey(s => s.EmployeeId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<WeeklyScheduleRevision>().HasOne<Employee>().WithMany().HasForeignKey(s => s.RecordedById).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<SupportingDocument>().HasIndex(d => new { d.OwnerId, d.UploadKey }).IsUnique();
         modelBuilder.Entity<SupportingDocument>().HasOne<Employee>().WithMany().HasForeignKey(d => d.OwnerId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<SupportingDocument>().HasOne<LeaveRequest>().WithMany().HasForeignKey(d => d.RequestId).OnDelete(DeleteBehavior.Restrict);

@@ -13,6 +13,9 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
     public void Configure(EntityTypeBuilder<Employee> builder)
     {
         builder.HasKey(employee => employee.Id);
+        builder.Property(e => e.EmployeeNumber).HasMaxLength(EmploymentFacts.MaxNumberLength);
+        builder.HasIndex(e => e.EmployeeNumber).IsUnique();
+        builder.Property(e => e.ScheduleVersion).IsConcurrencyToken();
         builder.Property(employee => employee.Version).IsConcurrencyToken();
         builder.Property(employee => employee.IsActive).HasDefaultValue(true);
         builder.Property(employee => employee.DeactivationReason).HasMaxLength(Employee.MaxDeactivationReasonLength);

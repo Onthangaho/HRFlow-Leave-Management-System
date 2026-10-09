@@ -52,6 +52,7 @@ public static class ServiceCollectionExtensions
             .AddEntityFrameworkStores<HRFlowDbContext>()
             .AddDefaultTokenProviders();
         services.AddScoped<IOwnAccountService, OwnAccountService>();
+        services.AddScoped<HRFlow.Application.Services.EmploymentScheduleService>();
         services.AddScoped<HRFlow.Application.Services.SupportingDocumentService>();
         services.AddScoped<IPrivateDocumentStorage, PrivateDocumentStorage>();
         services.AddScoped<IDocumentScanner, ClamAvDocumentScanner>();

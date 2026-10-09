@@ -44,6 +44,7 @@ public sealed class GetEmployeesQueryHandler(
                 results.Add(new GetEmployeeDto
                 {
                     RequiresActivation = state.RequiresActivation, InvitationDeliveryState = state.DeliveryState, ActivatedAtUtc = state.ActivatedAtUtc,
+                    EmployeeNumber = employee.EmployeeNumber, EmploymentStartDate = employee.EmploymentStartDate,
                     Id = employee.Id, FullName = employee.FullName, Email = employee.Email,
                     DepartmentId = employee.DepartmentId, DepartmentName = employee.Department.Name,
                     ManagerId = employee.ManagerId, ManagerName = employee.Manager?.FullName,

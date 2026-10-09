@@ -52,6 +52,27 @@ public class Employee : BaseEntity
     /// </summary>
     public string Email { get; private set; } = default!;
 
+    /// <summary>Null means HR has not confirmed these facts; Identity creation dates are never substituted.</summary>
+    public string? EmployeeNumber { get; private set; }
+    public DateOnly? EmploymentStartDate { get; private set; }
+    /// <summary>Separate append-only schedule generation; employment edits cannot overwrite schedule history.</summary>
+    public Guid ScheduleVersion { get; private set; }
+    /// <summary>Explicitly confirms a complete pair; absence of this operation preserves unknown legacy facts.</summary>
+    public void ConfirmEmployment(string number, DateOnly date)
+    {
+        EnsureActive();
+        var normalized = EmploymentFacts.NormalizeNumber(number);
+        EmploymentFacts.ValidateDate(date);
+        EmployeeNumber = normalized;
+        EmploymentStartDate = date;
+        Version = Guid.NewGuid();
+    }
+    /// <summary>Rotates only the schedule stream generation after a protected append.</summary>
+    public void ReviseSchedule()
+    {
+        EnsureActive();
+        ScheduleVersion = Guid.NewGuid();
+    }
     /// <summary>Changes on every management edit so a form loaded earlier cannot overwrite newer data.</summary>
     public Guid Version { get; private set; } = Guid.NewGuid();
 

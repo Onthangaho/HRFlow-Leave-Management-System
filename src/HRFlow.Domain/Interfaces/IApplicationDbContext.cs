@@ -7,6 +7,7 @@ namespace HRFlow.Domain.Interfaces
 {
     public interface IApplicationDbContext
     {
+        DbSet<WeeklyScheduleRevision> WeeklyScheduleRevisions { get; }
         DbSet<Employee> Employees { get; }
         DbSet<Department> Departments { get; }
         DbSet<RefreshToken> RefreshTokens { get; }

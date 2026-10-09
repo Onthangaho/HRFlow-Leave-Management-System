@@ -15,7 +15,7 @@ namespace HRFlow.Api.Controllers;
 [Authorize(Policy = "HrAdministratorOnly")]
 [ApiController]
 [Route("api/v1/employees")]
-public sealed class EmployeesController(IMediator mediator) : ControllerBase
+public sealed class EmployeesController(IMediator mediator, HRFlow.Application.Services.EmploymentScheduleService schedules) : ControllerBase
 {
     /// <summary>Returns complete edit snapshots for the HR directory and reporting selectors.</summary>
     [HttpGet]
@@ -60,6 +60,13 @@ public sealed class EmployeesController(IMediator mediator) : ControllerBase
         command.ActorIdentityUserId = GetActorIdentityId();
         return Ok(await mediator.Send(command, cancellationToken));
     }
+
+    /// <summary>Returns preserved weekly revisions for HR review without acquiring a writer lock.</summary>
+    [HttpGet("{id:guid}/schedules")]
+    public async Task<IActionResult> GetSchedules(Guid id, CancellationToken token) => Ok(await schedules.GetAsync(GetActorIdentityId(),id,token));
+    /// <summary>Appends a versioned fixed weekly pattern; older revisions cannot be edited or deleted.</summary>
+    [HttpPost("{id:guid}/schedules"), RequestSizeLimit(4096)]
+    public async Task<IActionResult> AddSchedule(Guid id, HRFlow.Application.Services.ScheduleInput input, CancellationToken token) => Ok(await schedules.AppendAsync(GetActorIdentityId(),id,input,token));
 
     private Guid GetActorIdentityId() =>
         Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var identityId)

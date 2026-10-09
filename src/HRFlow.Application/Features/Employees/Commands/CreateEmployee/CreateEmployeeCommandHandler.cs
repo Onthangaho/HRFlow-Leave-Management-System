@@ -29,7 +29,6 @@ public sealed class CreateEmployeeCommandHandler : IRequestHandler<CreateEmploye
             request.Email,
             request.DepartmentId,
             request.Roles,
-            request.ManagerId,
-            cancellationToken);
+            request.ManagerId, request.EmployeeNumber, request.EmploymentStartDate, cancellationToken);
     }
 }

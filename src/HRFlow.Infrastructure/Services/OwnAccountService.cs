@@ -27,7 +27,8 @@ public sealed class OwnAccountService(HRFlowDbContext context, CurrentAccountAut
         var metadata = await context.AccountSettings.AsNoTracking().SingleOrDefaultAsync(s => s.EmployeeId == employee.Id, ct);
         return new OwnProfileDto(profile.FullName, profile.Email,
             await roles.GetRolesByIdentityUserIdAsync(employee.IdentityUserId, ct), profile.Department, profile.Manager,
-            employee.IsActive, true, metadata?.PreferredDisplayName, metadata?.ContactPhone, metadata?.ProfileVersion ?? Guid.Empty);
+            employee.IsActive, true, metadata?.PreferredDisplayName, metadata?.ContactPhone, metadata?.ProfileVersion ?? Guid.Empty, employee.EmployeeNumber, employee.EmploymentStartDate,
+            await EmploymentScheduleService.HistoryAsync(context,employee,ct));
     }, token);
 
     /// <inheritdoc />
