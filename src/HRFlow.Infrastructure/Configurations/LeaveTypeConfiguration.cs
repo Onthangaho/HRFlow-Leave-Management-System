@@ -15,6 +15,11 @@ public class LeaveTypeConfiguration : IEntityTypeConfiguration<LeaveType>
     public void Configure(EntityTypeBuilder<LeaveType> builder)
     {
         builder.HasKey(lt => lt.Id);
+        builder.Property(lt => lt.DescriptionMode).HasDefaultValue(RequirementModes.NotRequested);
+        builder.Property(lt => lt.EvidenceMode).HasDefaultValue(RequirementModes.Optional);
+        builder.Property(lt => lt.EvidenceClass).HasDefaultValue(SupportingDocumentClass.Ordinary);
+        builder.Property(lt => lt.RequirementInstructions).HasMaxLength(RequirementModes.MaxTextLength);
+        builder.ToTable(table => table.HasCheckConstraint("CK_LeaveTypes_Requirements", "DescriptionMode IN ('NotRequested','Optional','Required') AND EvidenceMode IN ('NotRequested','Optional','Required') AND EvidenceClass IN ('Medical','Ordinary') AND NOT (EvidenceClass = 'Medical' AND EvidenceMode = 'Required') AND (RequirementInstructions IS NULL OR length(RequirementInstructions) <= 1000)"));
 
         builder.Property(lt => lt.Name)
             .IsRequired().HasMaxLength(LeaveType.MaxNameLength);

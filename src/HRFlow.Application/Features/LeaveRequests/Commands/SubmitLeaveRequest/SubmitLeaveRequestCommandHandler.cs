@@ -64,6 +64,13 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
             .SingleOrDefaultAsync(lt => lt.Id == request.LeaveTypeId, cancellationToken)
             ?? throw new WriteConflictException("This leave type is no longer available. Reload the leave types before submitting.");
 
+        if (leaveType.Version != request.ExpectedTypeVersion || leaveType.LeavePolicy.Version != request.ExpectedPolicyVersion)
+            throw new WriteConflictException("Leave requirements or policy changed. Refresh and explicitly review the current requirements; your dates, description and uploaded drafts have not been submitted.");
+        if (leaveType.EvidenceMode == RequirementModes.NotRequested && request.DocumentIds.Count != 0)
+            throw new HRFlow.Domain.Common.DomainException("This type does not request evidence. Deselect documents explicitly; uploaded drafts remain available.");
+        if (leaveType.EvidenceMode == RequirementModes.Required && request.DocumentIds.Count == 0)
+            throw new HRFlow.Domain.Common.DomainException("At least one clean owned supporting document is required for this company leave type.");
+
         var approvedRequests = await _context.LeaveRequests
             .Where(lr => lr.EmployeeId == request.EmployeeId &&
                          lr.LeaveTypeId == request.LeaveTypeId &&
@@ -76,6 +83,10 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
             request.StartDate,
             request.EndDate, _correlation.CorrelationId);
 
+        leaveRequest.CaptureRequirements(new RequestRequirementsSnapshot(leaveType.Id, leaveType.Version,
+            leaveType.LeavePolicyId, leaveType.LeavePolicy.Version, leaveType.DescriptionMode, leaveType.EvidenceMode,
+            leaveType.EvidenceClass, leaveType.RequirementInstructions), request.Description);
+
         var balance = LeaveBalanceCalculator.Calculate(
             leaveType.LeavePolicy.DefaultBalance,
             approvedRequests);
@@ -86,7 +97,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
             leaveType.LeavePolicy);
 
         _context.LeaveRequests.Add(leaveRequest);
-        await _documents.BindAsync(employee.Id, leaveRequest.Id, request.DocumentIds, verified, cancellationToken);
+        await _documents.BindAsync(employee.Id, leaveRequest.Id, request.DocumentIds, verified, cancellationToken, leaveType.EvidenceClass);
         await _notifications.TransitionAsync(leaveRequest, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 

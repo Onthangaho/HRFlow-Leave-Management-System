@@ -6,13 +6,14 @@ import { problemMessage } from '../../leave-configuration/problems';
 
 interface Evidence { id: string; class: string; status: string; version: string; canDownload: boolean; mediaType: string | null }
 /** Private evidence uses generated identifiers, guarded callbacks and explicit non-replayable operations. */
-export function SupportingDocuments({ requestId, onSelection, disabled = false }: { requestId?: string; onSelection?: (ids: string[], busy: boolean) => void; disabled?: boolean }) {
+export function SupportingDocuments({ requestId, onSelection, disabled = false, configuredClass, selectionDisabled = false }: { requestId?: string; onSelection?: (ids: string[], busy: boolean) => void; disabled?: boolean; configuredClass?: string; selectionDisabled?: boolean }) {
   const { user, sessionVersion } = useAuth();
-  return <DocumentWorkspace key={`${user?.id}:${sessionVersion}:${requestId ?? 'drafts'}`} requestId={requestId} onSelection={onSelection} disabled={disabled} />;
+  return <DocumentWorkspace key={`${user?.id}:${sessionVersion}:${requestId ?? 'drafts'}`} requestId={requestId} onSelection={onSelection} disabled={disabled} configuredClass={configuredClass} selectionDisabled={selectionDisabled} />;
 }
-function DocumentWorkspace({ requestId, onSelection, disabled }: { requestId?: string; onSelection?: (ids: string[], busy: boolean) => void; disabled: boolean }) {
+function DocumentWorkspace({ requestId, onSelection, disabled, configuredClass, selectionDisabled }: { requestId?: string; onSelection?: (ids: string[], busy: boolean) => void; disabled: boolean; configuredClass?: string; selectionDisabled?: boolean }) {
   const { user, sessionVersion, getSessionVersion } = useAuth();
   const [classification, setClassification] = useState('Medical');
+  const uploadClass = configuredClass === 'Medical' ? 'Medical' : classification;
   const [error, setError] = useState(''); const [progress, setProgress] = useState<number | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const selection = useRef<string[]>([]); const [busy, setBusy] = useState(false);
@@ -45,9 +46,9 @@ function DocumentWorkspace({ requestId, onSelection, disabled }: { requestId?: s
   }
   return <section className="ui-panel space-y-4" aria-label="Supporting documents">
     <h2 className="text-lg font-semibold">Supporting documents</h2>
-    <p className="text-sm">Optional PDF, JPEG or PNG, up to 10 MiB each and five per request. Medical evidence is private to you and authorised HR; Managers receive status only. Choose Medical whenever the content might include health information. No certificate is required by this form.</p>
-    {!requestId && <div className="space-y-3">
-      <label className="ui-label">Evidence class<select className="ui-input" value={classification} disabled={busy || disabled} onChange={e => setClassification(e.target.value)}><option value="Medical">Medical (restricted content)</option><option value="Ordinary">Ordinary (eligible manager may download)</option></select></label>
+    <p className="text-sm">PDF, JPEG or PNG, up to 10 MiB each and five per request. Medical evidence is private to you and authorised HR; Managers receive status only. Choose Medical whenever the content might include health information. Medical proof for payment is separate from recording absence.</p>
+    {!requestId && !selectionDisabled && <div className="space-y-3">
+      <label className="ui-label">Evidence class<select aria-label="Evidence class" className="ui-input" value={uploadClass} disabled={busy || disabled || configuredClass === 'Medical'} onChange={e => setClassification(e.target.value)}><option value="Medical">Medical (restricted content)</option><option value="Ordinary">Ordinary (eligible manager may download)</option></select></label>
       <label className="ui-label">Choose document<input className="ui-input" type="file" accept=".pdf,.png,.jpg,.jpeg" disabled={busy || disabled} onChange={e => {
         const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
         if (file.size === 0 || file.size > 10 * 1024 * 1024) { setError('Choose a nonempty file no larger than 10 MiB.'); return; }
@@ -58,7 +59,7 @@ function DocumentWorkspace({ requestId, onSelection, disabled }: { requestId?: s
           const types: Record<string, string> = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
           const transport = (!file.type || file.type === 'application/octet-stream') && extension && types[extension]
             ? new File([file], file.name, { type: types[extension] }) : file;
-          const data = new FormData(); data.append('file', transport); data.append('classification', classification); data.append('uploadKey', key);
+          const data = new FormData(); data.append('file', transport); data.append('classification', uploadClass); data.append('uploadKey', key);
           await authHttpClient.post('/documents', data, { headers: { 'Content-Type': undefined }, skipAuthReplay: true, signal: abort.signal, onUploadProgress: event => { if (active()) setProgress(event.total ? Math.round(event.loaded * 100 / event.total) : 0); } }); });
       }} /></label>
       {progress !== null && <div><p role="status" aria-live="polite">Upload {progress}% · Waiting for validation and scan.</p><button type="button" className="ui-secondary" onClick={() => controller.current?.abort()}>Cancel upload</button></div>}
@@ -69,7 +70,7 @@ function DocumentWorkspace({ requestId, onSelection, disabled }: { requestId?: s
     {evidence.data?.length === 0 && <p>No supporting documents recorded.</p>}
     <ul className="space-y-3">{evidence.data?.map((row, index) => <li className="rounded border p-3 flex flex-wrap gap-3 items-center" key={row.id}>
       <span>Document {index + 1} · {row.class} · {row.status}</span>
-      {!requestId && row.status === 'Clean' && <label><input type="checkbox" disabled={busy || disabled} checked={selected.includes(row.id)} onChange={e => choose(row, e.target.checked)} /> Attach to request</label>}
+      {!requestId && row.status === 'Clean' && <label><input type="checkbox" disabled={busy || disabled || (selectionDisabled && !selected.includes(row.id)) || (configuredClass === 'Medical' && row.class !== 'Medical' && !selected.includes(row.id))} checked={selected.includes(row.id)} onChange={e => choose(row, e.target.checked)} /> Attach to request</label>}
       {row.canDownload && <button type="button" className="ui-secondary" disabled={busy || disabled} onClick={() => void download(row)}>Download</button>}
       {!requestId && ['Quarantined', 'ScanUnavailable'].includes(row.status) && <button type="button" className="ui-secondary" disabled={busy || disabled} onClick={() => void action(() => authHttpClient.post(`/documents/${row.id}/scan`, {}, { skipAuthReplay: true }))}>Retry scan</button>}
       {!requestId && <button type="button" className="ui-danger" disabled={busy || disabled} onClick={() => void action(async () => { await authHttpClient.delete(`/documents/${row.id}`, { params: { expectedVersion: row.version }, skipAuthReplay: true }); if (active()) choose(row, false); })}>Remove draft</button>}

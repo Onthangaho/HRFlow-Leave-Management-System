@@ -2,7 +2,7 @@ using HRFlow.Domain.Common;
 
 namespace HRFlow.Domain.Entities;
 
-/// <summary>Names a leave category whose current rules come from a shared policy.</summary>
+/// <summary>Names a leave category with type-specific company requirements and shared entitlement/overlap rules.</summary>
 public class LeaveType : BaseEntity
 {
     /// <summary>Maximum trimmed name length accepted by management and persistence.</summary>
@@ -30,6 +30,20 @@ public class LeaveType : BaseEntity
         leaveType.Id = Guid.NewGuid();
         leaveType.LeavePolicyId = leavePolicy.Id;
         return leaveType;
+    }
+
+    public string DescriptionMode { get; private set; } = RequirementModes.NotRequested;
+    public string EvidenceMode { get; private set; } = RequirementModes.Optional;
+    public string EvidenceClass { get; private set; } = SupportingDocumentClass.Ordinary;
+    public string? RequirementInstructions { get; private set; }
+
+    /// <summary>Changes only this type's company submission requirements, rotating its edit version.</summary>
+    public void ConfigureRequirements(string descriptionMode, string evidenceMode, string evidenceClass, string? instructions)
+    {
+        RequirementModes.Validate(descriptionMode, evidenceMode, evidenceClass, instructions);
+        DescriptionMode = descriptionMode; EvidenceMode = evidenceMode; EvidenceClass = evidenceClass;
+        RequirementInstructions = string.IsNullOrWhiteSpace(instructions) ? null : instructions.Trim();
+        Version = Guid.NewGuid();
     }
 
     public string Name { get; private set; } = string.Empty;

@@ -5,6 +5,20 @@ namespace HRFlow.Domain.Entities;
 
 public class LeaveRequest : BaseEntity
 {
+    public string? Description { get; private set; }
+    public RequestRequirementsSnapshot? SubmissionRequirements { get; private set; }
+
+    /// <summary>Captures submission facts exactly once; later policy edits never replace them.</summary>
+    public void CaptureRequirements(RequestRequirementsSnapshot snapshot, string? description)
+    {
+        if (SubmissionRequirements != null) throw new DomainException("Submission requirements cannot be replaced.");
+        var text = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        if (text?.Length > RequirementModes.MaxTextLength) throw new DomainException("Description must contain at most 1000 trimmed characters.");
+        if (snapshot.DescriptionMode == RequirementModes.Required && text == null) throw new DomainException("A description is required for this leave type. Do not include diagnoses.");
+        if (snapshot.DescriptionMode == RequirementModes.NotRequested && text != null) throw new DomainException("This leave type does not request a description. Remove it explicitly before submitting.");
+        SubmissionRequirements = snapshot; Description = text;
+    }
+
     public Guid EmployeeId { get; private set; }
     public Guid LeaveTypeId { get; private set; }
     public DateTime StartDate { get; private set; }

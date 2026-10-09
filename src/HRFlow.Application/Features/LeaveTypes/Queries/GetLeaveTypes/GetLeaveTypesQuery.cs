@@ -14,8 +14,8 @@ public class GetLeaveTypesQuery : IRequest<IReadOnlyList<LeaveTypeSelectionDto>>
     public Guid ActorIdentityId { get; set; }
 }
 
-/// <summary>Projects only the ID and display name required by the existing employee client.</summary>
-public sealed record LeaveTypeSelectionDto(Guid Id, string Name);
+/// <summary>Projects company requirements and original type/policy versions for explicit submission review.</summary>
+public sealed record LeaveTypeSelectionDto(Guid Id, string Name, Guid Version, Guid PolicyId, Guid PolicyVersion, string DescriptionMode, string EvidenceMode, string EvidenceClass, string? RequirementInstructions);
 
 /// <summary>Loads current selector values without leaking persistence entities.</summary>
 public class GetLeaveTypesQueryHandler : IRequestHandler<GetLeaveTypesQuery, IReadOnlyList<LeaveTypeSelectionDto>>
@@ -41,7 +41,7 @@ public class GetLeaveTypesQueryHandler : IRequestHandler<GetLeaveTypesQuery, IRe
             await _authorization.RequireIdentityAsync(request.ActorIdentityId, EmployeeRoles.All, cancellationToken);
 
             return await _context.LeaveTypes.AsNoTracking().OrderBy(type => type.Name)
-                .Select(type => new LeaveTypeSelectionDto(type.Id, type.Name)).ToListAsync(cancellationToken);
+                .Select(type => new LeaveTypeSelectionDto(type.Id, type.Name, type.Version, type.LeavePolicyId, type.LeavePolicy.Version, type.DescriptionMode, type.EvidenceMode, type.EvidenceClass, type.RequirementInstructions)).ToListAsync(cancellationToken);
         }, cancellationToken);
     }
 }

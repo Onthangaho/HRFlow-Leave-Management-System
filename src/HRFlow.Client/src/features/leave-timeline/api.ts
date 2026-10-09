@@ -9,6 +9,8 @@ export interface TimelineEvent {
 }
 /** Minimal authorized single-request summary, with an honest legacy submission indicator. */
 export interface RequestTimeline {
+  description: string | null;
+  submissionRequirements: { typeId: string; typeVersion: string; policyId: string; policyVersion: string; descriptionMode: string; evidenceMode: string; evidenceClass: string; instructions: string | null; ruleId: string; ruleVersion: number } | null;
   requestId: string; employeeName: string; employeeIsActive: boolean; leaveTypeName: string;
   startDate: string; endDate: string; status: string; submissionRecorded: boolean; events: TimelineEvent[];
 }

@@ -58,6 +58,15 @@ export function LeaveRequestTimeline({ request, refreshing = false }: { request:
       <p className="text-slate-600">{calendarDate(request.startDate)} – {calendarDate(request.endDate)} · Inclusive calendar dates</p>
       <p className="text-sm text-slate-600">Actor names are current display names. Event times are shown in UTC. This history cannot be edited.</p>
     </section>
+    <section className="ui-panel space-y-3" aria-label="Submission requirements">
+      <h2 className="text-lg font-bold">Requirements at submission</h2>
+      {request.submissionRequirements ? <><p>Description: {request.submissionRequirements.descriptionMode}. Evidence: {request.submissionRequirements.evidenceMode} ({request.submissionRequirements.evidenceClass}).</p>
+        <p className="text-sm">Company configuration, not a statutory eligibility or payment decision. Later configuration changes do not alter these requirements.</p>
+        {request.submissionRequirements.instructions && <p className="whitespace-pre-wrap break-words">{request.submissionRequirements.instructions}</p>}
+        <p className="text-sm">Rule {request.submissionRequirements.ruleId} v{request.submissionRequirements.ruleVersion}</p></>
+        : <p>Unknown: submission requirements were not recorded for this legacy request.</p>}
+      {request.description && <><h3 className="font-semibold">Submitted description</h3><p className="whitespace-pre-wrap break-words">{request.description}</p></>}
+    </section>
     {!request.submissionRecorded && <p className="ui-warning" role="status">Submission event was not recorded for this legacy request.</p>}
     <section className="ui-panel">
       <h2 className="text-lg font-bold text-slate-900">Recorded lifecycle</h2>

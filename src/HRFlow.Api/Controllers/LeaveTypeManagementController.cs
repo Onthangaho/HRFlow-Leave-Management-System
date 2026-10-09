@@ -24,14 +24,14 @@ public sealed class LeaveTypeManagementController(LeaveConfigurationService serv
     [HttpPost]
     public async Task<IActionResult> Create(LeaveTypeInput input, CancellationToken token)
     {
-        var result = await service.SaveTypeAsync(Actor(), null, null, input.Name, input.LeavePolicyId, token);
+        var result = await service.SaveTypeAsync(Actor(), null, null, input.Name, input.LeavePolicyId, input.DescriptionMode, input.EvidenceMode, input.EvidenceClass, input.RequirementInstructions, token);
         return CreatedAtAction(nameof(Detail), new { id = result.Id }, result);
     }
 
     /// <summary>Replaces current name and policy assignment using a caller-supplied edit version.</summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, LeaveTypeUpdateInput input, CancellationToken token) =>
-        Ok(await service.SaveTypeAsync(Actor(), id, input.ExpectedVersion, input.Name, input.LeavePolicyId, token));
+        Ok(await service.SaveTypeAsync(Actor(), id, input.ExpectedVersion, input.Name, input.LeavePolicyId, input.DescriptionMode, input.EvidenceMode, input.EvidenceClass, input.RequirementInstructions, token));
 
     /// <summary>Deletes an unused type only when its version still matches the caller's snapshot.</summary>
     [HttpDelete("{id:guid}")]

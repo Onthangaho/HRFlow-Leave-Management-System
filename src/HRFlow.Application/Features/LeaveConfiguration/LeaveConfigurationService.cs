@@ -44,7 +44,7 @@ public sealed class LeaveConfigurationService(
                 type.LeavePolicyId, type.LeavePolicy.Name, type.LeavePolicy.Version,
                 type.LeavePolicy.AllowOverlap, type.LeavePolicy.DefaultBalance,
                 context.LeaveRequests.Count(request => request.LeaveTypeId == type.Id),
-                !context.LeaveRequests.Any(request => request.LeaveTypeId == type.Id)))
+                !context.LeaveRequests.Any(request => request.LeaveTypeId == type.Id), type.DescriptionMode, type.EvidenceMode, type.EvidenceClass, type.RequirementInstructions))
             .ToListAsync(token);
         if (id.HasValue && types.Count == 0) throw new NotFoundException("Leave type was not found.");
         return types;
@@ -95,7 +95,7 @@ public sealed class LeaveConfigurationService(
 
     /// <summary>Resolves an explicit policy and serializes normalized-name uniqueness with other type writes.</summary>
     public async Task<LeaveTypeManagementDto> SaveTypeAsync(Guid actor, Guid? id, Guid? expectedVersion,
-        string name, Guid policyId, CancellationToken token)
+        string name, Guid policyId, string descriptionMode, string evidenceMode, string evidenceClass, string? instructions, CancellationToken token)
     {
         LeaveTypeManagementDto? result = null;
         await transaction.ExecuteAsync(async protectedToken =>
@@ -111,6 +111,7 @@ public sealed class LeaveConfigurationService(
                 type.Update(name, policy);
             }
             else type = LeaveType.Create(name, policy);
+            type.ConfigureRequirements(descriptionMode, evidenceMode, evidenceClass, instructions);
             if (await context.LeaveTypes.AnyAsync(other => other.Id != type.Id
                 && other.NormalizedName == type.NormalizedName, protectedToken))
                 throw new WriteConflictException("A leave type with this name already exists. Choose another name.");
