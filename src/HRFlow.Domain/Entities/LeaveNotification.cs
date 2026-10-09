@@ -17,7 +17,9 @@ public sealed class LeaveNotificationEvent
     public DateTime CreatedAtUtc { get; set; }
     /// <summary>Persisted retry delay prevents a failed event monopolising every worker batch.</summary>
     public DateTime? RetryAfterUtc { get; set; }
-    /// <summary>Committed in the same transaction as notification creation.</summary>
+    /// <summary>Suppressed deliveries are acknowledged once and are never backfilled on re-enabling.</summary>
+    public DateTime? SuppressedAtUtc { get; set; }
+    /// <summary>Processing acknowledgment; SuppressedAtUtc distinguishes suppression from actual creation.</summary>
     public DateTime? DeliveredAtUtc { get; set; }
 }
 

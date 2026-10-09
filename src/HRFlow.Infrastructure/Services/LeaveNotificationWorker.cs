@@ -37,6 +37,13 @@ public sealed class LeaveNotificationWorker(IServiceScopeFactory scopes, ILogger
                         {
                             var source = await db.LeaveNotificationEvents.SingleAsync(e => e.Id == id, ct);
                             if (source.DeliveredAtUtc != null) return;
+                            var preferences = await db.AccountSettings.AsNoTracking().SingleOrDefaultAsync(s => s.EmployeeId == source.RecipientId, ct);
+                            if (!(preferences ?? AccountSettings.Create(source.RecipientId)).AllowsNotification(source.Kind))
+                            {
+                                source.SuppressedAtUtc = DateTime.UtcNow;
+                                source.DeliveredAtUtc = source.SuppressedAtUtc;
+                                return;
+                            }
                             if (!await db.LeaveNotifications.AnyAsync(n => n.EventId == id && n.RecipientId == source.RecipientId, ct))
                                 db.LeaveNotifications.Add(new LeaveNotification { EventId = id, RecipientId = source.RecipientId, CreatedAtUtc = source.CreatedAtUtc });
                             source.DeliveredAtUtc = DateTime.UtcNow;

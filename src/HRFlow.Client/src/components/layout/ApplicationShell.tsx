@@ -1,3 +1,5 @@
+import { useOwnProfile } from '../../features/account/api';
+import { useAccountTheme } from '../../features/account/useAccountTheme';
 import { NotificationControl } from '../../features/notifications/NotificationsPage';
 import { useEffect, useId, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
@@ -22,6 +24,9 @@ function NavigationIcon({ name }: { name: string }) {
 export function ApplicationShell() {
   const { user, logout, sessionVersion } = useAuth();
   const location = useLocation();
+  useAccountTheme();
+  const profile = useOwnProfile();
+  const displayName = profile.data?.preferredDisplayName || user?.email || 'HRFlow';
   const drawer = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -31,7 +36,7 @@ export function ApplicationShell() {
   const drawerId = useId();
   const groups = navigationFor(user?.roles ?? []);
   const title = titleFor(location.pathname);
-  const initials = (user?.email.split('@')[0].split(/[._\s-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('') ?? 'H').toUpperCase();
+  const initials = (displayName.split('@')[0].split(/[._\s-]+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('') ?? 'H').toUpperCase();
 
   useEffect(() => {
     drawer.current?.close();
@@ -83,7 +88,7 @@ export function ApplicationShell() {
           <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Your workspace</p><h1 className="mt-1 break-words text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1></div>
         </div>
         <NotificationControl />
-        <div className="shell-account"><span className="shell-avatar" aria-hidden="true">{initials}</span><div className="min-w-0"><p className="break-all text-sm font-semibold text-slate-800">{user?.email}</p><p className="mt-1 text-xs leading-5 text-slate-500">{user?.roles.join(' · ') || 'No assigned capabilities'}</p></div></div>
+        <div className="shell-account"><span className="shell-avatar" aria-hidden="true">{initials}</span><div className="min-w-0"><p className="break-all text-sm font-semibold text-slate-800">{displayName}</p><p className="mt-1 text-xs leading-5 text-slate-500">{user?.roles.join(' · ') || 'No assigned capabilities'}</p></div></div>
       </header>
       <main ref={content} id="workspace-content" tabIndex={-1} className="shell-content">
         <Outlet key={`${user?.id}:${sessionVersion}`} />

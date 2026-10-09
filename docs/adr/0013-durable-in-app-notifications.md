@@ -37,3 +37,7 @@ No automatic retention deletion ships here: records remain until an explicitly r
 AddLeaveNotifications adds two tables and indexes, plus RESTRICT source/notification references. Existing requests, audits, employees and Identity fields are untouched; no backfill. Down drops the notification tables and therefore loses new inbox/read/outbox data; leave and audit history remain unchanged. Take backups and stop writers during migration as in existing deployment guidance.
 
 Design was recorded before implementation. See [executed verification and limits](../verification/in-app-leave-notifications.md). Independent review remains outstanding; no deployment claim.
+
+## Issue #94 follow-up
+
+The original preference deferral is now addressed locally by [ADR 0014](0014-own-profile-and-preferences.md): delivery-time optional categories, persisted suppression acknowledgment, existing inbox preservation and no replay of suppressed events. No mandatory security notification category has been invented. Original #93 verification remains historical evidence.
