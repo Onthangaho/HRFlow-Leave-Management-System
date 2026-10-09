@@ -27,6 +27,16 @@ namespace HRFlow.Api.Filters
                 ?? context.HttpContext.TraceIdentifier;
             var userId = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // Upload cancellation/navigation aborts are expected; do not label an already disconnected client a server failure.
+            if (context.Exception is OperationCanceledException && context.HttpContext.RequestAborted.IsCancellationRequested)
+            {
+                logger.LogInformation("Client cancelled API request. {Method} {Path}; CorrelationId: {CorrelationId}; UserId: {UserId}",
+                    request.Method, request.Path, correlationId, userId);
+                context.Result = new StatusCodeResult(StatusCodes.Status499ClientClosedRequest);
+                context.ExceptionHandled = true;
+                return;
+            }
+
             var problemDetails = new ProblemDetails
             {
                 Instance = request.Path

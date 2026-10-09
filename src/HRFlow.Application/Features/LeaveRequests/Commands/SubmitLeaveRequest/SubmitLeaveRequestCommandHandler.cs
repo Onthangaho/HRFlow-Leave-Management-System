@@ -21,6 +21,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
     private readonly IRequestCorrelationContext _correlation;
     private readonly ILeaveApprovalAuthorizationService _leaveApprovalAuthorizationService;
     private readonly ILeaveConfigurationTransaction _transaction;
+    private readonly SupportingDocumentService _documents;
 
     /// <summary>Shares the context and database reservation used by policy management and approvals.</summary>
     public SubmitLeaveRequestCommandHandler(
@@ -29,7 +30,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
         CurrentAccountAuthorization authorization,
         IRequestCorrelationContext correlation,
         ILeaveApprovalAuthorizationService leaveApprovalAuthorizationService,
-        ILeaveConfigurationTransaction transaction)
+        ILeaveConfigurationTransaction transaction, SupportingDocumentService documents)
     {
         _context = context;
         _notifications = notifications;
@@ -37,17 +38,19 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
         _correlation = correlation;
         _leaveApprovalAuthorizationService = leaveApprovalAuthorizationService;
         _transaction = transaction;
+        _documents = documents;
     }
 
     /// <summary>Acquires writer protection before authoritative policy and relationship reads.</summary>
     public async Task<Guid> Handle(SubmitLeaveRequestCommand request, CancellationToken cancellationToken)
     {
         Guid id = Guid.Empty;
-        await _transaction.ExecuteAsync(async token => id = await SubmitAsync(request, token), cancellationToken);
+        var verified = await _documents.VerifyBindingAsync(request.EmployeeId, request.DocumentIds, cancellationToken);
+        await _transaction.ExecuteAsync(async token => id = await SubmitAsync(request, verified, token), cancellationToken);
         return id;
     }
 
-    private async Task<Guid> SubmitAsync(SubmitLeaveRequestCommand request, CancellationToken cancellationToken)
+    private async Task<Guid> SubmitAsync(SubmitLeaveRequestCommand request, IReadOnlyDictionary<Guid, Guid> verified, CancellationToken cancellationToken)
     {
         var employee = await _context.Employees
             .SingleOrDefaultAsync(employee => employee.Id == request.EmployeeId, cancellationToken)
@@ -83,6 +86,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
             leaveType.LeavePolicy);
 
         _context.LeaveRequests.Add(leaveRequest);
+        await _documents.BindAsync(employee.Id, leaveRequest.Id, request.DocumentIds, verified, cancellationToken);
         await _notifications.TransitionAsync(leaveRequest, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 

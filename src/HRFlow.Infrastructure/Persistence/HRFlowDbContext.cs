@@ -12,7 +12,7 @@ namespace HRFlow.Infrastructure.Persistence;
 /// Persists application data and the ASP.NET Core Identity schema for the HRFlow backend.
 /// Provides access to employees linked to identity users and all domain entities.
 /// </summary>
-public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IApplicationDbContext
+public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IApplicationDbContext, HRFlow.Application.Interfaces.IApplicationDocumentContext
 {
     /// <summary>
     /// Creates a new EF Core context for HRFlow with the supplied options.
@@ -23,6 +23,8 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     }
 
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<SupportingDocument> SupportingDocuments => Set<SupportingDocument>();
+    public DbSet<DocumentAccessEntry> DocumentAccessEntries => Set<DocumentAccessEntry>();
     public DbSet<AccountSettings> AccountSettings => Set<AccountSettings>();
     public DbSet<LeaveNotificationEvent> LeaveNotificationEvents => Set<LeaveNotificationEvent>();
     public DbSet<LeaveNotification> LeaveNotifications => Set<LeaveNotification>();
@@ -41,6 +43,11 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<SupportingDocument>().HasIndex(d => new { d.OwnerId, d.UploadKey }).IsUnique();
+        modelBuilder.Entity<SupportingDocument>().HasOne<Employee>().WithMany().HasForeignKey(d => d.OwnerId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<SupportingDocument>().HasOne<LeaveRequest>().WithMany().HasForeignKey(d => d.RequestId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<SupportingDocument>().Property(d => d.Version).IsConcurrencyToken();
+        modelBuilder.Entity<DocumentAccessEntry>().HasOne<SupportingDocument>().WithMany().HasForeignKey(d => d.DocumentId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<AccountSettings>().HasKey(s => s.EmployeeId);
         modelBuilder.Entity<AccountSettings>().HasOne<Employee>().WithOne().HasForeignKey<AccountSettings>(s => s.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<AccountSettings>().Property(s => s.PreferredDisplayName).HasMaxLength(HRFlow.Domain.Entities.AccountSettings.MaxPreferredNameLength);

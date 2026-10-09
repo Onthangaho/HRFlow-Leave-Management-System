@@ -13,7 +13,12 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.23" />
+    <!-- Pin only the native runtime to address GHSA-2m69-gcr7-jv3q without upgrading EF or managed providers. -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.13" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="SkiaSharp" Version="4.153.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.7.1" />
   </ItemGroup>
 

@@ -1,3 +1,4 @@
+using HRFlow.Domain.Entities;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -55,6 +56,7 @@ public static class BackupRestoreService
             using (var source = Open(database, SqliteOpenMode.ReadOnly))
             using (var target = Open(snapshot, SqliteOpenMode.ReadWriteCreate)) source.BackupDatabase(target);
             CheckDatabase(snapshot);
+            CheckDocuments(snapshot, privateRoot);
             var schema = ReadSchema(snapshot);
             var inventory = new List<InventoryFile>();
             using var archiveBytes = new MemoryStream();
@@ -147,6 +149,7 @@ public static class BackupRestoreService
             var database = Path.Combine(stage, DatabaseName);
             Directory.CreateDirectory(Path.Combine(stage, "private")); RestrictDirectory(Path.Combine(stage, "private"));
             CheckDatabase(database);
+            CheckDocuments(database, Path.Combine(stage, "private"));
             if (!ReadSchema(database).SequenceEqual(manifest.SchemaMigrations)) throw new InvalidDataException("Database schema mismatch.");
             var invalidated = InvalidateSecurity(database);
             CheckDatabase(database);
@@ -322,6 +325,23 @@ public static class BackupRestoreService
                 throw new InvalidDataException("SQLite tables/columns do not match this application build.");
             if (!ReadConstraints(connection, table.Name).SequenceEqual(ReadConstraints(expectedConnection, table.Name)))
                 throw new InvalidDataException("SQLite keys, nullability or indexes do not match this application build.");
+        }
+    }
+
+    // Blob checks complement SQLite integrity: relational integrity alone cannot prove evidence recoverability.
+    private static void CheckDocuments(string database, string privateRoot)
+    {
+        using var connection = Open(database, SqliteOpenMode.ReadOnly);
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Id, Status, Size, Checksum FROM SupportingDocuments WHERE Status NOT IN ('Receiving','Removed')";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            if (!Guid.TryParse(reader.GetString(0), out var id)) throw new InvalidDataException("Invalid document identifier.");
+            var area = reader.GetString(1) == SupportingDocumentStatus.Clean ? "clean" : "quarantine";
+            var path = Path.Combine(privateRoot, "documents", area, id.ToString("N") + ".blob");
+            if (!File.Exists(path) || new FileInfo(path).Length != reader.GetInt64(2) || Hash(path) != reader.GetString(3))
+                throw new InvalidDataException("Required private document content is missing or inconsistent. Reconcile the evidence store before recovery.");
         }
     }
 

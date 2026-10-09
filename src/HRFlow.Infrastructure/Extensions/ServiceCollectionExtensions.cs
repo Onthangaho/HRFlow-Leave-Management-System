@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
 
         services.AddDbContext<HRFlowDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
+        services.AddScoped<IApplicationDocumentContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
             {
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
@@ -51,6 +52,10 @@ public static class ServiceCollectionExtensions
             .AddEntityFrameworkStores<HRFlowDbContext>()
             .AddDefaultTokenProviders();
         services.AddScoped<IOwnAccountService, OwnAccountService>();
+        services.AddScoped<HRFlow.Application.Services.SupportingDocumentService>();
+        services.AddScoped<IPrivateDocumentStorage, PrivateDocumentStorage>();
+        services.AddScoped<IDocumentScanner, ClamAvDocumentScanner>();
+        services.AddHostedService<DocumentCleanupWorker>();
         services.AddScoped<ILeaveNotificationOutbox, LeaveNotificationService>();
         services.AddScoped<ILeaveNotificationService, LeaveNotificationService>();
         services.AddHostedService<LeaveNotificationWorker>();

@@ -23,8 +23,8 @@ South African leave requirements; qualified review is required before statutory 
 | Area | Current state |
 |---|---|
 | Completed milestones | Authentication, administration, reporting, audit, shared shell, decision notes, activation and password/session revocation are merged through **PR #104**, confirmed 9 October 2026. Existing backlog reconciliation and qualified legal/test-convention gates remain independent. |
-| Active milestone | **Phase 1 professional foundation** under #98; #82 operator backup/recovery is the current authorised slice. Qualified calculation/testing gates #75/#76 are unchanged. |
-| Current/next work | **PR #107 safe deployment configuration is merged. #82 is local on feat/verified-backup-restore**: offline SQLite-aware encrypted packages, stopped-writer protection, isolated validated restore and mandatory recovery credential invalidation. See docs/operations/backup-restore.md and docs/verification/verified-backup-restore.md for measured synthetic HTTP/persisted-row/restart/interruption evidence and limits. No hosting/deployment, schedules or future-upload recovery claim. First-admin, approved invitation delivery, trusted-proxy integration and load gates remain outstanding. Prepared for independent PR review; not merged or deployed. |
+| Active milestone | **Phase 2 evidence foundation** under #98; #83 private supporting documents is the current authorised slice. Qualified calculation/testing gates #75/#76 are unchanged. |
+| Current/next work | **PR #108 operator backup/recovery is merged**, confirmed 9 October 2026. **#83 on feat/private-supporting-documents is prepared for draft independent review**: private quarantine/clean storage, real loopback ClamAV, explicit medical classification, checksum-verified protected binding/downloads and request/timeline UI. See docs/adr/0015-private-supporting-documents.md, docs/operations/supporting-documents.md and docs/verification/private-supporting-documents.md for actual synthetic HTTP/browser/persisted-row, failure, migration, attachment recovery and finalisation checks, SQLite advisory resolution and remaining limits. Not merged or deployed. First-admin, approved invitation delivery, trusted-proxy integration, Linux and load gates remain outstanding. Evidence requirements and profile images remain #84/#95. |
 | Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. This authorised roadmap now PLANS secure evidence/images, activation/CSV, profiles/password/preferences, notifications and professional dashboards; none are shipped by this planning work. General email/SMS delivery remains future scope; secure activation delivery requires review. Automated tests stay deferred until #76 explicitly changes that convention. |
 | Current backend | .NET 8 ASP.NET Core **Controllers** (migrated from Minimal APIs), EF Core 8 with SQLite, ASP.NET Core Identity, JWT bearer auth, MediatR, FluentValidation, Swagger, and layered Domain/Application/Infrastructure/API projects. |
 | Current frontend | React 19 + TypeScript 6 Vite SPA, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, React Hook Form, and Zod. |
@@ -74,8 +74,9 @@ HRFlow.Client          -> React + TypeScript SPA
 - General email/SMTP status notifications remain deferred; #79 provides local private activation pickup;
   #93 durable in-app delivery is merged through PR #105; #94 profile/preferences are merged through PR #106; no production deployment. Do not claim a notification service exists from its name in
   historical plans. No plaintext-password CSV or secrets in logs/previews/reports.
-- No multi-tenancy or payroll integration. Private documents/profile images are now explicitly planned
-  through #83/#95 with quarantine, access, retention and failure gates, not implemented yet. See
+- No multi-tenancy or payroll integration. Private supporting documents (#83) are implemented locally
+  for review with quarantine, access and failure gates; configurable requirements (#84), profile images
+  (#95), approved bound-evidence retention/hold administration and production verification remain deferred. See
   `docs/planning/01-discovery-and-planning.md` §4 and the roadmap for current boundaries.
 
 ## Verification (non-negotiable)
