@@ -174,3 +174,8 @@ The original dated endpoint count above is historical. The notification controll
 - PATCH /notifications/{id}/read: own recipient only, current credentials and capabilities rechecked after the SQLite writer reservation; another recipient's ID and missing ID both return 404. Idempotent read time, no status/audit mutation.
 
 Authoritative service: LeaveNotificationService through CurrentAccountAuthorization, ILeaveReportingReadTransaction and IEmployeeManagementTransaction. Existing timeline deep links independently check current owner/Manager/HR scope; alerts never grant access. No client recipient or actor ID is accepted.
+
+## Issue #94 own metadata endpoints
+
+- GET `/api/v1/me` and GET `/api/v1/me/preferences`: own authenticated identity only; any current Employee/Manager/HR capability. Current active/activated state, credential proof, membership and metadata share the existing deferred read snapshot. No target-ID lookup or public private-field projection.
+- PUT `/api/v1/me/profile` and PUT `/api/v1/me/preferences`: the same current own-account requirements after SQLite writer reservation; independent expected versions, unknown-field rejection, atomic persistence, no callback replay. Canonical employment/roles/credentials remain outside the allowlist.

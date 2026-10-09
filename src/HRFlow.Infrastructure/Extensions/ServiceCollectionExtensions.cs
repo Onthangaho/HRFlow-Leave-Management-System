@@ -50,6 +50,7 @@ public static class ServiceCollectionExtensions
             })
             .AddEntityFrameworkStores<HRFlowDbContext>()
             .AddDefaultTokenProviders();
+        services.AddScoped<IOwnAccountService, OwnAccountService>();
         services.AddScoped<ILeaveNotificationOutbox, LeaveNotificationService>();
         services.AddScoped<ILeaveNotificationService, LeaveNotificationService>();
         services.AddHostedService<LeaveNotificationWorker>();

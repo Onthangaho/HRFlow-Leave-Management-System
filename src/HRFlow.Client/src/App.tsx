@@ -1,3 +1,4 @@
+import { ProfilePage, SettingsPage } from './features/account/AccountPages';
 import { NotificationsPage } from './features/notifications/NotificationsPage';
 import { ChangePasswordPage } from './features/auth/components/ChangePasswordPage';
 import { ActivationPage } from './features/auth/components/ActivationPage';
@@ -27,6 +28,8 @@ function App() {
       <Route element={<ApplicationShell />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/account/profile" element={<ProfilePage />} />
+        <Route path="/account/settings" element={<SettingsPage />} />
         <Route path="/account/password" element={<ChangePasswordPage />} />
         <Route element={<ProtectedRoute requiredRoles={['Employee', 'Manager', 'HR Administrator']} />}>
           <Route path="/leave-requests/:id/history" element={<LeaveRequestTimelinePage />} />

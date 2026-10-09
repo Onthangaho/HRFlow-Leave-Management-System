@@ -23,6 +23,7 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     }
 
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<AccountSettings> AccountSettings => Set<AccountSettings>();
     public DbSet<LeaveNotificationEvent> LeaveNotificationEvents => Set<LeaveNotificationEvent>();
     public DbSet<LeaveNotification> LeaveNotifications => Set<LeaveNotification>();
     public DbSet<Department> Departments => Set<Department>();
@@ -40,6 +41,11 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<AccountSettings>().HasKey(s => s.EmployeeId);
+        modelBuilder.Entity<AccountSettings>().HasOne<Employee>().WithOne().HasForeignKey<AccountSettings>(s => s.EmployeeId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<AccountSettings>().Property(s => s.PreferredDisplayName).HasMaxLength(HRFlow.Domain.Entities.AccountSettings.MaxPreferredNameLength);
+        modelBuilder.Entity<AccountSettings>().Property(s => s.ContactPhone).HasMaxLength(HRFlow.Domain.Entities.AccountSettings.MaxContactPhoneLength);
+        modelBuilder.Entity<AccountSettings>().Property(s => s.Theme).HasMaxLength(10);
         modelBuilder.Entity<LeaveNotificationEvent>().Property(e => e.EventKey).HasMaxLength(100);
         modelBuilder.Entity<LeaveNotificationEvent>().Property(e => e.Kind).HasMaxLength(32);
         modelBuilder.Entity<LeaveNotificationEvent>().HasIndex(e => new { e.EventKey, e.RecipientId }).IsUnique();

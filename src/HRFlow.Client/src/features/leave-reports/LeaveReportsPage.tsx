@@ -123,11 +123,11 @@ function ReportResults({ report, refreshing }: { report: DepartmentLeaveReport; 
         <div style={{ height: Math.max(260, chart.length * 55) }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chart} layout="vertical" accessibilityLayer margin={{ top: 12, right: 20, bottom: 25, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" allowDecimals={false} label={{ value: 'Summed approved request-days', position: 'insideBottom', offset: -20 }} />
-              <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} tickFormatter={(name: string) => name.length > 16 ? `${name.slice(0, 15)}…` : name} />
-              <Tooltip formatter={value => [`${value} request-days`, 'Approved duration (summed)']} isAnimationActive={false} />
-              <Bar dataKey="days" name="Approved request-days (summed)" fill="#4338ca" isAnimationActive={false} />
+              <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" horizontal={false} />
+              <XAxis tick={{ fill: 'var(--foreground)' }} stroke="var(--chart-grid)" type="number" allowDecimals={false} label={{ fill: 'var(--foreground)', value: 'Summed approved request-days', position: 'insideBottom', offset: -20 }} />
+              <YAxis stroke="var(--chart-grid)" type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: 'var(--foreground)' }} tickFormatter={(name: string) => name.length > 16 ? `${name.slice(0, 15)}…` : name} />
+              <Tooltip contentStyle={{ background: 'var(--surface)', color: 'var(--foreground)', borderColor: 'var(--border)' }} labelStyle={{ color: 'var(--foreground)' }} itemStyle={{ color: 'var(--foreground)' }} cursor={{ fill: 'var(--chart-hover)' }} formatter={value => [`${value} request-days`, 'Approved duration (summed)']} isAnimationActive={false} />
+              <Bar dataKey="days" name="Approved request-days (summed)" fill="var(--chart-bar)" isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>
