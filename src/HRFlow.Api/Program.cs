@@ -143,6 +143,9 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddRateLimiter(options =>
 {
+    options.AddPolicy("document-upload", context => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = (context, token) => new ValueTask(Results.Problem(statusCode: StatusCodes.Status429TooManyRequests,
         title: "Too many attempts", detail: "Wait a minute before trying again.").ExecuteAsync(context.HttpContext));

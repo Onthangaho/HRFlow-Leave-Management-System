@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
+    <!-- The existing Identity/EF graph resolves vulnerable Memory 8.0.0 without this smallest security patch. -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
   </ItemGroup>
 
 </Project>

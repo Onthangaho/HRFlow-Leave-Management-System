@@ -10,6 +10,7 @@ public class SubmitLeaveRequestCommandValidator : AbstractValidator<SubmitLeaveR
     /// <summary>Checks identifiers and dates without reading an unprotected policy/type snapshot.</summary>
     public SubmitLeaveRequestCommandValidator()
     {
+        RuleFor(v => v.DocumentIds).NotNull().Must(ids => ids != null && ids.Count <= HRFlow.Domain.Entities.SupportingDocumentLimits.MaxRequestDocuments && ids.Distinct().Count() == ids.Count).WithMessage("Choose at most five distinct clean documents.");
         RuleFor(v => v.LeaveTypeId)
             .NotEmpty();
 

@@ -64,8 +64,14 @@ checksums. Private files are included under their relative paths. No secret conf
 Limits: 100 MiB plaintext archive, 1,000 inventory files; archive overhead counts toward the byte
 limit. This small deployment slice uses whole-buffer authenticated encryption and needs several
 times the package size in memory plus private staging space. It is not streaming/large-store tooling.
-Private uploads are not implemented. Synthetic existing-file and empty-inventory checks **do not**
-prove medical-document, quarantine or attachment recovery. Repeat this drill after #83.
+The original #82 rehearsal preceded private uploads; its synthetic-file/empty-inventory evidence
+does not prove attachment recovery. The local #83 implementation now validates required document
+metadata against clean/quarantine blob sizes and checksums before completing backup or restoration.
+See [the attachment-aware rehearsal](../verification/private-supporting-documents.md) and
+[document operations](supporting-documents.md). This additional local drill does not establish future
+profile-image, retention/legal-hold, Linux or large-store recovery. Repeat after relevant changes.
+Clean documents retain quarantine copies; the existing 100 MiB package bound can reject a store
+containing five maximum-size documents plus the database. Never purge evidence to make it fit.
 
 ## Restore order and security invalidation
 
