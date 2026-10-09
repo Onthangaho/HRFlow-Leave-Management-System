@@ -91,7 +91,9 @@ content fails safely. No large hash/transfer/scanner work runs while holding the
 ## Storage, reconciliation and recovery
 
 Private objects live under documents/staging, documents/quarantine and documents/clean using generated
-GUID filenames. Original filenames are not persisted. Bound clean objects retain their quarantine
+GUID filenames. Persistent documents/locks and documents/removed contain empty per-document
+coordination files. Never purge these lock identities or removal markers: late publishers rely on
+their permanence. Original filenames are not persisted. Bound clean objects retain their quarantine
 copy, increasing storage use. No HTTP/static server must expose any private root. Provision restricted
 ACLs (owner/service identity, SYSTEM/Administrators as appropriate), owner-only Unix modes and local
 locking-compatible storage. The application rejects reparse points and application/repository roots.
@@ -105,3 +107,25 @@ The package must include metadata plus actual clean/quarantined objects; absent 
 blobs fail validation. Restored quarantine/rejected statuses stay inaccessible; recovery credential
 invalidation still applies. Repeat drills as formats/storage/retention change, especially future images
 and quarantine-policy extensions. Rehearsal evidence is not a guarantee of future recovery.
+
+## Publication, cleanup and upgrade procedure
+
+The OS per-document publication lock and persistent removal marker serialize file writes against
+physical cleanup across processes. Receive/validate before acquiring the lock; scan before clean
+publication. Removal commits terminal metadata, then writes the tombstone and deletes all content
+copies under the same lock. A three-second lock timeout defers physical work; durable metadata stays
+inaccessible and the worker retries. No transfer/scan/file-lock wait holds SQLite's writer reservation.
+
+The worker runs every five minutes: up to twenty draft expirations plus twenty Removed records in a
+rotating page. Old BlobCleanup entries are history, not exclusions. Every removed record is revisited
+as pages cycle; failures can delay cleanup but do not permanently suppress it or starve subsequent
+rows in that page. Large backlogs may take multiple cycles; scheduling/load limits remain unverified.
+No bound evidence is automatically removed. If final metadata persistence fails after publication,
+Receiving/Scanning content stays inaccessible; age-based expiry compensates after restart.
+
+Stop **all** API/worker writers before installing the correction; old writers bypass the new file
+protocol. Back up and upgrade using the existing offline procedure. No new schema migration is needed
+for this correction. Use only the documented single-host, local locking-compatible storage, never a
+network/shared SQLite/private root. Preserve locks/removal markers in backup and isolated restore.
+Reconciliation, not manual status changes, should repair interrupted drafts. Never set quarantine to
+Clean or delete a marker merely to retry a removed upload: choose a new owned upload key/document.

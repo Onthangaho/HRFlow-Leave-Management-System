@@ -48,11 +48,34 @@ may leave an inaccessible extra clean copy if final database commit fails. Remov
 metadata-backed until idempotent deletion completes. The worker processes 20 eligible drafts every
 five minutes; Receiving/Scanning older than one hour and other unbound drafts older than seven days
 expire. These are technical abandoned-draft limits, **not statutory retention periods**. A durable
-BlobCleanup acknowledgement prevents already-deleted rows starving the queue across restarts/processes.
+BlobCleanup records a completed cleanup; it is never a permanent exclusion from reconciliation.
+The worker separately expires at most twenty eligible drafts and revisits a round-robin page of
+twenty Removed records every five minutes, including historically acknowledged records. Failed
+physical deletion remains retryable without blocking the rest of that removed-page batch.
 Bound evidence is never automatically removed or expired. Legal holds therefore retain content;
 an approved retention/hold administration workflow remains outstanding. Metadata and request/audit
 history survive removal, and missing authorised content is marked unavailable rather than rewriting
 a leave decision. A missing required blob also prevents a successful backup/restore declaration.
+
+### Publication/removal correction (draft PR #109)
+
+Before publishing staging/quarantine or clean content, Infrastructure takes the document's persistent
+OS lock file with `FileShare.None` and checks its removal tombstone under that same lock. Upload bytes
+are received/validated first; scanning runs before clean publication. Neither transfers, scans nor
+file-lock waits run under SQLite writer protection. Removal first commits terminal Removed metadata,
+then takes the same file lock, flushes a persistent tombstone and deletes staging/quarantine/clean
+content. Only successful physical cleanup may be acknowledged. A publisher that wins before physical
+removal is compensated by removal; a publisher resumed after cleanup sees the tombstone and cannot
+recreate content. Final metadata still rechecks lifecycle under the SQLite reservation.
+
+OS contention has a bounded three-second wait; failure retains inaccessible Removed/Receiving/Scanning
+metadata for reconciliation. No business transaction callback is replayed. Restart releases abandoned
+OS handles; persistent locks/tombstones are never deleted or reused. Empty coordination files contain
+no medical payload and remain in private backups. They add persistent filesystem/storage overhead.
+These guarantees require all publishers/removers to use the protocol on the same locking-compatible
+local store. Stop all old API/worker processes before upgrading; mixed-version writers are unsupported.
+Windows separate-process interleavings were exercised; Linux/filesystem/load and power-loss evidence
+remain outstanding. See [FileShare semantics](https://learn.microsoft.com/dotnet/api/system.io.fileshare).
 
 Existing AuditEntry remains the sole leave-transition mechanism. DocumentAccessEntry separately
 records content Download/Remove/ContentUnavailable and system DraftExpiry/BlobCleanup; it does not

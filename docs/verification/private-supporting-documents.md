@@ -205,6 +205,68 @@ graph without this finding. This project-level exposure remains: review the Doma
 apply a focused patched Memory version (8.0.1+ per the advisory) in a separately scoped change rather
 than assume every consumer is safe. **The solution audit is not clean.**
 
+## PR #109 review corrections: newly executed checks
+
+The first finalisation's unresolved Memory advisory and cleanup design above are historical evidence,
+not the current outcome. The review correction uses persistent OS publication locks/removal tombstones
+and removes historical acknowledgement exclusions; it adds no schema or frontend changes.
+
+### Deterministic cross-process lifecycle checks
+
+Used a new isolated copy of synthetic data, leaving the previous fixture untouched. A temporary .NET
+process invokes the actual SupportingDocumentService/PrivateDocumentStorage with the current account
+credential version and real Identity/lifecycle checks. Wrappers pause an input stream, the return of
+the **real** ClamAV verdict, or final metadata persistence; no production pause hooks or always-clean
+scanner were added. Another actual API/worker process performs authenticated removal and restart cleanup.
+The paused publication/metadata checks are Application/Infrastructure interactions, not browser checks.
+
+- Paused scan after real Clean verdict, before promotion. Removed through the other API, restarted
+  its worker, inspected Removed plus exactly one BlobCleanup and no staging/quarantine/clean files,
+  then resumed. Promotion was refused; no object reappeared. Download **404**, binding **409**.
+- Paused upload before any file publication (after Receiving registration/input transfer). Removed
+  and cleaned through the other process, then resumed: tombstone refused staging/quarantine creation.
+  Removed and one cleanup acknowledgement survived; download/binding stayed denied.
+- After quarantine publication, injected failure of the final Quarantined metadata update. It rolled
+  back to Receiving with inaccessible bytes. After ageing the disposable interrupted row and worker
+  restart: Removed, one DraftExpiry, one BlobCleanup and zero content copies.
+- After real clean promotion, injected failure of the final Clean update. Metadata stayed Scanning;
+  expiry/restarted-worker compensation deleted staging/quarantine/clean with one expiry/cleanup.
+- Injected legacy leftovers into all three blob areas for a Removed row with an existing BlobCleanup.
+  Restart cleaned them despite the old entry; no duplicate acknowledgement was created.
+- Another .NET process held the actual OS publication lock. Removal committed Removed, waited the
+  bounded approximately three-second lock timeout and deferred physical work. After releasing the
+  foreign lock/restarting the worker, content disappeared and one cleanup acknowledgement persisted.
+- All failed binding/race cases left request and leave-transition audit counts unchanged. Coordination
+  lock/tombstone files deliberately remain; they contain no content and are not orphan evidence.
+
+### Regressions and dependency outputs rerun after the correction
+
+- Ordinary clean upload/two-process duplicate-key and binding: one object, **200/409**, one request and
+  one submission audit. Real PDF/JPEG/PNG Clean; malformed/CRC/truncated/mismatched/empty/oversized
+  denial; real embedded-EICAR PDF rejection; checksum-tampered clean binding/download denial all passed.
+- `dotnet build HRFlow.sln --no-restore`: **0 warnings, 0 errors**. Model check: **No changes have been
+  made to the model since the last migration.** Existing migration preserved all rows in 17 tables.
+  No new migration. Frontend was unchanged; build/lint/browser checks were **not rerun in this correction**.
+- Stopped both actual API/worker processes; encrypted isolated recovery preserved document/access rows,
+  clean/quarantined bytes and **16** empty publication lock/removal-marker files byte-for-byte. Missing
+  a required blob refused backup; an authenticated package missing a metadata-required Clean blob
+  refused restore without publishing a destination. An initial recovery harness picked an unused
+  clean-area leftover rather than a required Clean object, so its expected rejection was wrong; the
+  corrected metadata-scoped fixture passed. An initial temporary C# harness syntax error was corrected
+  before executing the lifecycle checks; it was not a product build failure.
+- Patched only **Microsoft.Extensions.Caching.Memory 8.0.0 → 8.0.1** in the Domain dependency graph,
+  the minimum compatible fix in [GHSA-qj66-m88j-hmgj](https://github.com/advisories/GHSA-qj66-m88j-hmgj).
+  `dotnet list HRFlow.sln package --include-transitive` resolved **8.0.1 in all five projects**;
+  native SQLite remains **2.1.13** in Infrastructure/API/Operations. EF/Identity major versions unchanged.
+- Solution-wide `dotnet list HRFlow.sln package --vulnerable --include-transitive` reports **no vulnerable
+  packages** for Domain, Application, Infrastructure, API and Operations with the checked NuGet sources.
+  This resolves both reported advisories, not a blanket guarantee against undiscovered vulnerabilities.
+
+Still unexecuted for the correction: Linux/local-filesystem semantics, network storage (unsupported),
+power loss/process kill at every byte boundary, high-load/backlog paging and full OS permission-failure
+matrix. Injected metadata rollback plus actual worker/process restart was exercised, not every crash.
+Earlier browser/privacy/permission evidence remains earlier evidence; the broader limits below remain.
+
 ## Explicitly unexecuted / remaining limits
 
 - Linux/native decoder/daemon deployment, realistic hostile load, full malformed-file/malware corpus,
