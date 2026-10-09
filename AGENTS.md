@@ -23,8 +23,8 @@ South African leave requirements; qualified review is required before statutory 
 | Area | Current state |
 |---|---|
 | Completed milestones | Authentication, administration, reporting, audit, shared shell, decision notes, activation and password/session revocation are merged through **PR #104**, confirmed 9 October 2026. Existing backlog reconciliation and qualified legal/test-convention gates remain independent. |
-| Active milestone | **Phase 1 professional foundation** under roadmap **#98**; permitted self-profile and working preferences **#94** are the current authorised slice. Statutory calculation and automated-test gates #75/#76 remain unchanged. |
-| Current/next work | **PR #105 (#93 notifications) is merged. #94 is locally implemented on feat/profile-and-preferences**: own allowlisted private fields, separate metadata versions, server theme/category preferences, worker suppression and session-scoped forms/theme. See docs/adr/0014-own-profile-and-preferences.md and docs/verification/profile-and-preferences.md for actual HTTP/persisted-row/Chromium evidence and explicit unexecuted checks. Prepared for independent PR review; not merged or deployed. Production invitation delivery remains unimplemented. |
+| Active milestone | **Phase 1 professional foundation** under #98; #81 safe configuration/local Production-mode verification is the current authorised slice. Qualified calculation/testing gates #75/#76 are unchanged. |
+| Current/next work | **PR #106 profile/preferences is merged. #81 is local on feat/safe-deployment-configuration**: early security/origin/proxy/private-storage checks and separate readiness, supported single-host SQLite operations. See docs/operations/single-host-configuration.md and docs/verification/safe-deployment-configuration.md. Real loopback Production-mode HTTP/Chromium/restart/contention evidence is not hosting/deployment evidence. First-admin provisioning, approved invitation delivery, backup/restore and load checks remain outstanding. Prepared for independent PR review; not merged or deployed. |
 | Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. This authorised roadmap now PLANS secure evidence/images, activation/CSV, profiles/password/preferences, notifications and professional dashboards; none are shipped by this planning work. General email/SMS delivery remains future scope; secure activation delivery requires review. Automated tests stay deferred until #76 explicitly changes that convention. |
 | Current backend | .NET 8 ASP.NET Core **Controllers** (migrated from Minimal APIs), EF Core 8 with SQLite, ASP.NET Core Identity, JWT bearer auth, MediatR, FluentValidation, Swagger, and layered Domain/Application/Infrastructure/API projects. |
 | Current frontend | React 19 + TypeScript 6 Vite SPA, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, React Hook Form, and Zod. |
@@ -72,7 +72,7 @@ HRFlow.Client          -> React + TypeScript SPA
   not generate test files or suggest test frameworks unless explicitly asked. If a change would be hard
   to test later, mention that in a comment instead of writing the test.
 - General email/SMTP status notifications remain deferred; #79 provides local private activation pickup;
-  #93 durable in-app delivery is merged through PR #105; #94 delivery-time preferences are local for review, not deployed. Do not claim a notification service exists from its name in
+  #93 durable in-app delivery is merged through PR #105; #94 profile/preferences are merged through PR #106; no production deployment. Do not claim a notification service exists from its name in
   historical plans. No plaintext-password CSV or secrets in logs/previews/reports.
 - No multi-tenancy or payroll integration. Private documents/profile images are now explicitly planned
   through #83/#95 with quarantine, access, retention and failure gates, not implemented yet. See

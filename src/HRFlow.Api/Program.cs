@@ -30,6 +30,8 @@ const string HrAdministratorRoleName = "HR Administrator";
 const string HrAdministratorOnlyPolicyName = "HrAdministratorOnly";
 
 var builder = WebApplication.CreateBuilder(args);
+DeploymentConfiguration.Validate(builder);
+DeploymentStorage.Validate(builder.Configuration, builder.Environment);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -52,15 +54,6 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-});
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(
-        "ReactDevServer",
-        policy => policy
-            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod());
 });
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddMediatR(configuration =>
@@ -134,7 +127,8 @@ builder.Services.AddAuthentication(options =>
         RequireExpirationTime = true,
         RequireSignedTokens = true,
         ClockSkew = TimeSpan.FromSeconds(JwtClockSkewSeconds),
-        ValidateIssuerSigningKey = true
+        ValidateIssuerSigningKey = true,
+        ValidAlgorithms = [SecurityAlgorithms.HmacSha256]
     };
 });
 
@@ -167,15 +161,23 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())
 {
+    app.UseHsts();
     app.UseHttpsRedirection();
+    app.Use(async (context, next) =>
+    {
+        if (!context.Request.IsHttps && !context.Request.Path.StartsWithSegments("/health"))
+        {
+            await Results.Problem(statusCode: 400, title: "HTTPS required", detail: "Use the configured secure application origin.").ExecuteAsync(context);
+            return;
+        }
+        await next();
+    });
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseCors("ReactDevServer");
-}
+app.UseCors("ConfiguredOrigins");
 
 app.UseMiddleware<ApiRequestLoggingMiddleware>();
 // HR management denials from JWT authorization also need form-ready ProblemDetails, before MVC runs.
@@ -199,6 +201,16 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
     .AllowAnonymous();
+
+app.MapGet("/health/ready", async (HRFlowDbContext db, CancellationToken token) =>
+{
+    try
+    {
+        return await db.Database.CanConnectAsync(token) && !(await db.Database.GetPendingMigrationsAsync(token)).Any()
+            ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503);
+    }
+    catch { return Results.StatusCode(503); }
+}).AllowAnonymous();
 
 app.MapControllers();
 
