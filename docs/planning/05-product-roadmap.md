@@ -1,3 +1,5 @@
+> 9 October 2026: PR #107 is merged. #82 operator backup/recovery is locally implemented for review: [runbook](../operations/backup-restore.md), [measured evidence/limits](../verification/verified-backup-restore.md). No deployment, scheduling or future-upload recovery claim; repeat after #83. Earlier entries are historical status.
+
 > 9 October 2026: PR #106 is merged. #81 configuration and local Production-mode verification is implemented locally for review: [operations](../operations/single-host-configuration.md), [evidence/limits](../verification/safe-deployment-configuration.md). No hosting/deployment; first-admin, invitation delivery, backup/restore and load gates remain open. Earlier entries are historical status.
 
 > 9 October 2026: PR #105 notifications is merged. Issue #94 own-profile and working preferences is locally implemented for review: [design](../adr/0014-own-profile-and-preferences.md), [executed verification and limitations](../verification/profile-and-preferences.md). Separate versions, private phone, server theme and delivery-time suppression; no images, email/SMS, commit or deployment. Earlier entries below are historical status.

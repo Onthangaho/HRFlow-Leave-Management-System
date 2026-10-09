@@ -16,3 +16,6 @@ api.log
 
 ## Other
 *.stackdump
+# Operator backup artifacts and cross-process maintenance leases are never source files.
+*.hrb
+*.operations-lock

@@ -32,6 +32,7 @@ const string HrAdministratorOnlyPolicyName = "HrAdministratorOnly";
 var builder = WebApplication.CreateBuilder(args);
 DeploymentConfiguration.Validate(builder);
 DeploymentStorage.Validate(builder.Configuration, builder.Environment);
+using var maintenanceLease = HRFlow.Infrastructure.Services.Operations.MaintenanceLease.ForApplication(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
