@@ -23,9 +23,9 @@ South African leave requirements; qualified review is required before statutory 
 | Area | Current state |
 |---|---|
 | Completed milestones | Authentication, administration, reporting, audit, shared shell, decision notes, activation and password/session revocation are merged through **PR #104**, confirmed 9 October 2026. Existing backlog reconciliation and qualified legal/test-convention gates remain independent. |
-| Active milestone | **#96 current-data scoped CSV exports**: fresh HR/Manager projections and spreadsheet-safe session-bound downloads. Calculation/testing gates remain unchanged. |
-| Current/next work | **PR #115 HR workspace is merged**, confirmed 14 October 2026. **#96 on feat/scoped-report-exports is locally implemented for review**: existing deferred authorization/data snapshots, accurate clipped report metrics and current-reporting team spans, bounded CsvHelper output with visible name safety prefixes, applied-range controls and cancellation/session guards. See ADR 0022 and verification/scoped-report-exports.md for actual API/SQLite/Chrome/build/audit evidence and explicit limits. No schema/dependency/charging change. #22-dependent charged units remain outstanding; #96 stays open. Prepared for independent PR review; not merged or deployed. |
-| Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. This authorised roadmap now PLANS secure evidence/images, activation/CSV, profiles/password/preferences, notifications and professional dashboards; none are shipped by this planning work. General email/SMS delivery remains future scope; secure activation delivery requires review. Automated tests stay deferred until #76 explicitly changes that convention. |
+| Active milestone | **#76 first focused regression phase**: maintained xUnit/Playwright critical workflow gates, reproducible migration fixtures and restricted CI. Legal calculation gate #75 remains unchanged. |
+| Current/next work | **PR #116 scoped exports is merged**, confirmed 14 October 2026. **test/critical-workflow-regressions implements the explicitly authorised first #76 slice for review**: real file-backed SQLite migrations, generated private Identity fixtures, two API processes with explicit barriers, persisted status/audit/duplicate/version checks, controlled browser session races, and focused CI. See tests/README.md, ADR 0023 and verification/critical-workflow-regressions.md for actual results, negative-control evidence and coverage limits. No product authorization bypass or diagnostic endpoint. #76 remains open; prepared for independent review, not merged or deployed. |
+| Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. This authorised roadmap now PLANS secure evidence/images, activation/CSV, profiles/password/preferences, notifications and professional dashboards; none are shipped by this planning work. General email/SMS delivery remains future scope; secure activation delivery requires review. Focused maintained xUnit/Playwright regression gates are explicitly authorised under #76; broader coverage remains incremental. |
 | Current backend | .NET 8 ASP.NET Core **Controllers** (migrated from Minimal APIs), EF Core 8 with SQLite, ASP.NET Core Identity, JWT bearer auth, MediatR, FluentValidation, Swagger, and layered Domain/Application/Infrastructure/API projects. |
 | Current frontend | React 19 + TypeScript 6 Vite SPA, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, React Hook Form, and Zod. |
 
@@ -58,8 +58,7 @@ HRFlow.Client          -> React + TypeScript SPA
   JSDoc `/** */` for TypeScript) that explains **why the class/method exists and any non-obvious
   behavior**, not a restatement of the method signature. Example of what NOT to do: `/// Gets the
   employee.` for `GetEmployee()`. Example of what TO do: `/// Returns the employee's current leave
-  balance snapshot. Balance is recalculated on read rather than stored, because approvals can be
-  backdated by HR admins and a stored value would drift.`
+  balance snapshot. Balance is recalculated on read rather than stored, because current approved history and policy rules can change; a stored value would drift.`
 - Inline comments are reserved for **non-obvious "why" decisions** (a trade-off, a business rule, a
   workaround). Do not comment obvious code line-by-line — that's noise a senior reviewer would flag in
   a PR.
@@ -68,9 +67,13 @@ HRFlow.Client          -> React + TypeScript SPA
 
 ## What is explicitly OUT of scope right now
 
-- **No automated tests yet** (unit, integration, or otherwise). This is a deliberate, later phase — do
-  not generate test files or suggest test frameworks unless explicitly asked. If a change would be hard
-  to test later, mention that in a comment instead of writing the test.
+- **Focused maintained regression tests are authorised under #76**: use the existing xUnit and
+  Playwright foundation for critical authorization, transaction, version, migration and session/workflow
+  gates. Use fresh file-backed SQLite with real migrations and synthetic Identity fixtures, never EF
+  InMemory for transaction claims. This narrowly replaces the former blanket deferral; unrelated
+  rewrites or additional frameworks require explicit authorisation. Keep scanner/recovery, comprehensive
+  accessibility, load/deployment and qualified legal calculation gaps visible. Never publish fixture
+  credentials, tokens, invitation links or sensitive test artifacts.
 - General email/SMTP status notifications remain deferred; #79 provides local private activation pickup;
   #93 durable in-app delivery is merged through PR #105; #94 profile/preferences are merged through PR #106; no production deployment. Do not claim a notification service exists from its name in
   historical plans. No plaintext-password CSV or secrets in logs/previews/reports.

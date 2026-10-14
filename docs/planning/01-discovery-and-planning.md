@@ -1,3 +1,5 @@
+> 14 October 2026: PR #116 is merged. The first explicitly authorised #76 regression slice is implemented locally for review on test/critical-workflow-regressions. [Retained commands and coverage](../../tests/README.md), [strategy](../adr/0023-focused-regression-gates.md), [executed evidence and limitations](../verification/critical-workflow-regressions.md). Focused xUnit/Playwright tests replace the blanket deferral only in this scope. Medical/scanner recovery, comprehensive accessibility, load/deployment and #75/#22-qualified legal calculations remain untested. Hosted CI has not run. No commit/PR/deployment; #76 remains open. Earlier entries below are historical.
+
 > 14 October 2026: PR #115 is merged. #96 current-data scoped CSV exports are locally implemented for review on feat/scoped-report-exports. [API/CSV/safety contract](../adr/0022-scoped-current-data-report-exports.md), [executed API/SQLite/browser evidence and screenshots](../verification/scoped-report-exports.md). Existing deferred projections/calculations reused; no schema/dependency/charging change. #22-dependent charged units remain outstanding and #96 stays open. Prepared for independent PR review; not merged or deployed. Earlier entries below are historical.
 
 > 14 October 2026: PR #114 is merged. #92 current-data HR workspace is locally implemented for review on feat/hr-workspace. [Design/API/attention definitions](../adr/0021-current-data-hr-workspace.md), [actual verification/screenshots/limits](../verification/hr-workspace.md). Read-only operations and reconciled period trends; no schema/dependency/calculation change. #92 stays open for #85/#22/#75. No commit/PR/deployment or next feature. Earlier entries below are historical.
@@ -67,7 +69,7 @@ As a portfolio project, HRFlow is deliberately chosen because it lets a single d
 - SPA + API deployment is an unverified operational goal (#81), not evidence of a live production system.
 
 **Current expansion boundaries:**
-- Automated tests remain deferred until #76's explicit convention decision. Manual/disposable HTTP, persisted-row and actual browser verification are required, not deferred. This phase adds no test files.
+- Focused maintained xUnit/Playwright regression gates are explicitly authorised for the first #76 slice (14 October 2026). Manual/disposable evidence remains useful for uncovered cases; broader frameworks, legal calculations and unrelated test rewrites remain outside this authorisation.
 - General status email/SMS remains future scope. #79 plans reviewed secure activation delivery and #93 durable in-app notifications; no notification implementation is claimed just because an old plan named an interface.
 - Private documents/images, configurable evidence, employment/schedules/cycles, secure CSV onboarding, profile/password/preferences, shared shell, real role dashboards/calendar and safe exports are now explicitly authorised planning scope, gated by security/legal/privacy review. They are not shipped by this planning work.
 - Session persistence, full department CRUD, hard deletion and reactivation remain excluded.
@@ -99,7 +101,7 @@ This scope boundary is itself a portfolio artifact — being able to say "here's
 - **Team size:** solo developer — no parallelization of frontend/backend work.
 - **Budget:** $0 — free-tier services only.
 - **Technology:** preserve current .NET 8/EF Core SQLite and React/TypeScript/Tailwind architecture; provider changes require reviewed equivalent safeguards.
-- **Testing deferred:** keep the no-automated-test-files convention until #76 explicitly reconciles it; manual verification remains mandatory.
+- **Focused testing authorised:** #76 retains critical regression gates; uncovered workflows still require honest manual verification and incremental coverage.
 
 ## 8. Success Criteria
 

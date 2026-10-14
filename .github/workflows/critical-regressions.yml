@@ -1,0 +1,45 @@
+name: Critical workflow regressions
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: critical-regressions-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, official tag verified 14 October 2026
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+      - name: Restore and build
+        run: |
+          dotnet restore HRFlow.sln --locked-mode -p:NuGetAuditMode=all -warnaserror:NU1901,NU1902,NU1903,NU1904
+          dotnet build HRFlow.sln --no-restore
+      - name: Frontend build and lint
+        run: |
+          npm ci --prefix src/HRFlow.Client
+          npm run build --prefix src/HRFlow.Client
+          npm run lint --prefix src/HRFlow.Client
+          npm audit --prefix src/HRFlow.Client
+      - name: SQLite and two-process regression gates
+        run: dotnet test tests/HRFlow.RegressionTests --no-build --logger 'console;verbosity=normal'
+      - name: Browser regression gates
+        working-directory: tests/browser
+        run: |
+          npm ci
+          npm audit
+          npm run typecheck
+          npx playwright install --with-deps chromium
+          npm test
+      # No screenshots, traces, API logs, credentials or private databases are uploaded as CI artifacts.
