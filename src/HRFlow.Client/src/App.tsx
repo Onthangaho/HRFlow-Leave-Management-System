@@ -1,3 +1,4 @@
+import { CsvOnboardingPage } from './features/onboarding/CsvOnboardingPage';
 import { ProfilePage, SettingsPage } from './features/account/AccountPages';
 import { NotificationsPage } from './features/notifications/NotificationsPage';
 import { ChangePasswordPage } from './features/auth/components/ChangePasswordPage';
@@ -41,6 +42,7 @@ function App() {
         <Route element={<ProtectedRoute requiredRoles={['HR Administrator']} />}>
           <Route path="/admin/leave-reports" element={<Suspense fallback={<p role="status" className="ui-panel">Loading leave reports…</p>}><LeaveReportsPage /></Suspense>} />
           <Route path="/admin/leave-policies" element={<LeaveConfigurationPage />} />
+          <Route path="/admin/onboarding" element={<CsvOnboardingPage />} />
           <Route path="/admin/employees" element={<EmployeeManagementPage />} />
           <Route path="/admin/leave-monitoring" element={<HrPendingLeaveMonitoringPage />} />
         </Route>

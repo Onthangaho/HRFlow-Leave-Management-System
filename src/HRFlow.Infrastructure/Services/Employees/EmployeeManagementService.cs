@@ -40,29 +40,50 @@ public sealed class EmployeeManagementService(
         await writeTransaction.ExecuteAsync(async token =>
         {
             await EnsureCurrentHrAsync(actorIdentityUserId);
-            var effectiveRoles = await ValidateRolesAsync(roles);
-            await ValidateDepartmentAsync(departmentId, token);
-            await EnsureEmailAvailableAsync(email.Trim(), null);
-            await ValidateManagerAssignmentAsync(null, departmentId, managerId, token);
-            var number = await ValidateEmploymentAsync(null, employeeNumber, employmentStartDate, token);
-
-            var identity = new ApplicationUser { UserName = email.Trim(), Email = email.Trim(), RequiresActivation = true };
-            EnsureIdentitySucceeded(await userManager.CreateAsync(identity));
-            EnsureIdentitySucceeded(await userManager.AddToRolesAsync(identity, effectiveRoles));
-
-            accountId = identity.Id;
-            invitation = activation.Prepare(identity);
-            var employee = Employee.Create(fullName, email, departmentId);
-            employee.ConfirmEmployment(number, employmentStartDate!.Value);
-            employee.SetIdentityUser(identity.Id.ToString());
-            employee.AssignManager(managerId);
-            dbContext.Employees.Add(employee);
-            result = new EmployeeManagementResult { EmployeeId = employee.Id, Version = employee.Version };
+            var created = await CreateInsideReservationAsync(fullName, email, departmentId, roles, managerId, employeeNumber, employmentStartDate, token);
+            accountId = created.IdentityId;
+            invitation = created.Invitation;
+            result = created.Result;
         }, cancellationToken);
         logger.LogInformation("Employee created. EmployeeId: {EmployeeId}; ActorIdentityUserId: {ActorIdentityUserId}",
             result!.EmployeeId, actorIdentityUserId);
         result!.InvitationDeliveryState = await activation.DeliverAsync(accountId, invitation, cancellationToken);
         return result;
+    }
+
+    /// <summary>Shared authoritative validation; callers must already hold the writer reservation or consistent preview snapshot.</summary>
+    internal async Task<string[]> ValidateCreationAsync(string fullName, string email, Guid departmentId, IReadOnlyCollection<string> roles,
+        Guid? managerId, string? number, DateOnly? date, CancellationToken token)
+    {
+        try { _ = Employee.Create(fullName, email, departmentId); }
+        catch (InvalidOperationException) { throw new DomainException("FullName and Email must be valid, nonempty and within the existing employee field limits."); }
+        var effectiveRoles = await ValidateRolesAsync(roles);
+        await ValidateDepartmentAsync(departmentId, token);
+        await EnsureEmailAvailableAsync(email.Trim(), null);
+        await ValidateManagerAssignmentAsync(null, departmentId, managerId, token);
+        await ValidateEmploymentAsync(null, number, date, token);
+        var candidate = new ApplicationUser { UserName = email.Trim(), Email = email.Trim() };
+        foreach (var validator in userManager.UserValidators) EnsureIdentitySucceeded(await validator.ValidateAsync(userManager, candidate));
+        return effectiveRoles;
+    }
+
+    /// <summary>Persists the shared creation core inside the caller's transaction; invitation delivery always occurs after commit.</summary>
+    internal async Task<(EmployeeManagementResult Result, Guid IdentityId, string Invitation)> CreateInsideReservationAsync(
+        string fullName, string email, Guid departmentId, IReadOnlyCollection<string> roles, Guid? managerId,
+        string? number, DateOnly? date, CancellationToken token)
+    {
+        activation.EnsureDeliveryConfigured();
+        var effectiveRoles = await ValidateCreationAsync(fullName,email,departmentId,roles,managerId,number,date,token);
+        var identity = new ApplicationUser { UserName = email.Trim(), Email = email.Trim(), RequiresActivation = true };
+        EnsureIdentitySucceeded(await userManager.CreateAsync(identity));
+        EnsureIdentitySucceeded(await userManager.AddToRolesAsync(identity, effectiveRoles));
+        var invitation = activation.Prepare(identity);
+        var employee = Employee.Create(fullName,email,departmentId);
+        employee.ConfirmEmployment(EmploymentFacts.NormalizeNumber(number),date!.Value);
+        employee.SetIdentityUser(identity.Id.ToString());
+        employee.AssignManager(managerId);
+        dbContext.Employees.Add(employee);
+        return (new EmployeeManagementResult { EmployeeId = employee.Id, Version = employee.Version }, identity.Id, invitation);
     }
 
     /// <inheritdoc />
@@ -285,12 +306,13 @@ public sealed class EmployeeManagementService(
 
     private async Task EnsureEmailAvailableAsync(string email, Guid? identityId)
     {
-        var byEmail = await userManager.FindByEmailAsync(email);
-        var byName = await userManager.FindByNameAsync(email);
-        if ((byEmail is not null && byEmail.Id != identityId) || (byName is not null && byName.Id != identityId))
-        {
-            throw new DuplicateEmailException(email);
-        }
+        var normalized = userManager.NormalizeEmail(email);
+        var profiles = await dbContext.Employees.AsNoTracking().Where(e => !identityId.HasValue || e.IdentityUserId != identityId.Value.ToString()).Select(e => e.Email).ToListAsync();
+        if (profiles.Any(value => userManager.NormalizeEmail(value) == normalized)) throw new WriteConflictException("Email is already in use.");
+        var normalizedName = userManager.NormalizeName(email);
+        if (await dbContext.Users.AnyAsync(u => (!identityId.HasValue || u.Id != identityId.Value)
+            && (u.NormalizedEmail == normalized || u.NormalizedUserName == normalizedName)))
+            throw new WriteConflictException("Email is already in use.");
     }
 
     private async Task EnsureDirectReportsRemainValidAsync(

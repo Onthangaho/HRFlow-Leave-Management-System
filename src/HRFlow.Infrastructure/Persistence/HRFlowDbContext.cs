@@ -22,6 +22,8 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     {
     }
 
+    public DbSet<OnboardingBatch> OnboardingBatches => Set<OnboardingBatch>();
+    public DbSet<OnboardingScheduleTemplate> OnboardingScheduleTemplates => Set<OnboardingScheduleTemplate>();
     public DbSet<WeeklyScheduleRevision> WeeklyScheduleRevisions => Set<WeeklyScheduleRevision>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<SupportingDocument> SupportingDocuments => Set<SupportingDocument>();
@@ -71,6 +73,11 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
         modelBuilder.Entity<ApplicationUser>().Property(u => u.ActivationTokenHash).HasMaxLength(64);
         modelBuilder.Entity<ApplicationUser>().HasIndex(u => u.ActivationTokenHash).IsUnique();
 
+        modelBuilder.Entity<OnboardingBatch>().Property(b => b.Version).IsConcurrencyToken();
+        modelBuilder.Entity<OnboardingBatch>().HasIndex(b => new { b.ActorId, b.ConfirmationKey }).IsUnique();
+        modelBuilder.Entity<OnboardingBatch>().HasIndex(b => b.ExpiresAtUtc);
+        modelBuilder.Entity<OnboardingScheduleTemplate>().HasIndex(t => t.Code).IsUnique();
+        modelBuilder.Entity<OnboardingScheduleTemplate>().Property(t => t.Version).IsConcurrencyToken();
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
         modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
         modelBuilder.ApplyConfiguration(new LeaveTypeConfiguration());

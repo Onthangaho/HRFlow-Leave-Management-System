@@ -24,6 +24,7 @@ export function navigationFor(roles: readonly string[]): NavigationGroup[] {
     { path: '/team-leave', label: 'Team leave', description: 'Plan coverage with approved team leave.', icon: 'team' },
   ] });
   if (roles.includes('HR Administrator')) groups.push({ label: 'Administration', items: [
+    { path: '/admin/onboarding', label: 'CSV onboarding', description: 'Review and create employee accounts safely.', icon: 'team' },
     { path: '/admin/employees', label: 'Employee management', description: 'Manage profiles, access and reporting relationships.', icon: 'team' },
     { path: '/admin/leave-policies', label: 'Leave policies/types', description: 'Manage leave types and their shared rules.', icon: 'policy' },
     { path: '/admin/leave-monitoring', label: 'Pending leave monitoring', description: 'Follow organisation-wide requests, read-only.', icon: 'history' },
