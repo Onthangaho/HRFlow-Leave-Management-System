@@ -62,6 +62,7 @@ builder.Services.AddMediatR(configuration =>
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<CurrentAccountAuthorization>();
 builder.Services.AddScoped<ReferenceDataService>();
 builder.Services.AddHttpContextAccessor();

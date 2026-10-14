@@ -189,3 +189,7 @@ Employee create/update retain current transactional HR checks; employment confir
 ## CSV onboarding (#89)
 
 All /api/v1/onboarding template, inspect, previews, review/read/revalidate/confirm/cancel/results and schedule-template routes require current active/activated HR and current credentials. Batch scope is initiating Identity only, with safe 404 for other actors. Read authorization/data share the existing deferred snapshot. Protected writes recheck after the SQLite writer reservation, including each row; shared employee creation validates current relationships and uniqueness. No anonymous activation tokens are returned here; redemption remains the existing separate token-authorized route.
+
+## Current-data personal dashboard (#90)
+
+GET /api/v1/leave-requests/dashboard derives Identity actor server-side. Current active/activated Employee OR Manager membership and credential generation are checked in the existing deferred read snapshot together with owned requests/current policies. HR-only denied; combined roles additive. No employee parameter or cross-user enumeration. Application GetPersonalDashboardQueryHandler composes explicit minimal DTOs using the existing calculator; no writer reservation or sensitive timeline fields.
