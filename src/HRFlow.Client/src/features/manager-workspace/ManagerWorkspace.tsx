@@ -1,3 +1,4 @@
+import { ReportExport } from '../report-exports/ReportExport';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -47,6 +48,7 @@ export function TeamCalendar() {
     <div role="status">{query.isPending ? 'Loading team calendar...' : query.isFetching ? 'Refreshing; previously loaded results are not yet confirmed current.' : entries ? `Team snapshot received ${new Date(query.dataUpdatedAt).toISOString()} (UTC client receipt time).` : ''}</div>
     {query.isError && <div className="ui-error" role="alert"><p>{problemMessage(query.error)}</p><p>Team data is unavailable; no zero absence is assumed. Your selected month is retained.</p><button className="ui-secondary mt-2" disabled={query.isFetching} onClick={() => void query.refetch()}>Retry calendar</button></div>}
     {entries && <>
+      <ReportExport kind="team" selection={{start:range.start,end:range.end}} disabled={query.isFetching} />
       <div className="hidden sm:block"><div className="grid grid-cols-7 gap-1 text-center text-sm" aria-hidden="true">{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => <span key={d}>{d}</span>)}</div><div className="grid grid-cols-7 gap-1">{range.days.map(day => { const count = activeAbsent(entries, day); return <button key={day} className={`ui-secondary min-w-0 flex-col px-1 py-3 ${selected === day ? 'ring-2 ring-indigo-500' : ''}`} aria-pressed={selected === day} aria-label={`${dateLabel(day)}, ${count} active people with Approved leave${day.slice(0,7) !== iso(month).slice(0,7) ? ', adjacent month' : ''}`} onClick={() => setSelected(day)}><span>{Number(day.slice(8))}</span><span className="block text-xs">{count} absent</span></button>; })}</div></div>
       <div className="flex flex-wrap items-end gap-3"><label className="min-w-0">Show date (optional)<input className="ui-input mt-1" type="date" min={range.start} max={range.end} value={selected ?? ''} onChange={e => setSelected(e.target.value >= range.start && e.target.value <= range.end ? e.target.value : null)}/></label><button className="ui-secondary" onClick={() => setSelected(null)}>Show whole range</button></div>
       <h3 className="font-semibold">{selected ? `${dateLabel(selected)}: ${activeAbsent(entries, selected)} distinct active people with Approved leave` : 'Accessible list - whole displayed range'}</h3>

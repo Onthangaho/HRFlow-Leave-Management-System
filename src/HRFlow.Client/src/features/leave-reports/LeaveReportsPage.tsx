@@ -1,3 +1,4 @@
+import { ReportExport } from '../report-exports/ReportExport';
 import { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -95,6 +96,7 @@ function LeaveReportsWorkspace() {
         <p className="text-sm text-slate-600">Your filter inputs are retained. Try again to reload the last applied selection, or change filters and Apply.</p>
         <button className="ui-primary" disabled={report.isFetching} onClick={() => void report.refetch()}>Try again</button>
       </section>}
+      {!report.isPending && !report.isError && report.data && <ReportExport kind="department" selection={{start:report.data.start,end:report.data.end,departmentId:report.data.departmentId??''}} disabled={report.isFetching} />}
       {!report.isPending && !report.isError && report.data && <ReportResults report={report.data} refreshing={report.isFetching} />}
     </div>
   </div>;
