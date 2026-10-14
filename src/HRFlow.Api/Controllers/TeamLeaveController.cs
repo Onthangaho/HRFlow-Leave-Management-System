@@ -13,6 +13,15 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/leave-requests/team-summary")]
 public sealed class TeamLeaveController(IMediator mediator) : ControllerBase
 {
+    /// <summary>Returns a bounded decision preview and total count from the authenticated Manager's live scope.</summary>
+    [HttpGet("/api/v1/leave-requests/manager-attention")]
+    public async Task<IActionResult> Attention(CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor))
+            throw new ForbiddenException("A valid authenticated account is required.");
+        return Ok(await mediator.Send(new HRFlow.Application.Features.LeaveRequests.Queries.GetManagerAttention.GetManagerAttentionQuery(actor), cancellationToken));
+    }
+
     /// <summary>Returns intersecting approved leave for current same-department direct reports, including inactive history.</summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TeamLeaveSummaryDto>>> Get(

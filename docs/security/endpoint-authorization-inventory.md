@@ -193,3 +193,7 @@ All /api/v1/onboarding template, inspect, previews, review/read/revalidate/confi
 ## Current-data personal dashboard (#90)
 
 GET /api/v1/leave-requests/dashboard derives Identity actor server-side. Current active/activated Employee OR Manager membership and credential generation are checked in the existing deferred read snapshot together with owned requests/current policies. HR-only denied; combined roles additive. No employee parameter or cross-user enumeration. Application GetPersonalDashboardQueryHandler composes explicit minimal DTOs using the existing calculator; no writer reservation or sensitive timeline fields.
+
+## Manager workspace attention (#91)
+
+GET /api/v1/leave-requests/manager-attention derives Identity actor from authentication; current active/activated Manager membership and credentials checked with all-date Pending count/preview in one deferred read snapshot. Current same-department direct reports, self excluded. Team-summary now uses shared CurrentAccountAuthorization explicitly in its existing snapshot. No emails, evidence, notes or personnel context; no writer reservation or decision authority added.

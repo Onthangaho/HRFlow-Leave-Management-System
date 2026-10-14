@@ -3,7 +3,8 @@ using HRFlow.Application.Exceptions;
 using HRFlow.Application.Interfaces;
 using HRFlow.Domain.Enums;
 using HRFlow.Domain.Interfaces;
-using HRFlow.Domain.Interfaces.Services;
+using HRFlow.Application.Services;
+using HRFlow.Domain.Models.Employees;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,22 +40,17 @@ public sealed class GetTeamLeaveSummaryQueryValidator : AbstractValidator<GetTea
 /// <summary>Reads current reporting scope, live capabilities and approved history from a single database snapshot.</summary>
 public sealed class GetTeamLeaveSummaryQueryHandler(
     IApplicationDbContext context,
-    IEmployeeRoleLookupService roles,
+    CurrentAccountAuthorization authorization,
     ITeamLeaveReadTransaction transaction)
     : IRequestHandler<GetTeamLeaveSummaryQuery, IReadOnlyList<TeamLeaveSummaryDto>>
 {
-    private const string ManagerRole = "Manager";
+
 
     /// <summary>Includes inactive reports' preserved approvals, but never the manager's own leave.</summary>
     public Task<IReadOnlyList<TeamLeaveSummaryDto>> Handle(GetTeamLeaveSummaryQuery request, CancellationToken cancellationToken) =>
         transaction.ExecuteAsync<IReadOnlyList<TeamLeaveSummaryDto>>(async token =>
         {
-            var identityId = request.ActorIdentityId.ToString();
-            var manager = await context.Employees.AsNoTracking()
-                .SingleOrDefaultAsync(employee => employee.IdentityUserId == identityId, token);
-            if (manager is null || !manager.IsActive
-                || !(await roles.GetRolesByIdentityUserIdAsync(manager.IdentityUserId, token)).Contains(ManagerRole))
-                throw new ForbiddenException("An active account with current Manager membership is required to view team leave.");
+            var manager = await authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.Manager], token);
 
             var start = request.Start.ToDateTime(TimeOnly.MinValue);
             var end = request.End.ToDateTime(TimeOnly.MaxValue);
