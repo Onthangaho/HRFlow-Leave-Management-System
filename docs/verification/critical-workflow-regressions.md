@@ -169,3 +169,13 @@ and all listed broader coverage gaps are not claimed verified by the stdin-cance
 Hosted workflow status must be inspected after PR creation; local Windows/Chrome results do not
 prove Linux/bundled Chromium. Screenshots/traces/video and artifact uploads remain disabled for
 credential/privacy safety. No merge, deployment, issue closure or production/compliance claim.
+
+## Actual hosted attempt: PR #117
+
+[Workflow run 38616253537](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38616253537)
+was triggered on the PR. GitHub reported failure before any steps ran (job steps collection is empty).
+The check annotation states: **"The job was not started because your account is locked due to a billing issue."**
+This is an account/runner-start blocker, not a passing hosted suite or an observed assertion failure.
+No assertions were weakened and no billing/account settings were changed. An authorised account owner
+must resolve the restriction and rerun the workflow. Hosted Linux/bundled Chromium, build/lint and
+tests therefore remain unexecuted. Local results above remain the only execution evidence.

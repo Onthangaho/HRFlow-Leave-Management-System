@@ -121,3 +121,9 @@ matrices, other same-request race combinations, notification delivery/retention,
 failure and qualified statutory calculations remain future/manual gates. No invented legal calculation
 fixtures. #75/#22 and broader #76 completion stay open. See the verification report for actual run counts,
 durations, initial harness failures and temporary negative-control experiments.
+
+## Hosted verification status
+
+PR #117's first workflow attempt was blocked before any job steps ran: GitHub reports the account
+is locked due to a billing issue. Resolve that account restriction and rerun the workflow; neither
+Linux nor bundled Chromium is verified by this blocked run. See the committed verification report.
