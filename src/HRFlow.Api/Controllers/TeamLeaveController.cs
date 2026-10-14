@@ -13,6 +13,18 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/leave-requests/team-summary")]
 public sealed class TeamLeaveController(IMediator mediator) : ControllerBase
 {
+    /// <summary>Exports only the authenticated Manager's fresh current reporting scope, never an arbitrary employee list.</summary>
+    [HttpGet("export")]
+    public async Task<IActionResult> Export([FromQuery] DateOnly start, [FromQuery] DateOnly end, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor))
+            throw new ForbiddenException("A valid authenticated account is required.");
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        var file = await mediator.Send(new HRFlow.Application.Features.LeaveRequests.Queries.ExportLeaveReports.ExportTeamLeaveQuery(actor, start, end), cancellationToken);
+        return File(file.Content, "text/csv; charset=utf-8", file.FileName);
+    }
+
     /// <summary>Returns a bounded decision preview and total count from the authenticated Manager's live scope.</summary>
     [HttpGet("/api/v1/leave-requests/manager-attention")]
     public async Task<IActionResult> Attention(CancellationToken cancellationToken)

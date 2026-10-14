@@ -70,6 +70,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmployeeManagementService>(sp => sp.GetRequiredService<EmployeeManagementService>());
         services.AddScoped<ICsvOnboardingService, CsvOnboardingService>();
         services.AddScoped<IHrImportAttentionReader, HrImportAttentionReader>();
+        services.AddScoped<IReportCsvWriter, ReportCsvWriter>();
         services.AddHostedService<OnboardingCleanupWorker>();
         services.AddScoped<IEmployeeRoleLookupService, EmployeeRoleLookupService>();
         services.AddScoped<ILeaveApprovalAuthorizationService, LeaveApprovalAuthorizationService>();

@@ -201,3 +201,7 @@ GET /api/v1/leave-requests/manager-attention derives Identity actor from authent
 ## Current-data HR workspace (#92)
 
 GET /api/v1/reports/hr-workspace accepts bounded start/end and optional department only; Identity actor from authentication. Current active/activated HR membership/credentials and operational/report/trend/import reads share one deferred snapshot, no writer reservation. All-date organisation attention separate from filtered report. Own live import batch metadata/counts only; no raw row fields or invitation secrets. HR directory computed attention flags are HR-only. Existing onboarding Get requires current HR and actor-owned batch; new client deep link changes no authorization. Department reporting now uses shared current-account validation explicitly. No decisions/override added.
+
+## Current-data CSV report exports (#96 slice)
+
+GET `/api/v1/reports/department-leave/export`: current active/activated HR and credential version inside the existing department-report deferred snapshot; optional department/366-day scope. GET `/api/v1/leave-requests/team-summary/export`: current active/activated Manager and credential version inside the existing team-summary deferred snapshot, current same-department direct reports excluding self, 62-day range. Export handlers reuse those queries, then Infrastructure encodes minimal DTOs. No medical/private context, arbitrary actor or leave-transition audit; output capped 5,000 data rows/2 MiB. [Contract](../adr/0022-scoped-current-data-report-exports.md).
