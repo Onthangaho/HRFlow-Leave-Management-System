@@ -1,0 +1,12 @@
+{
+  "name": "hrflow-browser-regressions",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "node ../../src/HRFlow.Client/node_modules/typescript/bin/tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}
