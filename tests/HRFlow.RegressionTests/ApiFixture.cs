@@ -33,6 +33,8 @@ public sealed class ApiFixture : IAsyncDisposable
 
     /// <summary>Fresh private path shared only by this fixture's separate contexts/processes.</summary>
     public string DatabasePath => Path.Combine(root, "fixture.sqlite");
+    /// <summary>Only test code inspects generated image objects; this path is never returned by production APIs.</summary>
+    public string PrivateRoot => Path.Combine(root, "private");
     /// <summary>Private runtime descriptor read only by the browser harness, never committed or reported.</summary>
     public object BrowserState => new { password, api = urls[0].ToString().TrimEnd('/'), employees = employees.ToDictionary(e => e.Key, e => new { id = e.Value.Id, email = e.Value.Email, name = e.Value.FullName }), typeId = type.Id };
     /// <summary>Locates build outputs without relying on machine-specific repository paths.</summary>
@@ -46,10 +48,10 @@ public sealed class ApiFixture : IAsyncDisposable
         }
     }
     /// <summary>Disables fixture parallelism at suite level; each case still owns entirely separate persistent storage.</summary>
-    public static async Task<ApiFixture> StartAsync(string origin = "http://127.0.0.1:5173", CancellationToken cancellationToken = default)
+    public static async Task<ApiFixture> StartAsync(string origin = "http://127.0.0.1:5173", CancellationToken cancellationToken = default, int scannerPort = 0)
     {
         var fixture = new ApiFixture();
-        try { await fixture.InitializeAsync(origin, cancellationToken); return fixture; }
+        try { await fixture.InitializeAsync(origin, cancellationToken, scannerPort); return fixture; }
         catch { await fixture.DisposeAsync(); throw; }
     }
     /// <summary>Independent EF context for persisted-row assertions, not EF InMemory.</summary>
@@ -78,6 +80,16 @@ public sealed class ApiFixture : IAsyncDisposable
         if (token is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         if (body is not null) request.Content = JsonContent.Create(body);
         return client.SendAsync(request);
+    }
+    /// <summary>Real bounded multipart transport for generated image fixtures; credentials never enter assertion output.</summary>
+    public Task<HttpResponseMessage> UploadImageAsync(string token, byte[] bytes, Guid version, int server = 0)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, new Uri(urls[server], "api/v1/me/image"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var form = new MultipartFormDataContent(); var image = new ByteArrayContent(bytes);
+        image.Headers.ContentType = new MediaTypeHeaderValue("image/png"); form.Add(image, "file", "synthetic.png");
+        foreach (var (key, value) in new Dictionary<string, string> { ["expectedVersion"] = version.ToString(), ["x"] = "0", ["y"] = "0", ["size"] = "1" }) form.Add(new StringContent(value), key);
+        request.Content = form; return client.SendAsync(request);
     }
     /// <summary>Reads only known synthetic responses; assertions avoid raw HTTP payload dumps.</summary>
     public static async Task<JsonNode> JsonAsync(HttpResponseMessage response) => JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
@@ -110,7 +122,7 @@ public sealed class ApiFixture : IAsyncDisposable
     public object Creation(string email, string number) => new { fullName = "Synthetic import", email, employeeNumber = number,
         employmentStartDate = "2020-01-01", departmentId = department, roles = new[] { "Employee" } };
 
-    private async Task InitializeAsync(string origin, CancellationToken cancellationToken)
+    private async Task InitializeAsync(string origin, CancellationToken cancellationToken, int scannerPort)
     {
         Directory.CreateDirectory(root); RestrictDirectory(root); Directory.CreateDirectory(Path.Combine(root, "private"));
         await using (var context = Context())
@@ -161,6 +173,7 @@ public sealed class ApiFixture : IAsyncDisposable
                 ["ASPNETCORE_ENVIRONMENT"]="Development", ["ASPNETCORE_URLS"]="http://127.0.0.1:0", ["AllowedHosts"]="127.0.0.1",
                 ["ConnectionStrings__DefaultConnection"]="Data Source="+DatabasePath+";Foreign Keys=True;Default Timeout=3",
                 ["Storage__LocalFileSystem"]="true", ["Storage__PrivateFilesRoot"]=Path.Combine(root,"private"),
+                ["Documents__ClamAvPort"] = scannerPort.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 ["Authentication__Jwt__Issuer"]="HRFlow.Regression", ["Authentication__Jwt__Audience"]="HRFlow.Regression.Client",
                 ["Authentication__Jwt__SigningKey"]=key, ["Authentication__Jwt__RefreshTokenPepper"]=pepper,
                 ["Activation__ApplicationOrigin"]=origin, ["Activation__Delivery"]="PrivatePickup", ["Activation__PickupProfile"]=pickupProfile,
@@ -168,6 +181,20 @@ public sealed class ApiFixture : IAsyncDisposable
                 ["Logging__LogLevel__Microsoft.AspNetCore.Routing.EndpointMiddleware"]="Information",
                 ["Logging__LogLevel__Microsoft.Hosting.Lifetime"]="Information",
                 ["Seeding__HrAdministratorPassword"]=password,["Seeding__EmployeePassword"]=password,["Seeding__ManagerPassword"]=password,["Seeding__SeniorManagerPassword"]=password }) start.Environment[name] = value;
+            await StartServerAsync(start, index, cancellationToken);
+        }
+    }
+    /// <summary>Restarts only owned API/worker processes against the same disposable persisted store.</summary>
+    public async Task RestartAsync(CancellationToken cancellationToken = default)
+    {
+        var starts = processes.Select(p => p.StartInfo).ToArray();
+        foreach (var process in processes)
+        { if (!process.HasExited) { process.Kill(true); await process.WaitForExitAsync(cancellationToken).WaitAsync(TimeSpan.FromSeconds(5)); } process.Dispose(); }
+        processes.Clear();
+        for (var index = 0; index < starts.Length; index++) await StartServerAsync(starts[index], index, cancellationToken);
+    }
+    private async Task StartServerAsync(ProcessStartInfo start, int index, CancellationToken cancellationToken)
+    {
             var process = new Process { StartInfo = start };
             var listening = new TaskCompletionSource<Uri>(TaskCreationOptions.RunContinuationsAsynchronously);
             process.OutputDataReceived += (_, line) => { Observe(line.Data); const string prefix = "Now listening on: "; var value = line.Data; if (value is not null && value.Contains(prefix)) listening.TrySetResult(new Uri(value[(value.IndexOf(prefix, StringComparison.Ordinal) + prefix.Length)..].Trim())); }; process.ErrorDataReceived += (_, _) => { };
@@ -181,7 +208,6 @@ public sealed class ApiFixture : IAsyncDisposable
                 catch (HttpRequestException) { }
                 await Task.Delay(25, timeout.Token); // Readiness polling, never concurrency ordering.
             }
-        }
     }
     private void Observe(string? line)
     {

@@ -12,7 +12,7 @@ namespace HRFlow.Infrastructure.Persistence;
 /// Persists application data and the ASP.NET Core Identity schema for the HRFlow backend.
 /// Provides access to employees linked to identity users and all domain entities.
 /// </summary>
-public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IApplicationDbContext, HRFlow.Application.Interfaces.IApplicationDocumentContext
+public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IApplicationDbContext, HRFlow.Application.Interfaces.IApplicationDocumentContext, HRFlow.Application.Interfaces.IProfileImageContext
 {
     /// <summary>
     /// Creates a new EF Core context for HRFlow with the supplied options.
@@ -27,6 +27,7 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     public DbSet<WeeklyScheduleRevision> WeeklyScheduleRevisions => Set<WeeklyScheduleRevision>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<SupportingDocument> SupportingDocuments => Set<SupportingDocument>();
+    public DbSet<ProfileImage> ProfileImages => Set<ProfileImage>();
     public DbSet<DocumentAccessEntry> DocumentAccessEntries => Set<DocumentAccessEntry>();
     public DbSet<AccountSettings> AccountSettings => Set<AccountSettings>();
     public DbSet<LeaveNotificationEvent> LeaveNotificationEvents => Set<LeaveNotificationEvent>();
@@ -46,6 +47,9 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<ProfileImage>().HasOne<Employee>().WithMany().HasForeignKey(i => i.OwnerId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<ProfileImage>().Property(i => i.Version).IsConcurrencyToken();
+        modelBuilder.Entity<ProfileImage>().HasIndex(i => i.OwnerId).IsUnique().HasFilter("Status = 'Current'");
         modelBuilder.Entity<WeeklyScheduleRevision>().HasIndex(s => new { s.EmployeeId, s.EffectiveFrom }).IsUnique();
         modelBuilder.Entity<WeeklyScheduleRevision>().Property(s => s.Name).HasMaxLength(100);
         modelBuilder.Entity<WeeklyScheduleRevision>().HasOne<Employee>().WithMany().HasForeignKey(s => s.EmployeeId).OnDelete(DeleteBehavior.Restrict);

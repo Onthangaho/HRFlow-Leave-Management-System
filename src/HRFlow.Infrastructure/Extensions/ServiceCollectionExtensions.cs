@@ -36,6 +36,10 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<HRFlowDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
         services.AddScoped<IApplicationDocumentContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
+        services.AddScoped<IProfileImageContext>(sp => sp.GetRequiredService<HRFlowDbContext>());
+        services.AddScoped<HRFlow.Application.Services.ProfileImageService>();
+        services.AddScoped<IProfileImageStorage, PrivateProfileImageStorage>();
+        services.AddHostedService<ProfileImageCleanupWorker>();
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
             {
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);

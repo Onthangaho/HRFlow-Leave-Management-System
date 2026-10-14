@@ -1,4 +1,5 @@
 import { ScheduleRevisions } from '../employees/components/ScheduleWorkspace';
+import { ProfileImageEditor } from './ProfileImage';
 import { useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ function AccountLinks() {
 export function ProfilePage() {
   const query = useOwnProfile();
   return <div className="workspace-page mx-auto max-w-3xl space-y-5"><AccountLinks />
+    <ProfileImageEditor />
     {query.isPending && <p className="ui-panel" role="status">Loading your profile…</p>}
     {query.isError && <section className="ui-error" role="alert"><p>{problemMessage(query.error)}</p><button className="ui-secondary mt-3" disabled={query.isFetching} onClick={() => void query.refetch()}>Retry profile</button></section>}
     {query.data && <ProfileForm initial={query.data} />}
