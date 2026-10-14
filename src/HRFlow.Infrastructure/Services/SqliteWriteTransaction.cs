@@ -71,9 +71,11 @@ public sealed class SqliteWriteTransaction(HRFlowDbContext context, IRequestCred
         catch (DbUpdateException exception) when (exception.InnerException is SqliteException unique
             && unique.SqliteExtendedErrorCode == SqliteUniqueConstraint
             && (unique.Message.Contains("Employees.EmployeeNumber", StringComparison.Ordinal)
-                || unique.Message.Contains("WeeklyScheduleRevisions.EmployeeId", StringComparison.Ordinal)))
+                || unique.Message.Contains("WeeklyScheduleRevisions.EmployeeId", StringComparison.Ordinal)
+                || unique.Message.Contains("OnboardingBatches.ActorId", StringComparison.Ordinal)
+                || unique.Message.Contains("OnboardingScheduleTemplates.Code", StringComparison.Ordinal)))
         {
-            throw new WriteConflictException("Employee number or schedule effective date is already assigned. Reload and review before saving.");
+            throw new WriteConflictException("Employee number, schedule date/code or import confirmation key is already assigned. Reload and review before saving.");
         }
         catch (DbUpdateException exception) when (exception.InnerException is SqliteException reference && IsReferenceConstraint(reference)
             && exception.Entries.Any(entry => entry.Entity is LeaveType or LeavePolicy or LeaveRequest))

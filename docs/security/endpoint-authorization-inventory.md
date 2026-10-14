@@ -185,3 +185,7 @@ Authoritative service: LeaveNotificationService through CurrentAccountAuthorizat
 GET /api/v1/employees/{id}/schedules: current active/activated HR only; EmploymentScheduleService.GetAsync rechecks membership and reads target/history in one deferred snapshot.
 POST to the same route: current active/activated HR only; AppendAsync rechecks under the existing SQLite writer reservation, with credential-generation protection, active target and original schedule version. No arbitrary actor accepted.
 Employee create/update retain current transactional HR checks; employment confirmation joins the existing atomic Identity/profile/role/manager write. GET /api/v1/me adds only the server-derived account own read-only employment/schedule projection in its current protected read snapshot.
+
+## CSV onboarding (#89)
+
+All /api/v1/onboarding template, inspect, previews, review/read/revalidate/confirm/cancel/results and schedule-template routes require current active/activated HR and current credentials. Batch scope is initiating Identity only, with safe 404 for other actors. Read authorization/data share the existing deferred snapshot. Protected writes recheck after the SQLite writer reservation, including each row; shared employee creation validates current relationships and uniqueness. No anonymous activation tokens are returned here; redemption remains the existing separate token-authorized route.

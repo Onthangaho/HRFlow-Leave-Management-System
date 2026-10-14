@@ -199,6 +199,14 @@ public static class BackupRestoreService
         using var revoke = connection.CreateCommand(); revoke.Transaction = transaction;
         revoke.CommandText = "UPDATE RefreshTokens SET RevokedAtUtc=$now WHERE RevokedAtUtc IS NULL";
         revoke.Parameters.AddWithValue("$now", DateTime.UtcNow); revoke.ExecuteNonQuery();
+        using var batches = connection.CreateCommand(); batches.Transaction = transaction;
+        batches.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='OnboardingBatches'";
+        if (Convert.ToInt32(batches.ExecuteScalar()) != 0)
+        {
+            batches.CommandText = "UPDATE OnboardingBatches SET Cancelled=1, ExpiresAtUtc=$now, Version=$version";
+            batches.Parameters.AddWithValue("$now", DateTime.UtcNow); batches.Parameters.AddWithValue("$version", Guid.NewGuid().ToString());
+            batches.ExecuteNonQuery();
+        }
         transaction.Commit(); return ids.Count;
     }
 
