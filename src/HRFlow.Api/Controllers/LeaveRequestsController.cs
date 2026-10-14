@@ -31,6 +31,15 @@ public class LeaveRequestsController : ControllerBase
         return Ok(await _mediator.Send(new GetLeaveRequestTimelineQuery(actor, id), cancellationToken));
     }
 
+    /// <summary>Returns only the authenticated employee's current-model dashboard from one live authorization/data snapshot.</summary>
+    [HttpGet("dashboard"), Authorize(Roles = PersonalLeaveRoles)]
+    public async Task<IActionResult> GetDashboard(CancellationToken token)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor))
+            throw new ForbiddenException("A valid authenticated account is required.");
+        return Ok(await _mediator.Send(new HRFlow.Application.Features.LeaveRequests.Queries.GetPersonalDashboard.GetPersonalDashboardQuery(actor), token));
+    }
+
     private const string HrAdministratorOnlyPolicy = "HrAdministratorOnly";
     private const string ManagerRoleName = "Manager";
     private const string PersonalLeaveRoles = "Employee,Manager";
