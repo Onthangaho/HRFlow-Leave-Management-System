@@ -1,3 +1,4 @@
+import { PrivateAvatar } from '../../features/account/ProfileImage';
 import { useOwnProfile } from '../../features/account/api';
 import { useAccountTheme } from '../../features/account/useAccountTheme';
 import { NotificationControl } from '../../features/notifications/NotificationsPage';
@@ -88,7 +89,7 @@ export function ApplicationShell() {
           <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Your workspace</p><h1 className="mt-1 break-words text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1></div>
         </div>
         <NotificationControl />
-        <div className="shell-account"><span className="shell-avatar" aria-hidden="true">{initials}</span><div className="min-w-0"><p className="break-all text-sm font-semibold text-slate-800">{displayName}</p><p className="mt-1 text-xs leading-5 text-slate-500">{user?.roles.join(' · ') || 'No assigned capabilities'}</p></div></div>
+        <div className="shell-account"><PrivateAvatar fallback={initials} className="shell-avatar" /><div className="min-w-0"><p className="break-all text-sm font-semibold text-slate-800">{displayName}</p><p className="mt-1 text-xs leading-5 text-slate-500">{user?.roles.join(' · ') || 'No assigned capabilities'}</p></div></div>
       </header>
       <main ref={content} id="workspace-content" tabIndex={-1} className="shell-content">
         <Outlet key={`${user?.id}:${sessionVersion}`} />

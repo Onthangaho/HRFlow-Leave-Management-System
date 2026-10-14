@@ -1,4 +1,5 @@
 import type { Employee } from '../types';
+import { PrivateAvatar } from '../../account/ProfileImage';
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -27,6 +28,7 @@ export function EmployeeTable({ onResend, employees, onEdit, editing, onDeactiva
           {employees.map(employee => (
             <tr key={employee.id}>
               <th scope="row" className="px-4 py-4 text-left font-medium">
+                <PrivateAvatar employeeId={employee.id} fallback={employee.fullName.slice(0, 2).toUpperCase()} className="mb-2 h-10 w-10" />
                 <div className="max-w-60 break-words">{employee.fullName}</div><p className="text-xs">Number: {employee.employeeNumber ?? 'Unknown'} ? Start: {employee.employmentStartDate ?? 'Unknown'}</p><div className="max-w-60 break-words text-sm font-normal text-slate-600">{employee.email}</div>
               </th>
               <td className="px-4 py-4 text-sm">

@@ -70,6 +70,13 @@ metadata against clean/quarantine blob sizes and checksums before completing bac
 See [the attachment-aware rehearsal](../verification/private-supporting-documents.md) and
 [document operations](supporting-documents.md). This additional local drill does not establish future
 profile-image, retention/legal-hold, Linux or large-store recovery. Repeat after relevant changes.
+
+The #95 slice now extends integrity checks and retained Windows recovery verification to processed
+profile images, pending/removed metadata and removal markers; see
+[image operations](private-profile-images.md) and [actual evidence](../verification/private-profile-images.md).
+This does not establish Linux, load, all-role restored browser or bound-medical-evidence recovery.
+Use matching application/schema/tool builds: the new image migration changes expected schema even
+though the encrypted package format remains version 1. Restore does not silently migrate older packages.
 Clean documents retain quarantine copies; the existing 100 MiB package bound can reject a store
 containing five maximum-size documents plus the database. Never purge evidence to make it fit.
 

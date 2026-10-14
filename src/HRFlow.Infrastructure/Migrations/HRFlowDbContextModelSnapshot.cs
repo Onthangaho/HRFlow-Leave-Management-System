@@ -599,6 +599,45 @@ namespace HRFlow.Infrastructure.Migrations
                     b.ToTable("OnboardingScheduleTemplates");
                 });
 
+            modelBuilder.Entity("HRFlow.Domain.Entities.ProfileImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Checksum")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique()
+                        .HasFilter("Status = 'Current'");
+
+                    b.ToTable("ProfileImages");
+                });
+
             modelBuilder.Entity("HRFlow.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -992,6 +1031,15 @@ namespace HRFlow.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("LeavePolicy");
+                });
+
+            modelBuilder.Entity("HRFlow.Domain.Entities.ProfileImage", b =>
+                {
+                    b.HasOne("HRFlow.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("HRFlow.Domain.Entities.SupportingDocument", b =>

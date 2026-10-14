@@ -22,10 +22,10 @@ South African leave requirements; qualified review is required before statutory 
 
 | Area | Current state |
 |---|---|
-| Completed milestones | Current-feature administration, secure lifecycle/session handling, documents/requirements, employment/onboarding, dashboards/exports and the first focused regression suite are merged through **PR #117**, confirmed 14 October 2026. Hosted CI is blocked by an account billing restriction; local execution is separate evidence. |
-| Active milestone | **#97 current-feature synthetic pitch slice**: isolated Development fixture, real three-role browser rehearsal and an honest speaking runbook. Qualified legal/calculation gates #75/#22 and broader reliability/production gates remain outstanding. |
-| Current/next work | **feat/repeatable-pitch-demo**, based on merged PR #117/current main: new private migrated store, generated credentials, real CSV/activation/ClamAV evidence/decision/history/notification/calendar/report/export workflows and reviewed synthetic screenshots. See ADR 0024, operations/pitch-rehearsal.md and verification/pitch-rehearsal.md for executed evidence and limits. No product/schema/dependency changes or deployment. #97 remains open; documentation/tooling is prepared for independent review; not merged or deployed. |
-| Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. Profile images, statutory/cycle calculations, production invitation delivery/deployment, comprehensive reliability/accessibility/load and medical payment/absence workflows remain outstanding. Current-feature activation/onboarding, profiles/preferences, notifications, dashboards and exports are shipped slices, not complete legal/production gates. Focused maintained xUnit/Playwright regressions are authorised under #76; broader coverage remains incremental. |
+| Completed milestones | Current-feature administration, lifecycle/session handling, documents, onboarding, workspaces, exports, focused regression gates and synthetic pitch rehearsal are merged through **PR #118**, confirmed 14 October 2026. Hosted CI remains billing-blocked; local evidence is separate. |
+| Active milestone | **#95 private profile images**: separate own-account raster processing, real fail-closed scanner transport, versioned publication/removal and scoped HR visibility. |
+| Current/next work | **feat/private-profile-images**, based on current main/PR #118. Optional legacy initials; image-only lifecycle/storage; Profile crop/upload/remove and authenticated header/HR thumbnails. See ADR 0025, operations/private-profile-images.md and verification/private-profile-images.md for actual checks and gaps. Prepared for independent PR review; not merged or deployed. No statutory calculation or medical-document scope change. |
+| Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. Statutory/cycle calculations, production invitation delivery/deployment, comprehensive reliability/accessibility/load and medical payment/absence workflows remain outstanding. Current-feature activation/onboarding, profiles/preferences, notifications, dashboards and exports are shipped slices, not complete legal/production gates. Focused maintained xUnit/Playwright regressions are authorised under #76; broader coverage remains incremental. |
 | Current backend | .NET 8 ASP.NET Core **Controllers** (migrated from Minimal APIs), EF Core 8 with SQLite, ASP.NET Core Identity, JWT bearer auth, MediatR, FluentValidation, Swagger, and layered Domain/Application/Infrastructure/API projects. |
 | Current frontend | React 19 + TypeScript 6 Vite SPA, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, React Hook Form, and Zod. |
 
@@ -78,8 +78,7 @@ HRFlow.Client          -> React + TypeScript SPA
   #93 durable in-app delivery is merged through PR #105; #94 profile/preferences are merged through PR #106; no production deployment. Do not claim a notification service exists from its name in
   historical plans. No plaintext-password CSV or secrets in logs/previews/reports.
 - No multi-tenancy or payroll integration. Private supporting documents (#83) and company configuration/submission snapshots (#84 slice) are merged
-  with quarantine, access and failure gates; statutory/conditional requirements (#84), profile images
-  (#95), approved bound-evidence retention/hold administration and production verification remain deferred. See
+  with quarantine, access and failure gates; statutory/conditional requirements (#84), approved bound-evidence retention/hold administration and production verification remain deferred. See
   `docs/planning/01-discovery-and-planning.md` §4 and the roadmap for current boundaries.
 
 ## Verification (non-negotiable)

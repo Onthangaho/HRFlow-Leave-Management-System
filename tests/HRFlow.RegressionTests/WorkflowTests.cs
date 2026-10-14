@@ -22,6 +22,7 @@ public sealed class WorkflowTests
         Assert.Equal(HttpStatusCode.Forbidden, (await fixture.SendAsync(token, "employees")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await fixture.SendAsync(token, "leave-requests/dashboard")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await fixture.SendAsync(token, "leave-requests/manager-attention")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await fixture.SendAsync(token, "me/image")).StatusCode);
     }
 
     /// <summary>A request entering through a valid Manager token while another writer holds protection must recheck current permission.</summary>
@@ -69,6 +70,7 @@ public sealed class WorkflowTests
         if (change == "inactive") (await context.Employees.FindAsync(fixture.Employee(actor).Id))!.Deactivate(fixture.Employee("hr").Id, "Synthetic lifecycle");
         if (change == "pending") (await context.Users.FindAsync(fixture.User(actor).Id))!.RequiresActivation = true;
         await context.SaveChangesAsync();
+        Assert.Equal(expected, (int)(await fixture.SendAsync(token, "me/image")).StatusCode);
         Assert.Equal(expected, (int)(await fixture.SendAsync(token, actor == "hr" ? "employees" : actor == "employee" ? "leave-requests/dashboard" : "leave-requests/team-summary?start=2026-01-01&end=2026-01-31")).StatusCode);
     }
 

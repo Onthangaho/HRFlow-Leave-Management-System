@@ -1,4 +1,5 @@
-@import "tailwindcss";
+/* Explicit source root keeps image/crop utilities identical in app and repository-root browser fixtures. */
+@import "tailwindcss" source(".");
 
 /* One semantic theme layer adapts shared components and the established utility palette. */
 :root {

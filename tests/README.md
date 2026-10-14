@@ -122,8 +122,32 @@ failure and qualified statutory calculations remain future/manual gates. No inve
 fixtures. #75/#22 and broader #76 completion stay open. See the verification report for actual run counts,
 durations, initial harness failures and temporary negative-control experiments.
 
-## Hosted verification status
+## Profile-image extension (#95)
+
+`ProfileImageTests` retains bounded JPEG/PNG/EXIF processing, unsafe input/decode limits,
+real scanner outage, labelled controlled adverse scanner replies, independent storage integrity,
+two-process paused publication/removal and actual API/worker restart compensation.
+`ProfileImageRecoveryTests` verifies encrypted image/lifecycle/marker recovery, security invalidation
+and missing-current-blob refusal. Existing live-access cases now check the image endpoint too.
+
+With no `HRFLOW_TEST_CLAMAV_PORT`, the retained HTTP lifecycle test asserts fail-closed behavior.
+Explicitly supplying a real scanner enables its owner/HR/Manager, stale/two-process replacement,
+injected late database rollback and versioned removal path. This is not a skipped test or a
+clean-verdict substitute. Scanner-free CI cannot establish the positive path.
+
+The separate `profile-images.scanner.ts` browser suite requires real ClamAV and is selected with
+`HRFLOW_IMAGE_SCANNER_TESTS=1`; see [exact commands](../docs/operations/private-profile-images.md).
+Its main test uses real HTTP/ClamAV/browser interactions. Two labelled response-barrier tests use
+actual upstream writes and controlled response delays across replacement sessions. Credentials and
+responses stay in private fixtures; routine traces/video/failure screenshots remain disabled.
+
+See [executed evidence and outstanding image checks](../docs/verification/private-profile-images.md).
+
+## Hosted verification status (unchanged)
 
 PR #117's first workflow attempt was blocked before any job steps ran: GitHub reports the account
 is locked due to a billing issue. Resolve that account restriction and rerun the workflow; neither
 Linux nor bundled Chromium is verified by this blocked run. See the committed verification report.
+
+With real ClamAV configured, `HRFLOW_IMAGE_SCANNER_TESTS=all` runs both existing and image
+browser gates in one invocation; `1` remains the image-only selection.

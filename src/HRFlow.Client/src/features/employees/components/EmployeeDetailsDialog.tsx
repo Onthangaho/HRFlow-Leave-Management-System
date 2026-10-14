@@ -1,6 +1,7 @@
 import { ScheduleWorkspace } from './ScheduleWorkspace';
 import { ConfirmationDialog } from '../../../components/ConfirmationDialog';
 import type { Employee } from '../types';
+import { PrivateAvatar } from '../../account/ProfileImage';
 
 /** HR-only preserved lifecycle details never offer editing, reactivation or deletion. */
 export function EmployeeDetailsDialog({ employee, returnFocus, onClose }: {
@@ -17,6 +18,7 @@ export function EmployeeDetailsDialog({ employee, returnFocus, onClose }: {
     ['Reason', employee.deactivationReason || 'Not recorded'],
   ];
   return <ConfirmationDialog title="Employee details" confirmLabel="Close details" neutral returnFocus={returnFocus} onCancel={onClose} onConfirm={onClose}>
+    <PrivateAvatar employeeId={employee.id} fallback={employee.fullName.slice(0, 2).toUpperCase()} className="h-16 w-16" />
     <dl className="space-y-3">{fields.map(([label, value]) => <div key={label}>
       <dt className="font-semibold text-slate-900">{label}</dt><dd className="whitespace-pre-wrap break-words">{value}</dd>
     </div>)}</dl>

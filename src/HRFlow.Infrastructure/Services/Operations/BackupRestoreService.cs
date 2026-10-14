@@ -55,9 +55,9 @@ public static class BackupRestoreService
             var snapshot = Path.Combine(stage, DatabaseName);
             using (var source = Open(database, SqliteOpenMode.ReadOnly))
             using (var target = Open(snapshot, SqliteOpenMode.ReadWriteCreate)) source.BackupDatabase(target);
+            var schema = ReadSchema(snapshot);
             CheckDatabase(snapshot);
             CheckDocuments(snapshot, privateRoot);
-            var schema = ReadSchema(snapshot);
             var inventory = new List<InventoryFile>();
             using var archiveBytes = new MemoryStream();
             using (var archive = new ZipArchive(archiveBytes, ZipArchiveMode.Create, true))
@@ -350,6 +350,25 @@ public static class BackupRestoreService
             var path = Path.Combine(privateRoot, "documents", area, id.ToString("N") + ".blob");
             if (!File.Exists(path) || new FileInfo(path).Length != reader.GetInt64(2) || Hash(path) != reader.GetString(3))
                 throw new InvalidDataException("Required private document content is missing or inconsistent. Reconcile the evidence store before recovery.");
+        }
+        reader.Close();
+        command.CommandText = "SELECT Id, Status, Size, Checksum FROM ProfileImages";
+        using var images = command.ExecuteReader();
+        while (images.Read())
+        {
+            if (!Guid.TryParse(images.GetString(0), out var id)) throw new InvalidDataException("Invalid image identifier.");
+            var clean = Path.Combine(privateRoot, "profile-images", "clean", id.ToString("N") + ".blob");
+            var staging = Path.Combine(privateRoot, "profile-images", "staging", id.ToString("N") + ".blob");
+            var removed = Path.Combine(privateRoot, "profile-images", "removed", id.ToString("N") + ".blob");
+            var status = images.GetString(1);
+            if (status == "Current" && images.GetInt64(2) > 0
+                && (!File.Exists(clean) || new FileInfo(clean).Length != images.GetInt64(2) || Hash(clean) != images.GetString(3) || File.Exists(removed)))
+                throw new InvalidDataException("Required profile image is missing or inconsistent. Reconcile before recovery.");
+            if (status == "Current" && images.GetInt64(2) == 0 && (File.Exists(clean) || File.Exists(removed)))
+                throw new InvalidDataException("Absent profile image has inconsistent content or publication markers.");
+            if (status == "Removed" && (!File.Exists(removed) || File.Exists(clean) || File.Exists(staging)))
+                throw new InvalidDataException("Profile image removal is incomplete. Run cleanup before recovery.");
+            if (status is not ("Current" or "Removed" or "Processing")) throw new InvalidDataException("Unsupported image lifecycle.");
         }
     }
 
