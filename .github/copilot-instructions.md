@@ -22,10 +22,10 @@ South African leave requirements; qualified review is required before statutory 
 
 | Area | Current state |
 |---|---|
-| Completed milestones | Authentication, administration, reporting, audit, shared shell, decision notes, activation and password/session revocation are merged through **PR #104**, confirmed 9 October 2026. Existing backlog reconciliation and qualified legal/test-convention gates remain independent. |
-| Active milestone | **#76 first focused regression phase**: maintained xUnit/Playwright critical workflow gates, reproducible migration fixtures and restricted CI. Legal calculation gate #75 remains unchanged. |
-| Current/next work | **PR #116 scoped exports is merged**, confirmed 14 October 2026. **test/critical-workflow-regressions implements the explicitly authorised first #76 slice for review**: real file-backed SQLite migrations, generated private Identity fixtures, two API processes with explicit barriers, persisted status/audit/duplicate/version checks, controlled browser session races, and focused CI. See tests/README.md, ADR 0023 and verification/critical-workflow-regressions.md for actual results, negative-control evidence and coverage limits. No product authorization bypass or diagnostic endpoint. #76 remains open; prepared for independent review, not merged or deployed. |
-| Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. This authorised roadmap now PLANS secure evidence/images, activation/CSV, profiles/password/preferences, notifications and professional dashboards; none are shipped by this planning work. General email/SMS delivery remains future scope; secure activation delivery requires review. Focused maintained xUnit/Playwright regression gates are explicitly authorised under #76; broader coverage remains incremental. |
+| Completed milestones | Current-feature administration, secure lifecycle/session handling, documents/requirements, employment/onboarding, dashboards/exports and the first focused regression suite are merged through **PR #117**, confirmed 14 October 2026. Hosted CI is blocked by an account billing restriction; local execution is separate evidence. |
+| Active milestone | **#97 current-feature synthetic pitch slice**: isolated Development fixture, real three-role browser rehearsal and an honest speaking runbook. Qualified legal/calculation gates #75/#22 and broader reliability/production gates remain outstanding. |
+| Current/next work | **feat/repeatable-pitch-demo**, based on merged PR #117/current main: new private migrated store, generated credentials, real CSV/activation/ClamAV evidence/decision/history/notification/calendar/report/export workflows and reviewed synthetic screenshots. See ADR 0024, operations/pitch-rehearsal.md and verification/pitch-rehearsal.md for executed evidence and limits. No product/schema/dependency changes or deployment. #97 remains open; documentation/tooling is prepared for independent review; not merged or deployed. |
+| Deferred work | Session persistence across refresh, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation remain excluded. Profile images, statutory/cycle calculations, production invitation delivery/deployment, comprehensive reliability/accessibility/load and medical payment/absence workflows remain outstanding. Current-feature activation/onboarding, profiles/preferences, notifications, dashboards and exports are shipped slices, not complete legal/production gates. Focused maintained xUnit/Playwright regressions are authorised under #76; broader coverage remains incremental. |
 | Current backend | .NET 8 ASP.NET Core **Controllers** (migrated from Minimal APIs), EF Core 8 with SQLite, ASP.NET Core Identity, JWT bearer auth, MediatR, FluentValidation, Swagger, and layered Domain/Application/Infrastructure/API projects. |
 | Current frontend | React 19 + TypeScript 6 Vite SPA, Tailwind CSS 4, React Router 7, TanStack Query 5, Axios, React Hook Form, and Zod. |
 
@@ -77,8 +77,8 @@ HRFlow.Client          -> React + TypeScript SPA
 - General email/SMTP status notifications remain deferred; #79 provides local private activation pickup;
   #93 durable in-app delivery is merged through PR #105; #94 profile/preferences are merged through PR #106; no production deployment. Do not claim a notification service exists from its name in
   historical plans. No plaintext-password CSV or secrets in logs/previews/reports.
-- No multi-tenancy or payroll integration. Private supporting documents (#83) are implemented locally
-  for review with quarantine, access and failure gates; remaining conditional requirements (#84), profile images
+- No multi-tenancy or payroll integration. Private supporting documents (#83) and company configuration/submission snapshots (#84 slice) are merged
+  with quarantine, access and failure gates; statutory/conditional requirements (#84), profile images
   (#95), approved bound-evidence retention/hold administration and production verification remain deferred. See
   `docs/planning/01-discovery-and-planning.md` §4 and the roadmap for current boundaries.
 
