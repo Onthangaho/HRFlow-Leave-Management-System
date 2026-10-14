@@ -68,6 +68,7 @@ function useRefreshManagementQueries() {
       client.invalidateQueries({ queryKey: employeesQueryKey(user.id) }),
       client.invalidateQueries({ queryKey: ['pending-leave-requests', user.id] }),
       client.invalidateQueries({ queryKey: ['organisation-pending-leave-requests', user.id] }),
+      client.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
       client.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] }),
       client.invalidateQueries({ queryKey: ['team-leave-summary', user.id, sessionVersion] }),
       client.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
@@ -106,6 +107,7 @@ export function useDeactivateEmployee() {
     },
     onSuccess: async (_, { employee }) => {
       if (!user || getSessionVersion() !== sessionVersion || employee.identityUserId === user.id) return;
+      await client.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] });
       await client.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] });
       await Promise.all(['employees', 'leave-balances', 'employee-leave-history', 'pending-leave-requests',
         'organisation-pending-leave-requests', 'leave-types', 'managed-leave-types', 'leave-policies',

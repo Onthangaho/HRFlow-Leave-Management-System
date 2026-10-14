@@ -88,6 +88,7 @@ export function useApproveLeaveRequest() {
     onSuccess: async () => {
       if (!user?.id || getSessionVersion() !== sessionVersion) return;
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['personal-leave-dashboard', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
@@ -112,6 +113,7 @@ export function useRejectLeaveRequest() {
     onSuccess: async () => {
       if (!user?.id || getSessionVersion() !== sessionVersion) return;
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['personal-leave-dashboard', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
@@ -158,6 +160,7 @@ export function useCancelLeaveRequest() {
       }
 
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['personal-leave-dashboard', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: employeeLeaveHistoryQueryKey(user.id) }),

@@ -19,7 +19,7 @@ public sealed class GetEmployeesQuery : IRequest<IReadOnlyList<GetEmployeeDto>>
 /// <summary>Combines profile/reporting IDs with complete Identity roles so edits preserve existing capabilities.</summary>
 public sealed class GetEmployeesQueryHandler(
     IApplicationDbContext context, IEmployeeRoleLookupService roleLookup,
-    ILeaveReportingReadTransaction transaction, CurrentAccountAuthorization authorization, IAccountActivationService activation) : IRequestHandler<GetEmployeesQuery, IReadOnlyList<GetEmployeeDto>>
+    ILeaveReportingReadTransaction transaction, CurrentAccountAuthorization authorization, IAccountActivationService activation, TimeProvider clock) : IRequestHandler<GetEmployeesQuery, IReadOnlyList<GetEmployeeDto>>
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<GetEmployeeDto>> Handle(GetEmployeesQuery request, CancellationToken cancellationToken)
@@ -33,6 +33,9 @@ public sealed class GetEmployeesQueryHandler(
                 .Include(e => e.Department).Include(e => e.Manager)
                 .Where(e => !request.EmployeeId.HasValue || e.Id == request.EmployeeId)
                 .OrderBy(e => e.FullName).ToListAsync(cancellationToken);
+            var today = HRFlow.Application.Features.LeaveRequests.Queries.GetPersonalDashboard.GetPersonalDashboardQueryHandler.BusinessDate(clock.GetUtcNow());
+            var schedules = await context.WeeklyScheduleRevisions.AsNoTracking().Select(s => new { s.EmployeeId, s.EffectiveFrom }).ToListAsync(token);
+            var scheduleDates = schedules.ToLookup(s => s.EmployeeId, s => s.EffectiveFrom);
             var actorIds = employees.Where(e => e.DeactivatedById.HasValue)
                 .Select(e => e.DeactivatedById!.Value).Distinct().ToArray();
             var actorNames = await context.Employees.AsNoTracking().Where(e => actorIds.Contains(e.Id))
@@ -41,8 +44,10 @@ public sealed class GetEmployeesQueryHandler(
             foreach (var employee in employees)
             {
                 var state = await activation.GetStatusAsync(employee.IdentityUserId, cancellationToken);
+                var attention = EmploymentAttention.For(employee, today, scheduleDates[employee.Id]);
                 results.Add(new GetEmployeeDto
                 {
+                    NeedsEmploymentFacts = attention.NeedsEmploymentFacts, NeedsCurrentSchedule = attention.NeedsCurrentSchedule, HasFutureScheduleOnly = attention.HasFutureScheduleOnly,
                     RequiresActivation = state.RequiresActivation, InvitationDeliveryState = state.DeliveryState, ActivatedAtUtc = state.ActivatedAtUtc,
                     EmployeeNumber = employee.EmployeeNumber, EmploymentStartDate = employee.EmploymentStartDate,
                     Id = employee.Id, FullName = employee.FullName, Email = employee.Email,

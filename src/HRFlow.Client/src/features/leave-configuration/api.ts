@@ -29,6 +29,7 @@ export function useConfigurationWrite() {
     },
     onSuccess: async (_, write) => {
       if (currentAccount.current !== write.accountId || getSessionVersion() !== sessionVersion) return;
+      await client.invalidateQueries({ queryKey: ['hr-workspace', write.accountId, sessionVersion] });
       await Promise.all(['leave-policies', 'managed-leave-types', 'leave-types', 'leave-balances',
         'employee-leave-history', 'pending-leave-requests', 'organisation-pending-leave-requests', 'team-leave-summary', 'department-leave-report', 'leave-request-timeline']
         .map(key => client.invalidateQueries({ queryKey: [key, write.accountId] })));
