@@ -18,6 +18,7 @@ export function ResendActivationDialog({ employee, onClose, onSuccess }: { emplo
     try {
       const result = await authHttpClient.post('/employees/' + employee.id + '/activation/resend', { expectedVersion: employee.version }, { skipAuthReplay: true });
       if (getSessionVersion() !== sessionVersion) return;
+      await query.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] });
       await query.invalidateQueries({ queryKey: ['employees', user.id] });
       if (getSessionVersion() === sessionVersion) onSuccess(result.data.invitationDeliveryState);
     } catch (failure) {

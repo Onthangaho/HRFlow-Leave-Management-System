@@ -1,0 +1,9 @@
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import type { HrWorkspaceData } from './types';
+const tooltipStyle = { background: 'var(--surface)', color: 'var(--foreground)', borderColor: 'var(--border)' };
+/** Lazy charts visualize the same request-day values as the adjacent accessible tables. */
+export function HrCharts({data}:{data:HrWorkspaceData}) {
+ const trends=data.trends.map(t=>({name:t.start.slice(0,7),period:t.start+' - '+t.end,days:t.approvedRequestDays}));
+ const departments=data.report.departments.map(d=>({name:d.departmentName,days:d.metrics.approvedRequestDays}));
+ return <div className="grid min-w-0 gap-6 xl:grid-cols-2">{[{title:'Period trend: summed Approved request-days',values:trends},{title:'Department comparison: summed Approved request-days',values:departments}].map(chart=><figure key={chart.title} className="ui-panel min-w-0"><figcaption className="mb-3 font-semibold">{chart.title}</figcaption><p className="text-sm">Calendar days summed per request, overlaps separate. Exact periods and values are in the matching tables below.</p><div className="mt-3 h-64 min-w-0" aria-label={chart.title}><ResponsiveContainer width="100%" height="100%"><BarChart data={chart.values} accessibilityLayer margin={{top:10,right:12,left:0,bottom:10}}><CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3"/><XAxis dataKey="name" tick={{fill:'var(--foreground)',fontSize:11}}/><YAxis allowDecimals={false} tick={{fill:'var(--foreground)'}}/><Tooltip isAnimationActive={false} cursor={{fill:'var(--chart-hover)'}} labelFormatter={(label,items)=>items[0]?.payload.period??label} contentStyle={tooltipStyle} labelStyle={{color:'var(--foreground)'}} itemStyle={{color:'var(--foreground)'}}/><Bar name="Approved request-days" dataKey="days" fill="var(--chart-bar)" isAnimationActive={false}/></BarChart></ResponsiveContainer></div></figure>)}</div>;
+}

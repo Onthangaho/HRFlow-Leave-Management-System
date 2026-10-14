@@ -13,6 +13,16 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/reports/department-leave")]
 public sealed class LeaveReportsController(IMediator mediator) : ControllerBase
 {
+    /// <summary>Returns HR operational attention and the applied period from one current authorized snapshot.</summary>
+    [HttpGet("/api/v1/reports/hr-workspace")]
+    public async Task<IActionResult> Workspace([FromQuery] DateOnly start, [FromQuery] DateOnly end,
+        [FromQuery] Guid? departmentId, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor))
+            throw new ForbiddenException("A valid authenticated account is required.");
+        return Ok(await mediator.Send(new HRFlow.Application.Features.LeaveRequests.Queries.GetHrWorkspace.GetHrWorkspaceQuery(actor, start, end, departmentId), cancellationToken));
+    }
+
     /// <summary>Returns calendar-period totals by current department, preserving inactive Approved history.</summary>
     [HttpGet]
     public async Task<ActionResult<DepartmentLeaveReportDto>> Get([FromQuery] DateOnly start, [FromQuery] DateOnly end,

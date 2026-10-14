@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useRef, useState } from 'react';
 import { useEmployees } from '../api';
 import { useAuth } from '../../auth/hooks/useAuth';
@@ -25,7 +26,9 @@ function EmployeeManagementWorkspace() {
   const [notice, setNotice] = useState('');
   const [reloadError, setReloadError] = useState('');
   const [search, setSearch] = useState('');
+  const [params] = useSearchParams();
   const [status, setStatus] = useState('All');
+  const [attention, setAttention] = useState(() => { const value=params.get('attention') ?? 'all'; return ['all','employment','schedule','future-schedule','activation','delivery-failed','delivery-pending'].includes(value)?value:'all'; });
   const [reportsFor, setReportsFor] = useState<Employee | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const rememberFocus = () => { opener.current = document.activeElement as HTMLElement | null; };
@@ -43,6 +46,12 @@ function EmployeeManagementWorkspace() {
   };
   const query = search.trim().toLocaleLowerCase();
   const filtered = (employees.data ?? []).filter(employee =>
+    (attention === 'all' || (attention === 'employment' && employee.needsEmploymentFacts)
+      || (attention === 'schedule' && employee.needsCurrentSchedule)
+      || (attention === 'future-schedule' && employee.hasFutureScheduleOnly)
+      || (attention === 'activation' && employee.isActive && employee.requiresActivation)
+      || (attention === 'delivery-failed' && employee.isActive && employee.requiresActivation && employee.invitationDeliveryState === 'DeliveryFailed')
+      || (attention === 'delivery-pending' && employee.isActive && employee.requiresActivation && employee.invitationDeliveryState === 'PendingDelivery')) &&
     (status === 'All' || employee.isActive === (status === 'Active')) &&
     (!reportsFor || employee.managerId === reportsFor.id) &&
     [employee.fullName, employee.employeeNumber ?? '', employee.email, employee.departmentName, employee.managerName ?? '', ...employee.roles]
@@ -63,11 +72,15 @@ function EmployeeManagementWorkspace() {
       <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
         <div><label htmlFor="employee-search" className="mb-1 block text-sm font-semibold">Search employees</label>
           <input id="employee-search" type="search" className="ui-input w-full" value={search} onChange={event => setSearch(event.target.value)} placeholder="Name, email, department or role" /></div>
-        <div><label htmlFor="employee-status" className="mb-1 block text-sm font-semibold">Account status</label>
+        <div><label htmlFor="employee-status" className="mb-1 block text-sm font-semibold">Employment status</label>
           <select id="employee-status" className="ui-input w-full" value={status} onChange={event => setStatus(event.target.value)}>
             {['All', 'Active', 'Inactive'].map(value => <option key={value}>{value}</option>)}
           </select></div>
       </div>
+      <label className="ui-label">Administrative attention<select aria-label="Administrative attention" className="ui-input block" value={attention} onChange={e => setAttention(e.target.value)}>
+        <option value="all">All employee records</option><option value="employment">Active: Unknown employment facts</option><option value="schedule">Active starters: No schedule effective today</option><option value="future-schedule">Active starters: Future schedule only</option><option value="activation">Active employment: Pending activation</option><option value="delivery-failed">Active pending accounts: Delivery failed</option><option value="delivery-pending">Active pending accounts: Delivery acknowledgement pending</option>
+      </select></label>
+      {attention !== 'all' && <p className="text-sm">These are current server SAST input/account states, not legal violations. Confirm facts or open Edit for schedule history; use Resend invitation for delivery recovery.</p>}
       {reportsFor && <div className="rounded-lg bg-slate-50 p-4">
         <p>Active direct reports for <strong>{reportsFor.fullName}</strong>. Edit each report to assign another eligible manager or intentionally clear their assignment.</p>
         <button type="button" className="ui-secondary mt-2" onClick={() => setReportsFor(null)}>Show all employees</button>

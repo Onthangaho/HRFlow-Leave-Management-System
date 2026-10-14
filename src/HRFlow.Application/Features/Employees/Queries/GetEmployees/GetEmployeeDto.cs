@@ -3,6 +3,12 @@ namespace HRFlow.Application.Features.Employees.Queries.GetEmployees;
 /// <summary>Provides a complete editable snapshot; no Identity credentials or tokens are exposed.</summary>
 public sealed class GetEmployeeDto
 {
+    /// <summary>Active profiles with unconfirmed employee number or start date, not a legal violation.</summary>
+    public bool NeedsEmploymentFacts { get; set; }
+    /// <summary>Active confirmed starters with no revision effective on the server SAST business date.</summary>
+    public bool NeedsCurrentSchedule { get; set; }
+    /// <summary>Subset of missing-current-schedule profiles that already have a future revision.</summary>
+    public bool HasFutureScheduleOnly { get; set; }
     /// <summary>Independent from employment lifecycle; legacy activation dates are not fabricated.</summary>
     public bool RequiresActivation { get; set; }
     /// <summary>Safe invitation feedback; never exposes a token or private pickup location.</summary>

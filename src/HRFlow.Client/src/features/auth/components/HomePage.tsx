@@ -1,3 +1,4 @@
+import { HrWorkspace } from '../../hr-workspace/HrWorkspace';
 import { ManagerWorkspace } from '../../manager-workspace/ManagerWorkspace';
 import { PersonalLeaveDashboard } from '../../personal-dashboard/PersonalLeaveDashboard';
 import { Link } from 'react-router-dom';
@@ -8,13 +9,14 @@ import { useAuth } from '../hooks/useAuth';
 export function HomePage() {
   const { user, sessionVersion } = useAuth();
   const personal = user?.roles.some(role => role === 'Employee' || role === 'Manager');
-  const groups = navigationFor(user?.roles ?? []).filter(group => !personal || group.label !== 'Personal');
+  const groups = navigationFor(user?.roles ?? []).filter(group => (!personal || group.label !== 'Personal') && (!user?.roles.includes('HR Administrator') || group.label !== 'Administration'));
   return <div className="space-y-8">
-    {personal ? <PersonalLeaveDashboard /> : <section className="ui-panel">
+    {personal ? <PersonalLeaveDashboard /> : !user?.roles.includes('HR Administrator') && <section className="ui-panel">
       <h2 className="text-2xl font-bold text-slate-900">Welcome to HRFlow</h2>
       <p className="mt-3 max-w-2xl leading-7 text-slate-600">Manage leave and keep your workplace moving. Choose a task below, or use the navigation to return to a workspace.</p>
     </section>}
     {user?.roles.includes('Manager') && <ManagerWorkspace key={`${user.id}:${sessionVersion}`} />}
+    {user?.roles.includes('HR Administrator') && <HrWorkspace key={`${user.id}:${sessionVersion}`} />}
     {groups.filter(group => group.items.some(item => item.path !== '/')).map(group => <section key={group.label} aria-label={group.label + ' quick actions'}>
       <h2 className="mb-4 text-lg font-bold text-slate-900">{group.label}</h2>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

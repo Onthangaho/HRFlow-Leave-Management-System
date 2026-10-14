@@ -4,7 +4,7 @@ using HRFlow.Application.Interfaces;
 using HRFlow.Domain.Models.Employees;
 using HRFlow.Domain.Enums;
 using HRFlow.Domain.Interfaces;
-using HRFlow.Domain.Interfaces.Services;
+using HRFlow.Application.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,42 +46,43 @@ public sealed class GetDepartmentLeaveReportQueryValidator : AbstractValidator<G
 
 /// <summary>Attributes preserved leave to current departments and clips each Approved duration before summing.</summary>
 public sealed class GetDepartmentLeaveReportQueryHandler(IApplicationDbContext context,
-    IEmployeeRoleLookupService roles, ILeaveReportingReadTransaction transaction)
+    CurrentAccountAuthorization authorization, ILeaveReportingReadTransaction transaction)
     : IRequestHandler<GetDepartmentLeaveReportQuery, DepartmentLeaveReportDto>
 {
     /// <summary>Reads authorization and all aggregate inputs from the same snapshot; no decisions or audit writes occur.</summary>
     public Task<DepartmentLeaveReportDto> Handle(GetDepartmentLeaveReportQuery request, CancellationToken cancellationToken) =>
         transaction.ExecuteAsync(async token =>
         {
-            var identityId = request.ActorIdentityId.ToString();
-            if (!await context.Employees.AsNoTracking().AnyAsync(employee => employee.IdentityUserId == identityId && employee.IsActive, token)
-                || !(await roles.GetRolesByIdentityUserIdAsync(identityId, token)).Contains(EmployeeRoles.HrAdministrator))
-                throw new ForbiddenException("An active account with current HR Administrator membership is required to view leave reports.");
+            await authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.HrAdministrator], token);
+            return await ReadAsync(context, request.Start, request.End, request.DepartmentId, token);
+        }, cancellationToken);
 
+    internal static async Task<DepartmentLeaveReportDto> ReadAsync(IApplicationDbContext context, DateOnly startDate, DateOnly endDate, Guid? departmentId, CancellationToken token)
+    {
             var departments = await context.Departments.AsNoTracking()
-                .Where(department => !request.DepartmentId.HasValue || department.Id == request.DepartmentId.Value)
+                .Where(department => !departmentId.HasValue || department.Id == departmentId.Value)
                 .OrderBy(department => department.Name).ThenBy(department => department.Id)
                 .Select(department => new { department.Id, department.Name }).ToListAsync(token);
-            if (request.DepartmentId.HasValue && departments.Count == 0)
+            if (departmentId.HasValue && departments.Count == 0)
                 throw new NotFoundException("The selected department was not found. Choose an existing department.");
 
-            var start = request.Start.ToDateTime(TimeOnly.MinValue);
-            var end = request.End.ToDateTime(TimeOnly.MaxValue);
+            var start = startDate.ToDateTime(TimeOnly.MinValue);
+            var end = endDate.ToDateTime(TimeOnly.MaxValue);
             var leaves = await context.LeaveRequests.AsNoTracking()
                 .Where(leave => (leave.Status == LeaveRequestStatus.Pending || leave.Status == LeaveRequestStatus.Approved)
                     && leave.StartDate <= end && leave.EndDate >= start
-                    && (!request.DepartmentId.HasValue || leave.Employee.DepartmentId == request.DepartmentId.Value))
+                    && (!departmentId.HasValue || leave.Employee.DepartmentId == departmentId.Value))
                 .Select(leave => new ReportRow(leave.EmployeeId, leave.Employee.DepartmentId, leave.Employee.IsActive,
                     leave.Status, leave.StartDate, leave.EndDate)).ToListAsync(token);
 
             var byDepartment = leaves.ToLookup(leave => leave.DepartmentId);
             var breakdown = departments.Select(department => new DepartmentLeaveBreakdownDto(department.Id, department.Name,
-                Calculate(byDepartment[department.Id], request.Start, request.End))).ToList();
-            return new DepartmentLeaveReportDto(request.Start, request.End, request.DepartmentId,
-                Calculate(leaves, request.Start, request.End), breakdown);
-        }, cancellationToken);
+                Calculate(byDepartment[department.Id], startDate, endDate))).ToList();
+            return new DepartmentLeaveReportDto(startDate, endDate, departmentId,
+                Calculate(leaves, startDate, endDate), breakdown);
+    }
 
-    private static LeaveReportMetricsDto Calculate(IEnumerable<ReportRow> rows, DateOnly start, DateOnly end)
+    internal static LeaveReportMetricsDto Calculate(IEnumerable<ReportRow> rows, DateOnly start, DateOnly end)
     {
         var leaves = rows.ToList();
         var approved = leaves.Where(leave => leave.Status == LeaveRequestStatus.Approved).ToList();
@@ -94,5 +95,5 @@ public sealed class GetDepartmentLeaveReportQueryHandler(IApplicationDbContext c
             inactive.Select(leave => leave.EmployeeId).Distinct().Count(), inactive.Sum(Days));
     }
 
-    private sealed record ReportRow(Guid EmployeeId, Guid DepartmentId, bool IsActive, LeaveRequestStatus Status, DateTime StartDate, DateTime EndDate);
+    internal sealed record ReportRow(Guid EmployeeId, Guid DepartmentId, bool IsActive, LeaveRequestStatus Status, DateTime StartDate, DateTime EndDate);
 }

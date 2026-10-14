@@ -197,3 +197,7 @@ GET /api/v1/leave-requests/dashboard derives Identity actor server-side. Current
 ## Manager workspace attention (#91)
 
 GET /api/v1/leave-requests/manager-attention derives Identity actor from authentication; current active/activated Manager membership and credentials checked with all-date Pending count/preview in one deferred read snapshot. Current same-department direct reports, self excluded. Team-summary now uses shared CurrentAccountAuthorization explicitly in its existing snapshot. No emails, evidence, notes or personnel context; no writer reservation or decision authority added.
+
+## Current-data HR workspace (#92)
+
+GET /api/v1/reports/hr-workspace accepts bounded start/end and optional department only; Identity actor from authentication. Current active/activated HR membership/credentials and operational/report/trend/import reads share one deferred snapshot, no writer reservation. All-date organisation attention separate from filtered report. Own live import batch metadata/counts only; no raw row fields or invitation secrets. HR directory computed attention flags are HR-only. Existing onboarding Get requires current HR and actor-owned batch; new client deep link changes no authorization. Department reporting now uses shared current-account validation explicitly. No decisions/override added.
