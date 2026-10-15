@@ -15,9 +15,10 @@ public sealed class ProfileImageRecoveryTests
     public async Task EncryptedRecoveryPreservesImagesAndRejectsMissingRequiredContent()
     {
         var root = Path.Combine(Path.GetTempPath(), "hrflow-image-test-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root); ApiFixture.RestrictDirectory(root);
+        ApiFixture.CreatePrivateDirectory(root);
         var database = Path.Combine(root, "fixture.sqlite"); var privateRoot = Path.Combine(root, "private");
-        Directory.CreateDirectory(privateRoot); ApiFixture.RestrictDirectory(privateRoot);
+        ApiFixture.CreatePrivateDirectory(privateRoot);
+        ApiFixture.CreatePrivateFile(database);
         var storage = new PrivateProfileImageStorage(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> { ["Storage:PrivateFilesRoot"] = privateRoot }).Build());
         var current = new ProfileImage { Status = "Current" }; var removed = new ProfileImage { Status = "Removed" }; var pending = new ProfileImage();
         var account = new ApplicationUser { Id = Guid.NewGuid(), UserName = "owner@synthetic.invalid", Email = "owner@synthetic.invalid", SecurityStamp = Guid.NewGuid().ToString() };
@@ -39,8 +40,12 @@ public sealed class ProfileImageRecoveryTests
             }
             var key = Path.Combine(root,"private.key"); var package = Path.Combine(root,"backup.package"); var destination = Path.Combine(root,"restored");
             BackupRestoreService.GenerateKey(key, ApiFixture.RepositoryRoot);
+            foreach (var path in new[] { root, privateRoot, database, key }) ApiFixture.AssertPrivatePath(path);
             BackupRestoreService.Backup(database, privateRoot, package, key, ApiFixture.RepositoryRoot);
+            ApiFixture.AssertPrivatePath(package);
             BackupRestoreService.Restore(package, destination, key, ApiFixture.RepositoryRoot, true);
+            foreach (var path in new[] { destination, Path.Combine(destination,"private"), Path.Combine(destination,"database.sqlite") })
+                ApiFixture.AssertPrivatePath(path);
             await using (var db = new HRFlowDbContext(new DbContextOptionsBuilder<HRFlowDbContext>().UseSqlite("Data Source="+Path.Combine(destination,"database.sqlite")+";Pooling=False").Options))
             {
                 var rows = await db.ProfileImages.AsNoTracking().OrderBy(i=>i.Id).ToArrayAsync(); Assert.Equal(3, rows.Length);
