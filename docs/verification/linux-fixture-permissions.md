@@ -120,3 +120,5 @@ patch therefore does contain these two small Infrastructure source corrections; 
 production-unchanged statement applies only to commit 24f023d and its separate Windows runs.
 
 A complete hosted job including browser checks remains required after this follow-up.
+
+Local follow-up checks: the recovery/fixture-permission filter passed 2/2 (14s), and the solution build passed with zero warnings/errors (3.68s). These are scoped follow-up runs, not a new full Windows suite. A final hosted run remains pending.
