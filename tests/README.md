@@ -151,3 +151,7 @@ Linux nor bundled Chromium is verified by this blocked run. See the committed ve
 
 With real ClamAV configured, `HRFLOW_IMAGE_SCANNER_TESTS=all` runs both existing and image
 browser gates in one invocation; `1` remains the image-only selection.
+
+## Linux fixture storage gate
+
+Fixture roots/private directories must be explicitly owner-only (0700), and databases precreated with 0600 before SQLite opens them; parent privacy and runner umask do not replace per-path validation. FixturePermissionTests and image recovery assertions retain this boundary using production path checks. See [actual hosted failure and correction evidence](../docs/verification/linux-fixture-permissions.md).

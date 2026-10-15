@@ -53,6 +53,11 @@ public static class BackupRestoreService
         try
         {
             var snapshot = Path.Combine(stage, DatabaseName);
+            // SQLite otherwise creates a 0644 snapshot on common Unix umasks; cleanup correctly rejects it.
+            var snapshotOptions = new FileStreamOptions { Mode = FileMode.CreateNew, Access = FileAccess.Write, Share = FileShare.None };
+            if (!OperatingSystem.IsWindows()) snapshotOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            using (new FileStream(snapshot, snapshotOptions)) { }
+            RestrictFile(snapshot);
             using (var source = Open(database, SqliteOpenMode.ReadOnly))
             using (var target = Open(snapshot, SqliteOpenMode.ReadWriteCreate)) source.BackupDatabase(target);
             var schema = ReadSchema(snapshot);
@@ -135,7 +140,10 @@ public static class BackupRestoreService
                     throw new InvalidDataException("Inventory mismatch or missing file.");
                 var path = Path.Combine(stage, file.Path.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                RestrictDirectory(Path.GetDirectoryName(path)!);
+                // Recursive creation also creates intermediate archive directories; restrict every one before publication.
+                for (var directory = new DirectoryInfo(Path.GetDirectoryName(path)!);
+                    directory != null && PrivateOperationsPaths.Within(directory.FullName, stage); directory = directory.Parent)
+                    RestrictDirectory(directory.FullName);
                 using (var input = entry.Open())
                 using (var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
