@@ -126,7 +126,8 @@ verify all Linux deployment, scanner or recovery scenarios. Billing and protecti
 ## Release boundaries
 
 A synthetic current-feature pitch is supported by the retained walkthrough. A real employee-data
-pilot still needs qualified applicable leave rules, first-admin provisioning, approved production
+pilot still needs qualified applicable leave rules, target-host verification of the
+[offline first-admin tool](docs/operations/offline-first-administrator.md), approved production
 invitation delivery, privacy/retention/legal-hold decisions, target-host TLS/proxy/storage/recovery,
 representative accessibility/volume acceptance and named operational monitoring/support.
 Development pickup is not production email. Offline reviewed-identity recovery is not fresh-admin

@@ -2,6 +2,21 @@ using System.Text.Json;
 using HRFlow.RegressionTests;
 using Microsoft.Extensions.Configuration;
 
+// Test-only stdin barrier starts independent real provisioning services, never a production bypass.
+if (args.Length == 2 && args[0] == "--first-admin-race")
+{
+    var descriptor = Path.GetFullPath(args[1]);
+    var parent = Path.GetDirectoryName(descriptor)!;
+    if (Path.GetDirectoryName(parent) != Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar)
+        || !Path.GetFileName(parent).StartsWith("hrflow-first-admin-", StringComparison.Ordinal)) return 2;
+    HRFlow.Infrastructure.Services.Operations.PrivateOperationsPaths.Check(descriptor, ApiFixture.RepositoryRoot);
+    var options = JsonSerializer.Deserialize<HRFlow.Infrastructure.Services.Operations.FirstAdministratorOptions>(await File.ReadAllTextAsync(descriptor))!;
+    Console.WriteLine("Ready");
+    await Task.Run(Console.ReadLine).WaitAsync(TimeSpan.FromSeconds(15));
+    try { await HRFlow.Infrastructure.Services.Operations.FirstAdministratorService.ProvisionAsync(options); return 0; }
+    catch { return 1; }
+}
+
 // Separate OS processes exercise publication/removal; this fixture command is never an API or production seam.
 if (args.Length == 3 && args[0] is "--publish-image" or "--remove-image")
 {

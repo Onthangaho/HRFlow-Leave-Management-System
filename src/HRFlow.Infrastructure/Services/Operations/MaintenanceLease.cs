@@ -26,8 +26,10 @@ public static class MaintenanceLease
             throw new InvalidOperationException("The maintenance lease location is unsafe.");
         try
         {
-            return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite,
-                exclusive ? FileShare.None : FileShare.ReadWrite);
+            var options = new FileStreamOptions { Mode = FileMode.OpenOrCreate, Access = FileAccess.ReadWrite,
+                Share = exclusive ? FileShare.None : FileShare.ReadWrite };
+            if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            return new FileStream(path, options);
         }
         catch (IOException)
         {

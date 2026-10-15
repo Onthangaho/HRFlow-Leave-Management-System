@@ -1,5 +1,10 @@
 # Current readiness review — 15 October 2026
 
+## Offline first-administrator follow-up — 15 October 2026
+
+PR #120 is merged. The #81 empty-store operator bootstrap is now implemented locally for review; see the [runbook](../operations/offline-first-administrator.md) and [new execution evidence](../verification/offline-first-administrator.md). This supersedes the first-admin implementation recommendation below, not the historical review evidence. Production delivery and target-host deployment/operational gates remain open. No tracker proposals were published, and #81 remains open.
+
+
 ## Current CI update after merged PR #121
 
 PR #121 merged 15 October 2026 18:57:01 UTC as `5d6a9bd56c434705b2a7eee8b52b1d8fd3df1a93`.
@@ -170,7 +175,7 @@ ClamAV updates, legal-source revalidation or browser/load results are claimed.
 
 Rechecked documentation/source references, the complete changed/new-file inventory and fetched
 tracker states. The #78 holiday-source remainder is explicitly preserved despite its CLOSED state;
-no tracker proposal was published. First-admin provisioning remains a recommendation, not code.
+no tracker proposal was published. At that original review, first-admin provisioning was a recommendation, not code; the dated follow-up above supersedes that implementation status.
 Documentation links/formatting/whitespace/sensitive-literal checks and instruction-byte comparison
 were rerun for this finalisation. Product builds/tests/audits were not rerun because executable
 files did not change. Earlier dated test results remain earlier evidence.

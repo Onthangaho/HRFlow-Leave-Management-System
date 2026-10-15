@@ -1,5 +1,18 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Offline first-administrator coverage (#81)
+
+`FirstAdministratorTests` uses disposable migrated private SQLite stores, generated credentials,
+real operator CLI invocations, a two-process stdin barrier and a real local Production HTTPS API.
+It covers exact HR-only access, nonempty-store refusal, explicit departments/canonical roles,
+Identity/employment validation, rollback, repeated invocation and unsafe storage. The normal
+Production invitation gate remains enforced. No HTTP bootstrap bypass or production test endpoint
+is added. Run `dotnet test tests/HRFlow.RegressionTests --no-build --filter FullyQualifiedName~FirstAdministrator`
+after a full Debug solution build; run operator/API suites sequentially because stopped-writer
+validation intentionally refuses a concurrent API. See [runbook](../docs/operations/offline-first-administrator.md)
+and [actual evidence](../docs/verification/offline-first-administrator.md). Hosted results for this
+new slice must be observed after publication; older hosted passes do not cover it.
+
 Use .NET 8 runtime plus a compatible SDK and Node 24. Local execution used SDK 9.0.305,
 .NET runtime 8.0.23 and Node 24.12.0 on Windows. CI selects SDK 8 and Ubuntu 24.04; hosted
 execution remains unverified. Build the solution in Debug before starting these fixtures.

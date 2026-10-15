@@ -23,6 +23,7 @@ try
         "backup" => ["--database", "--private-root", "--output", "--key-file", "--application-root"],
         "restore" => ["--package", "--destination", "--key-file", "--application-root", "--invalidate-security"],
         "recover-password" => ["--database", "--identity", "--password-file", "--application-root", "--confirm-current-permissions"],
+        "first-admin" => ["--database", "--application-root", "--password-file", "--name", "--email", "--employee-number", "--employment-start-date", "--department-id", "--create-department"],
         "cleanup-staging" => ["--staging", "--application-root"],
         _ => throw new InvalidDataException("Unknown command.")
     };
@@ -37,6 +38,12 @@ try
         case "backup": summary = BackupRestoreService.Backup(Get("--database"), Get("--private-root"), Get("--output"), Get("--key-file"), root); break;
         case "restore": summary = BackupRestoreService.Restore(Get("--package"), Get("--destination"), Get("--key-file"), root, options.ContainsKey("--invalidate-security")); break;
         case "recover-password": await RecoveryPasswordService.RecoverAsync(Get("--database"), Guid.Parse(Get("--identity")), Get("--password-file"), root, options.ContainsKey("--confirm-current-permissions")); break;
+        case "first-admin":
+            await FirstAdministratorService.ProvisionAsync(new(Get("--database"), root, Get("--password-file"),
+                Get("--name"), Get("--email"), Get("--employee-number"), Get("--employment-start-date"),
+                options.TryGetValue("--department-id", out var department) ? Guid.Parse(department) : null,
+                options.TryGetValue("--create-department", out var departmentName) ? departmentName : null));
+            break;
         case "cleanup-staging": BackupRestoreService.DeleteStage(Get("--staging"), root); break;
     }
     Console.WriteLine(JsonSerializer.Serialize(new { outcome = "completed", command = args[0], summary }));
@@ -46,6 +53,7 @@ catch (Exception exception)
 {
     var category = exception switch
     {
+        FirstAdministratorException refusal => "first_admin_" + refusal.Reason.ToString(),
         CryptographicException => "authentication_failed",
         InvalidDataException or JsonException or ArgumentException => "invalid_input_or_package",
         SqliteException => "database_unavailable_or_incompatible",
@@ -53,6 +61,8 @@ catch (Exception exception)
         _ => "operation_failed"
     };
     Console.Error.WriteLine(JsonSerializer.Serialize(new { outcome = "failed", category,
-        guidance = "Check the runbook, stopped services, private paths, matching schema build and separately held key. No existing restore destination is replaced." }));
+        guidance = args.FirstOrDefault() == "first-admin"
+            ? "Check the first-admin runbook, stopped services, private inputs, current schema and empty store. Inspect uncertain outcomes before retrying; existing accounts are never repaired."
+            : "Check the runbook, stopped services, private paths, matching schema build and separately held key. No existing restore destination is replaced." }));
     return 1;
 }
