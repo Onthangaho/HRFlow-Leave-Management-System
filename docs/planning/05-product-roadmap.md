@@ -1,3 +1,5 @@
+> **Current review: 15 October 2026, merged PR #119.** Read [current readiness](08-current-readiness-review.md), [29-issue reconciliation](09-issue-reconciliation.md) and [unpublished tracker proposals](10-proposed-tracker-updates.md). The dated entries below are historical evidence, not the current remaining-work queue. No GitHub issue changes or product implementation in this review.
+
 > 14 October 2026: PR #118 is confirmed merged. #95 private profile images are implemented locally for review on feat/private-profile-images. [ADR 0025](../adr/0025-private-profile-images.md), [operations](../operations/private-profile-images.md), [executed verification and limits](../verification/private-profile-images.md). Separate image-only storage/lifecycle; no public originals, medical permission changes or deployment. Earlier status entries are historical.
 
 > 14 October 2026: PR #117 is merged. #97 current-feature pitch rehearsal is locally implemented on feat/repeatable-pitch-demo: [runbook](../operations/pitch-rehearsal.md), [ADR 0024](../adr/0024-isolated-current-feature-pitch.md), [actual browser/persisted-row/regression evidence and screenshots](../verification/pitch-rehearsal.md). Development-only fresh private fixtures; no product/schema/dependency change. Hosted GitHub/Linux/Chromium remains billing-blocked. Statutory/cycle/legal, production invitation/deployment and broader reliability gates remain outstanding; #97 stays open. Prepared for independent review, not merged or deployed. Earlier status entries below are historical.
@@ -88,6 +90,11 @@ No existing issue was edited/closed and no project-board item moved during this 
 Approve reconciliation bodies before changing those tracker contracts. The new dependent issues
 assume the proposed #21/#22 scopes are accepted; otherwise adjust dependencies before implementation.
 
+## Original phase sequence (8 October design; superseded status)
+
+Security, shell, activation, current-data workflows and the pitch slices below have since merged.
+Use the current readiness review for ranked remaining work; retain this sequence for design rationale.
+
 ## Phase 0 — security and interpretation gates
 
 1. [#74 JWT expiry and uniform current permissions](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/74)
@@ -109,8 +116,8 @@ owners, signed-off categories and visible unresolved blockers. No blanket compli
    — **Essential / Medium**, #74. Working role menus/shared styles/accessibility, no dummy controls.
    Local implementation on `feat/responsive-application-shell` now integrates existing routes; see
    [actual browser/persisted-state evidence and limitations](../verification/responsive-application-shell.md).
-   Independent review is pending; #77 is not closed or described as merged. Real API-backed role
-   dashboards remain #90–#92 work, not shell metrics.
+   PR #101 is merged; #77 remains open in the tracker pending reconciliation. Current-data
+   dashboards have since merged in #113–#115; statutory-dependent completion remains separate.
 5. [#78 employment numbers/dates/schedules](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/78)
    — **Essential / Large**, #74/#75. Versioned HR forms and honest legacy-unknown states.
 6. **Existing #22** — #75/#78. Central rule results/units/cycles/effective dates across submission,

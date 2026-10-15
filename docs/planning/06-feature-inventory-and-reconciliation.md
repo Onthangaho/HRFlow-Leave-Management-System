@@ -1,3 +1,15 @@
+> **Current review: 15 October 2026, merged PR #119.** Read [current readiness](08-current-readiness-review.md), [29-issue reconciliation](09-issue-reconciliation.md) and [unpublished tracker proposals](10-proposed-tracker-updates.md). The dated entries below are historical evidence, not the current remaining-work queue. No GitHub issue changes or product implementation in this review.
+
+## Current shipped / partial / blocked inventory
+
+- **Shipped:** protected role-aware shell; current-role/credential auth; employee lifecycle and versioned HR management; optional decision notes and request timelines; private scanned documents/images; local activation/password change; CSV onboarding; profile/themes/notification preferences; durable in-app alerts; current-data personal/Manager/HR workspaces and scoped exports; retained regressions and synthetic pitch. PRs #99–#119.
+- **Partially delivered parent scope:** #78 holiday/cycle foundation, #79/#89 production delivery, #81 deployment/provisioning, #83 retention/holds, #84 conditional proof/payment, #90/#92/#96 statutory charged units. Local #82 tooling is delivered, target-host operator acceptance remains separate.
+- **Blocked/new functionality:** qualified #75 approval; #22 central historical-charge engine; #85–#88 statutory categories; first-admin creation and production invitation adapter.
+- **Verification debt, not proof of missing functionality:** hosted billing-blocked Linux/Chromium, comprehensive AT/accessibility, physical disk/ACL faults, broad scanner/EXIF corpora and realistic load. See dated reports for narrower executed cases.
+
+The older inventory below is retained as an 8 October planning record. Use the 29-item reconciliation for current acceptance/closure recommendations.
+
+
 > 14 October 2026: PR #118 is confirmed merged. #95 private profile images are implemented locally for review on feat/private-profile-images. [ADR 0025](../adr/0025-private-profile-images.md), [operations](../operations/private-profile-images.md), [executed verification and limits](../verification/private-profile-images.md). Separate image-only storage/lifecycle; no public originals, medical permission changes or deployment. Earlier status entries are historical.
 
 > 14 October 2026: PR #117 is merged. #97 current-feature pitch rehearsal is locally implemented on feat/repeatable-pitch-demo: [runbook](../operations/pitch-rehearsal.md), [ADR 0024](../adr/0024-isolated-current-feature-pitch.md), [actual browser/persisted-row/regression evidence and screenshots](../verification/pitch-rehearsal.md). Development-only fresh private fixtures; no product/schema/dependency change. Hosted GitHub/Linux/Chromium remains billing-blocked. Statutory/cycle/legal, production invitation/deployment and broader reliability gates remain outstanding; #97 stays open. Prepared for independent review, not merged or deployed. Earlier status entries below are historical.
@@ -181,7 +193,7 @@ This documentation phase makes the README's old delete-and-restart note safe: re
 disposable local store; preserve/back up any store with needed data and review migration preflight.
 No automatic legacy repair is introduced. Do not delete real data to satisfy old troubleshooting text.
 
-## Other historical tracker discrepancies
+## Other historical tracker discrepancies (8 October review)
 
 Closed #19 described HR deciding leave; current rules correctly prohibit it. Closed #20 mentions
 PATCH; actual decision routes are POST. Closed #31 proposed AuditLog/interceptor; the accepted

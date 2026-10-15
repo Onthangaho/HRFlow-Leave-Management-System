@@ -1,3 +1,5 @@
+> **Historical design baseline.** Current source/merged status is reconciled as of 15 October 2026 in [the readiness review](08-current-readiness-review.md) and [issue reconciliation](09-issue-reconciliation.md). Old estimates, test deferral and implementation-pending wording below are not current instructions. Qualified statutory review remains required.
+
 # Implementation issue catalogue
 
 Created 8 October 2026 after reviewing open and relevant closed issues.

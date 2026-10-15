@@ -1,3 +1,5 @@
+> **Current review: 15 October 2026, merged PR #119.** Read [current readiness](08-current-readiness-review.md), [29-issue reconciliation](09-issue-reconciliation.md) and [unpublished tracker proposals](10-proposed-tracker-updates.md). The dated entries below are historical evidence, not the current remaining-work queue. No GitHub issue changes or product implementation in this review.
+
 > 14 October 2026: PR #118 is confirmed merged. #95 private profile images are implemented locally for review on feat/private-profile-images. [ADR 0025](../adr/0025-private-profile-images.md), [operations](../operations/private-profile-images.md), [executed verification and limits](../verification/private-profile-images.md). Separate image-only storage/lifecycle; no public originals, medical permission changes or deployment. Earlier status entries are historical.
 
 > 14 October 2026: PR #117 is merged. #97 current-feature pitch rehearsal is locally implemented on feat/repeatable-pitch-demo: [runbook](../operations/pitch-rehearsal.md), [ADR 0024](../adr/0024-isolated-current-feature-pitch.md), [actual browser/persisted-row/regression evidence and screenshots](../verification/pitch-rehearsal.md). Development-only fresh private fixtures; no product/schema/dependency change. Hosted GitHub/Linux/Chromium remains billing-blocked. Statutory/cycle/legal, production invitation/deployment and broader reliability gates remain outstanding; #97 stays open. Prepared for independent review, not merged or deployed. Earlier status entries below are historical.
@@ -54,7 +56,7 @@ As a portfolio project, HRFlow is deliberately chosen because it lets a single d
 - Give employees self-service visibility into their leave balance and request history.
 - Give managers a fast, low-friction approval queue.
 - Give HR administrators control over employee records, leave policies, and read-only organisation reporting.
-- Preserve recorded decisions and their actors/times; missing manager notes remain #21 work.
+- Preserve recorded decisions and their actors/times; optional manager notes are shipped through PR #102.
 
 **Portfolio goals (why this project exists at all):**
 - Produce a flagship, fully deployed project demonstrating secure JWT/RBAC authentication, layered architecture, and a professional Git/GitHub workflow.
@@ -64,7 +66,7 @@ As a portfolio project, HRFlow is deliberately chosen because it lets a single d
 ## 4. Scope
 
 **Original baseline, with current corrections:**
-- Employee self-registration is out. #79 now locally replaces initial-password creation with pending one-time activation and private Development pickup; review and a real production delivery provider remain outstanding. See ADR 0011 and its verification report.
+- Employee self-registration is out. #79 replaces initial-password creation with pending one-time activation and private Development pickup; a real approved production delivery provider remains outstanding. See ADR 0011 and its verification report.
 - Leave request submission, approval/rejection workflow, and automatic balance calculation.
 - Three roles: Employee, Manager, HR Administrator, enforced via RBAC.
 - Employee, reporting assignment and leave-type/policy management (HR Admin); department selection, not full department CRUD.
@@ -74,8 +76,8 @@ As a portfolio project, HRFlow is deliberately chosen because it lets a single d
 
 **Current expansion boundaries:**
 - Focused maintained xUnit/Playwright regression gates are explicitly authorised for the first #76 slice (14 October 2026). Manual/disposable evidence remains useful for uncovered cases; broader frameworks, legal calculations and unrelated test rewrites remain outside this authorisation.
-- General status email/SMS remains future scope. #79 plans reviewed secure activation delivery and #93 durable in-app notifications; no notification implementation is claimed just because an old plan named an interface.
-- Private documents/images, configurable evidence, employment/schedules/cycles, secure CSV onboarding, profile/password/preferences, shared shell, real role dashboards/calendar and safe exports are now explicitly authorised planning scope, gated by security/legal/privacy review. They are not shipped by this planning work.
+- General status email/SMS remains future scope. #79 still needs approved production activation delivery; #93 durable in-app notifications and #94 category preferences are merged.
+- Private documents/images, configurable evidence, employment/schedules/cycles, secure CSV onboarding, profile/password/preferences, shared shell, real role dashboards/calendar and safe exports are now explicitly authorised planning scope, gated by security/legal/privacy review. Merged current slices and remaining functional dependencies are enumerated in the current readiness review; this documentation itself adds no product functionality.
 - Session persistence, full department CRUD, hard deletion and reactivation remain excluded.
 - Payroll integration.
 - Multi-tenancy (single organization only).
@@ -122,4 +124,4 @@ MVP is considered complete and interview-ready when:
 
 ---
 
-**Next:** review the phased roadmap and reconcile existing tracker contracts before implementing #74. Preserve additive role permissions: Managers decide eligible current direct reports, never self; HR monitors/administers and never gains approval authority. No unsupported compliance or production-readiness claims.
+**Next:** review the 15 October reconciliation and proposed #81 offline first-administrator slice; #74 is already merged. Preserve additive role permissions: Managers decide eligible current direct reports, never self; HR monitors/administers and never gains approval authority. No unsupported compliance or production-readiness claims.

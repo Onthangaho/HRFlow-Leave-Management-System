@@ -1,223 +1,144 @@
-# HRFlow
+﻿# HRFlow
 
-<p align="center">
-  <strong>A secure, auditable leave-management platform for employees, managers, and HR teams.</strong>
-</p>
+HRFlow is a single-organisation leave-management portfolio application for Employees, Managers
+and HR Administrators. It demonstrates layered .NET/React engineering, current-permission
+security, versioned writes, auditable decisions and private-file handling. It is **not certified
+legally compliant or production-ready**.
 
-<p align="center">
-  <a href="#-what-it-does">What it does</a> ·
-  <a href="#-architecture">Architecture</a> ·
-  <a href="#-run-it-locally">Run locally</a> ·
-  <a href="#-project-status">Project status</a>
-</p>
+## Current status — 15 October 2026
 
-> **Portfolio project:** HRFlow demonstrates production-minded full-stack engineering: layered .NET architecture, JWT authentication, server-enforced RBAC, auditable leave decisions, and a responsive React single-page application.
+Merged through [PR #119](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/119).
+See the [current readiness review](docs/planning/08-current-readiness-review.md),
+[issue reconciliation](docs/planning/09-issue-reconciliation.md) and
+[unpublished tracker proposals](docs/planning/10-proposed-tracker-updates.md).
 
-## ✨ What it does
+Shipped current-feature workflows:
 
-HRFlow replaces email-and-spreadsheet leave handling with clear, role-appropriate workflows:
+- Employee/Manager request submission, current configured balances, personal history and cancellation.
+- Manager current same-department direct-report decisions with optional notes, team workspace/calendar.
+- HR employee create/edit/deactivate, combined roles/reporting, confirmed employment facts and weekly
+  schedule history, CSV mapping/preview/confirmation, leave type/policy management and organisation reports.
+- Immutable transition audit timelines, recipient-scoped notifications and optional category preferences.
+- Secure one-time activation using private **Development-only** pickup; password change revokes sessions.
+- Own-account allowlisted profile fields, System/Light/Dark theme and private processed profile images.
+- Private scanned supporting documents, medical-content restrictions and company requirement snapshots.
+- Scoped spreadsheet-protected CSV exports, operator encrypted backup/restore and synthetic pitch fixture.
 
-- **🧑‍💼 Employees** submit leave requests, view live balances and decision history, and cancel their own pending requests.
-- **🧭 Managers** review and decide only the pending requests of their current, same-department direct reports.
-- **🏢 HR Administrators** create and edit employees, assign combined roles and reporting relationships, and monitor organisation-wide pending leave without receiving a decision override.
-- **📝 Auditing** records leave lifecycle decisions with the actor, status transition, and timestamp.
-- **🛡️ Authentication** uses JWT access tokens and rotating refresh tokens; the client isolates authenticated query caches so one user's data cannot appear after another user signs in.
+Current leave charging uses **inclusive calendar days**. Balance is current configured entitlement
+minus Approved request days; Pending does not reserve balance. Annual cycles, accrual, holiday
+calculations and statutory categories remain dependent on qualified review (#75) and #22/#85–#88.
+Approved decisions remain preserved; current-policy changes can change displayed balances.
 
-## 🔐 Role and permission model
+## Permissions
 
-Permissions are enforced by the API, not just hidden in the interface.
+Employees access their own leave. Managers additionally decide eligible current same-department
+direct-report requests, never their own. HR administers/monitors and has **no approve/reject override**.
+Combined roles receive additive capabilities. Server checks current active/activated accounts,
+Identity membership, reporting scope and credential version; navigation is not authorization.
+Managers see medical evidence status, not raw medical content. HR can view employee images but
+cannot replace another employee's image. Private contact data is not public directory data.
 
-| Capability | Employee | Manager | HR Administrator |
-|---|:---:|:---:|:---:|
-| Submit and view personal leave | ✅ | ✅ | ❌* |
-| View live balances and personal history | ✅ | ✅ | ❌* |
-| Cancel own pending request | ✅ | ✅ | ❌* |
-| Approve or reject leave | ❌ | ✅ Direct reports only | ❌ |
-| Actionable approval queue | ❌ | ✅ Scoped to direct reports | ❌ |
-| Organisation-wide pending monitoring | ❌ | ❌ | ✅ Read-only |
-| Employee profiles, roles, and reporting | ❌ | ❌ | ✅ Create/edit |
-
-\* An account with only the **HR Administrator** role has no personal-leave capability. Combined roles receive the capabilities of their explicitly assigned roles.
-
-### Approval safeguards
-
-Managers may decide a request only when all of the following are true:
-
-1. The request is still pending.
-2. The actor has the Manager role and an employee record.
-3. The request owner currently reports to that manager.
-4. Both people belong to the same department.
-5. The manager is not deciding their own request.
-
-New personal leave requests require a valid assigned manager. HR monitoring remains deliberately separate from the manager approval queue.
-
-Employee management uses explicit Preserve/Assign/Clear manager updates and original edit versions. See [the contract and SQLite safeguards](docs/adr/0003-hr-employee-management.md).
-
-## 🏗️ Architecture
+## Architecture
 
 ```text
-┌──────────────────────────────────────────────────────────────────┐
-│  React 19 + TypeScript SPA                                         │
-│  React Router · TanStack Query · Axios · React Hook Form · Zod    │
-└───────────────────────────────┬──────────────────────────────────┘
-                                │ HTTPS / JSON
-┌───────────────────────────────▼──────────────────────────────────┐
-│  HRFlow.Api                                                        │
-│  ASP.NET Core 8 Controllers · JWT Bearer · Swagger · MediatR      │
-└───────────────────────────────┬──────────────────────────────────┘
-                                │ depends inward only
-┌───────────────────────────────▼──────────────────────────────────┐
-│  HRFlow.Application                                                │
-│  Commands, queries, validators, application services, interfaces  │
-└───────────────────────────────┬──────────────────────────────────┘
-                                │
-┌───────────────────────────────▼──────────────────────────────────┐
-│  HRFlow.Domain                                                     │
-│  Leave, employee, department, policy, and audit business rules    │
-└───────────────────────────────┬──────────────────────────────────┘
-                                │
-┌───────────────────────────────▼──────────────────────────────────┐
-│  HRFlow.Infrastructure                                             │
-│  EF Core 8 · SQLite · ASP.NET Identity · repositories · seeding   │
-└──────────────────────────────────────────────────────────────────┘
+React SPA -> HTTP -> API controllers -> Application -> Domain
+                       Infrastructure -> Application + Domain
 ```
 
-The dependency direction is intentional: the domain has no ASP.NET Core or EF Core dependency, controllers contain no business decisions, and application behavior is expressed through MediatR commands and queries.
+Domain has no EF/HTTP dependency. Infrastructure supplies Identity, EF Core/SQLite, private storage,
+scanner and transactions. Writes reserve the SQLite writer **before** authoritative reads; consistent
+reporting/history reads use deferred snapshots. Versions prevent stale overwrites; transition audits
+commit with status changes. Authenticated caches/callbacks are account/session scoped.
 
-## 🧰 Technology
+Stack: .NET 8 / EF Core 8 / ASP.NET Identity / MediatR / FluentValidation; React 19 / TypeScript 6 /
+Vite / Tailwind 4 / React Router / TanStack Query / Axios; xUnit and Playwright retained regression gates.
+SQLite is supported on one host with locking-compatible persistent **local** storage. Network-file
+multi-host operation is unsupported. A different provider needs equivalent transactions/migrations
+and re-verification, not just another connection string.
 
-| Area | Current stack |
-|---|---|
-| Backend | .NET 8, ASP.NET Core Controllers, MediatR, FluentValidation |
-| Data and identity | EF Core 8, SQLite, ASP.NET Core Identity |
-| Security | JWT bearer authentication, rotating refresh tokens, RBAC, RFC 7807 problem responses |
-| Frontend | React 19, TypeScript 6, Vite, Tailwind CSS 4 |
-| Client data and forms | TanStack Query 5, Axios, React Hook Form, Zod |
-| API exploration | Swagger UI in Development |
+## Run locally
 
-## 🚀 Run it locally
+Prerequisites: compatible .NET SDK/runtime 8, Node (retained fixtures currently document Node 24),
+and real ClamAV for successful document/image uploads. See the exact configuration and operations:
 
-### Prerequisites
+- [Single-host configuration and security settings](docs/operations/single-host-configuration.md)
+- [Private evidence and scanner setup](docs/operations/supporting-documents.md)
+- [Private profile image setup](docs/operations/private-profile-images.md)
+- [Isolated synthetic pitch setup/start/rehearsal/cleanup](docs/operations/pitch-rehearsal.md)
 
-- [.NET SDK 8](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Node.js](https://nodejs.org/) 20 or later
-
-### 1. Configure the API
-
-The API requires a local JWT signing key. Keep secrets out of source control:
-
-```powershell
-dotnet user-secrets set "Authentication:Jwt:SigningKey" "<a-long-random-development-key>" --project src/HRFlow.Api
-dotnet user-secrets set "Authentication:Jwt:RefreshTokenPepper" "<a-second-random-development-secret>" --project src/HRFlow.Api
-```
-
-Start the API:
+Use user-secrets/environment settings for signing material, independent refresh pepper and generated
+private Development fixture credentials. Never commit or print them. Development seeding is guarded;
+it does not repair existing roles/reactivate accounts. Do not run Development seed defaults on a
+real employee store. The isolated pitch/regression tooling generates private synthetic credentials.
+No passwords or invitation links are included here.
 
 ```powershell
+dotnet restore HRFlow.sln
 dotnet run --project src/HRFlow.Api
+npm.cmd ci --prefix src/HRFlow.Client
+npm.cmd run dev --prefix src/HRFlow.Client
 ```
 
-In the default HTTP profile, the API runs on `http://localhost:5228`. Development Swagger UI is available at `/swagger`, and the health endpoint is available at `/health`.
+These commands assume private configuration is already prepared per the linked runbooks. Default
+Development HTTP API profile uses `http://localhost:5228`; client API base is configured with
+`VITE_API_BASE_URL=http://localhost:5228/api/v1`. Vite normally uses `http://localhost:5173`.
+Confirm the actual addresses printed by your local profiles. Production requires trusted HTTPS
+origin/host/proxy and persistent paths. Development Swagger is `/swagger`; `/health` is liveness,
+`/health/ready` is database/migration readiness, not business-integrity or capacity certification.
 
-### 2. Configure and start the client
+Existing databases must be preserved. Back up needed data, stop all writers and follow
+[migration preflight](docs/adr/0004-leave-policy-management.md) and
+[encrypted recovery](docs/operations/backup-restore.md). Reset only explicitly disposable stores;
+no automatic legacy repair or delete-and-restart advice applies to needed records.
 
-Create `src/HRFlow.Client/.env`:
+## Tests and evidence
 
-```dotenv
-VITE_API_BASE_URL=http://localhost:5228/api/v1
-```
-
-Then install dependencies and run Vite:
-
-```powershell
-Set-Location src/HRFlow.Client
-npm ci
-npm run dev
-```
-
-Open the address printed by Vite, normally `http://localhost:5173`.
-
-### 3. Development seed accounts
-
-The Development API seeds local accounts so role boundaries can be exercised on a clean database. These credentials are for local development only and must never be deployed:
-
-| Role | Email | Default password |
-|---|---|---|
-| HR Administrator | `hr.administrator@hrflow.local` | `HrFlow!Dev2026` |
-| Employee | `employee@hrflow.local` | `HrFlow!Employee2026` |
-| Manager | `manager@hrflow.local` | `HrFlow!Manager2026` |
-
-The passwords can be overridden through the corresponding `Seeding:*Password` configuration values. Seeding is idempotent, so restarting does not create duplicate accounts.
-
-> **Local database note:** For a migration error on a pre-migration database, reset only a known disposable local store. If any records are needed, preserve and back up the database, stop writers, and review [migration preflight/remediation](docs/adr/0004-leave-policy-management.md#migration-and-legacy-review) before proceeding. Do not delete needed development or production data; startup does not automatically repair legacy records.
-
-## 🧪 Quality checks
-
-The repository currently uses build, lint, and manual end-to-end verification while automated tests are deliberately deferred.
+Focused maintained automated tests are authorised under #76. Use
+[tests/README.md](tests/README.md) for exact fixture, scanner, local/CI and cleanup commands.
 
 ```powershell
 dotnet build HRFlow.sln
-
-Set-Location src/HRFlow.Client
-npm run build
-npm run lint
+dotnet test tests/HRFlow.RegressionTests --no-build
+npm.cmd run build --prefix src/HRFlow.Client
+npm.cmd run lint --prefix src/HRFlow.Client
+npm.cmd --prefix tests/browser run typecheck
+npm.cmd --prefix tests/browser test
+git diff --check
 ```
 
-`git diff --check` is also used before review to catch whitespace errors. The API exposes Swagger in Development for authenticated endpoint exploration.
+Run backend and browser suites sequentially. Fixtures use fresh file-backed migrated SQLite and
+generated private Identity data, not existing stores or EF InMemory. Scanner-free gates prove
+fail-closed behavior; real positive image/document scanning needs the documented real scanner.
+Routine traces/video/failure screenshots are disabled to protect credentials/private payloads.
 
-## 📍 Project status
+[Dated verification reports](docs/verification/) separate source inspection, real HTTP/browser
+interaction, controlled transport barriers and persisted-row/file checks. PR #119 records 19 image
+backend tests and a combined 12 browser run after FreshClam daily 28153 (14 October 06:24 UTC).
+The full 54-case backend result is earlier recorded evidence, not a new readiness-review run.
+Hosted [PR #119 workflow](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38651078671)
+never started its job due to account billing restriction. Local Windows/Chrome does not prove hosted
+Linux/Chromium execution. Billing and protections have not been changed.
 
-| Area | Status |
-|---|---|
-| Foundation and authentication | ✅ Layered solution, Identity, JWT login/refresh, protected routing, and server-side role checks are in place. |
-| Leave lifecycle | ✅ Personal submission, live balance calculation, history, cancellation, scoped manager approval/rejection, and audit history are implemented. |
-| HR operations | ✅ HR employee creation/editing, multiple roles, explicit manager assignment, and organisation-wide pending monitoring are available; employee writes use live HR authorization and version conflicts. |
-| Client security | ✅ Authenticated query caches are scoped by user and cleared at session boundaries; refresh and retry flows are fenced against stale sessions. |
-| Policy administration | 🚧 Leave types and policies exist in the domain. Full HR CRUD endpoints and UI remain planned work. |
-| Reporting | 🚧 Team summaries and department-level reporting remain planned work. |
+## Release boundaries
 
-### Deliberately deferred
+A synthetic current-feature pitch is supported by the retained walkthrough. A real employee-data
+pilot still needs qualified applicable leave rules, first-admin provisioning, approved production
+invitation delivery, privacy/retention/legal-hold decisions, target-host TLS/proxy/storage/recovery,
+representative accessibility/volume acceptance and named operational monitoring/support.
+Development pickup is not production email. Offline reviewed-identity recovery is not fresh-admin
+provisioning. Medical Required submission remains unsupported pending proof/payment versus absence
+review. No guaranteed RPO/RTO, load capacity, statutory compliance or production deployment is claimed.
 
-The following are out of scope for the current iteration: persistent sessions across full-page refreshes, full department CRUD, automated test suites, real email/SMTP delivery, attachments, payroll integration, and multi-tenancy.
+Persistent browser sessions, full department CRUD, payroll, multi-tenancy, hard deletion/reactivation
+and general email/SMS notifications remain excluded. Avoid adding inactive placeholder controls.
 
-## 🗺️ API highlights
+## Repository and contribution
 
-All business endpoints are rooted at `/api/v1`.
+- `src/`: API, Application, Domain, Infrastructure and Client.
+- `tests/`: retained regression gates and browser fixture.
+- `tools/`: operator tooling; never exposed through public HTTP.
+- `docs/planning/`, `docs/adr/`, `docs/operations/`, `docs/verification/`: rationale and dated evidence.
 
-| Area | Selected endpoints |
-|---|---|
-| Authentication | `POST /auth/login`, `POST /auth/refresh` |
-| Leave requests | `POST /leave-requests`, `GET /leave-requests/balances`, `GET /leave-requests/history`, `POST /leave-requests/{id}/cancel` |
-| Manager decisions | `GET /leave-requests?status=Pending`, `POST /leave-requests/{id}/approve`, `POST /leave-requests/{id}/reject` |
-| HR monitoring | `GET /leave-requests/monitoring/pending` |
-| Employee management | `GET /employees`, `GET /employees/{id}`, `POST /employees`, `PUT /employees/{id}` |
-| Reference data | `GET /departments`, `GET /roles`, `GET /leave-types` |
-
-Swagger is the authoritative interactive contract for a running Development API.
-
-## 📁 Repository layout
-
-```text
-src/
-├── HRFlow.Api/              # HTTP boundary: controllers, middleware, startup
-├── HRFlow.Application/      # Commands, queries, validators, interfaces
-├── HRFlow.Domain/           # Entities, enums, domain rules
-├── HRFlow.Infrastructure/   # EF Core, Identity, persistence, seed data
-└── HRFlow.Client/           # React SPA
-docs/
-├── planning/                # Discovery, requirements, agile plan
-└── adr/                     # Architecture decision records
-```
-
-## 🤝 Contributing
-
-This project follows a small, reviewable change workflow:
-
-1. Create a focused branch from current `main`.
-2. Keep layer dependencies pointing inward and preserve server-side authorization.
-3. Run the smallest relevant build/lint/manual verification.
-4. Open a pull request with a concise explanation of the behavior change.
-
----
-
-Built to demonstrate deliberate engineering choices, not just screens and endpoints.
+Create a focused branch from fetched main, preserve layer/permission/transaction/session safeguards,
+run relevant retained checks, and use an independently reviewed PR. Never commit secrets, private
+files, real personnel CSVs, databases, traces or private invitation pickup content.

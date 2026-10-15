@@ -68,8 +68,8 @@ The original #82 rehearsal preceded private uploads; its synthetic-file/empty-in
 does not prove attachment recovery. The local #83 implementation now validates required document
 metadata against clean/quarantine blob sizes and checksums before completing backup or restoration.
 See [the attachment-aware rehearsal](../verification/private-supporting-documents.md) and
-[document operations](supporting-documents.md). This additional local drill does not establish future
-profile-image, retention/legal-hold, Linux or large-store recovery. Repeat after relevant changes.
+[document operations](supporting-documents.md). That #83 drill alone did not establish profile-image recovery; the subsequent #95 extension is
+recorded below. Retention/legal-hold, Linux and large-store recovery remain unverified. Repeat after relevant changes.
 
 The #95 slice now extends integrity checks and retained Windows recovery verification to processed
 profile images, pending/removed metadata and removal markers; see
