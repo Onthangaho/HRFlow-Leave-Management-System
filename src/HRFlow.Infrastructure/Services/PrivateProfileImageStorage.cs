@@ -215,8 +215,12 @@ public sealed class PrivateProfileImageStorage(IConfiguration configuration) : I
         var directory = Path.Combine(root, "profile-images", area);
         for (var ancestor = new DirectoryInfo(directory); ancestor != null; ancestor = ancestor.Parent)
             if (ancestor.Exists && ancestor.Attributes.HasFlag(FileAttributes.ReparsePoint)) throw new IOException("Unsafe image storage.");
-        Directory.CreateDirectory(directory);
-        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        foreach (var ownedDirectory in new[] { Path.Combine(root, "profile-images"), directory })
+        {
+            if (OperatingSystem.IsWindows()) Directory.CreateDirectory(ownedDirectory);
+            else Directory.CreateDirectory(ownedDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(ownedDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
         var path = Path.Combine(directory, id.ToString("N") + ".blob");
         if (File.Exists(path) && File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint)) throw new IOException("Unsafe image object.");
         return path;

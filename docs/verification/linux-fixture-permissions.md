@@ -97,3 +97,26 @@ validate this uncommitted patch. First-admin work has not started.
 ## Publication for hosted validation
 
 Publication is now authorised. The fixture-only patch is prepared for a separate PR referencing #76; hosted Linux status is initially pending. Windows runs above remain separate earlier executions. No production source, 409 assertions, cleanup ordering or workflow configuration changed.
+
+## First hosted correction attempt and newly exposed creation omissions
+
+[Run 38785153430](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38785153430)
+ran commit 24f023d: **54 passed / 1 failed**, 55 backend cases, 2.5216 minutes.
+Both expected-409 tests, restart compensation and the new fixture permission test passed.
+Recovery failed later in `DeleteStage -> EnumerateFiles -> Check`, not at its original source
+DB input validation. Browser was skipped. Build and frontend checks passed.
+
+Inspection exposed additional generated-object omissions in production code: backup SQLite
+snapshots were created with default file permissions; profile-images' intermediate namespace
+directory was not explicitly restricted; restore restricted leaf directories but not every
+recursively created ancestor. A private outer directory limits exposure but does not satisfy
+per-object validation. These cannot correctly be fixed with fixture chmod or a relaxed validator.
+
+The follow-up precreates the backup snapshot 0600, restricts the generated image namespace at
+creation, and restricts every restored archive ancestor before publishing. Production validation,
+409 mappings and cleanup ordering remain unchanged. This narrowly extends the original fixture-only
+scope to correct file creation, with recursive recovery permission assertions retained. The final
+patch therefore does contain these two small Infrastructure source corrections; the earlier
+production-unchanged statement applies only to commit 24f023d and its separate Windows runs.
+
+A complete hosted job including browser checks remains required after this follow-up.

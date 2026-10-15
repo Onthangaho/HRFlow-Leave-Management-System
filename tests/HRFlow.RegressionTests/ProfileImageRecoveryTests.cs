@@ -41,10 +41,14 @@ public sealed class ProfileImageRecoveryTests
             var key = Path.Combine(root,"private.key"); var package = Path.Combine(root,"backup.package"); var destination = Path.Combine(root,"restored");
             BackupRestoreService.GenerateKey(key, ApiFixture.RepositoryRoot);
             foreach (var path in new[] { root, privateRoot, database, key }) ApiFixture.AssertPrivatePath(path);
+            foreach (var path in Directory.EnumerateFileSystemEntries(privateRoot, "*", SearchOption.AllDirectories))
+                ApiFixture.AssertPrivatePath(path);
             BackupRestoreService.Backup(database, privateRoot, package, key, ApiFixture.RepositoryRoot);
             ApiFixture.AssertPrivatePath(package);
             BackupRestoreService.Restore(package, destination, key, ApiFixture.RepositoryRoot, true);
             foreach (var path in new[] { destination, Path.Combine(destination,"private"), Path.Combine(destination,"database.sqlite") })
+                ApiFixture.AssertPrivatePath(path);
+            foreach (var path in Directory.EnumerateFileSystemEntries(destination, "*", SearchOption.AllDirectories))
                 ApiFixture.AssertPrivatePath(path);
             await using (var db = new HRFlowDbContext(new DbContextOptionsBuilder<HRFlowDbContext>().UseSqlite("Data Source="+Path.Combine(destination,"database.sqlite")+";Pooling=False").Options))
             {
