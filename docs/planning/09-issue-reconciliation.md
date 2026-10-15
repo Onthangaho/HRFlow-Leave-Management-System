@@ -5,6 +5,14 @@ No issue edited/closed. “Complete” recommends closure after review, not auto
 “Partial” preserves parent scope, “Blocked” names unresolved dependencies. No issue in this set
 is recommended wholly superseded; selected stale transport/safety wording is superseded explicitly.
 
+## Superseding CI evidence after merged #121
+
+Tracker states/criteria below remain the fetched review baseline, not new issue edits. Original PR
+#120 Linux execution was 50 backend pass / 4 fail. #121 corrected fixture and production creation
+permissions without relaxing validation; [final hosted Ubuntu run](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38786228861)
+passed 55 backend and 9 Chromium tests. Earlier billing blocks are historical. Positive ClamAV
+coverage remains separate local evidence; broad Linux deployment/scanner/recovery checks remain.
+
 ## Acceptance baseline
 
 The verbatim criteria below are the **currently fetched tracker contract**, including authorised
@@ -160,8 +168,8 @@ Follow-up from CodeRabbit review on PR for issue #3.
 
 - **Implemented:** Maintained xUnit and Playwright, disposable migrated SQLite, actual two-process barriers, persisted assertions, defect experiments and CI; PR #117, image extension #119.
 - **Remaining functionality:** Incremental coverage remains: full expiry/skew/refresh boundary matrix and broader failure workflows. Test convention has already been authorised.
-- **Verification only:** Hosted Linux/Chromium blocked before job start by billing; comprehensive scanner/AT/load/deployment still unexecuted.
-- **Dependencies/decision:** Keep open for bounded follow-up gates; owner resolves billing independently without weakening CI.
+- **Verification only:** Final #121 hosted Ubuntu/Chromium gates passed (55 backend / 9 browser). Earlier billing blocks are historical; comprehensive scanner/AT/load/deployment remains unexecuted.
+- **Dependencies/decision:** Keep open for bounded follow-up gates; current retained hosted gates now pass without weakening CI.
 - **Source:** [inspected contract/source](../../tests/README.md). **Dated evidence:** [critical-workflow-regressions](../verification/critical-workflow-regressions.md). **Merged evidence:** [PR #117](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/117), [PR #119](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/119).
 
 ## [#77: Add a responsive role-aware application shell around existing workflows](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/77)
@@ -286,7 +294,7 @@ Follow-up from CodeRabbit review on PR for issue #3.
 
 - **Implemented:** Operator encrypted package, cross-process stopped-writer coordination, isolated no-overwrite restore, integrity/file manifest, credential invalidation and reviewed recover-password; PR #108, document/image extensions #109/#119.
 - **Remaining functionality:** None found in the implemented operator-only local tooling contract. Scheduled backup/retention automation is not part of that slice; company custody/retention/access procedure still needs approval.
-- **Verification only:** Local database/document/image recovery exists; target-host/Linux, large-store and restored full-role browser rehearsal outstanding. Historical 1.470s backup/0.922s restore and 2.580s post-cutoff window are local only.
+- **Verification only:** Local database/document/image recovery exists; broader target-host/Linux, large-store and restored full-role browser rehearsal outstanding beyond the retained Linux image-recovery case. Historical 1.470s backup/0.922s restore and 2.580s post-cutoff window are local only.
 - **Dependencies/decision:** Recommend closure of local tooling criteria after operator evidence review, or retain only an explicitly agreed operational acceptance remainder. Target-host/Linux/load permutations alone are verification gaps, not new functionality. Actual evidence/image blobs now have local recovery tests.
 - **Source:** [inspected contract/source](../../docs/operations/backup-restore.md). **Dated evidence:** [verified-backup-restore](../verification/verified-backup-restore.md). **Merged evidence:** [PR #108](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/108), [PR #109](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/109), [PR #119](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/119).
 
@@ -607,7 +615,7 @@ Follow-up from CodeRabbit review on PR for issue #3.
 
 - **Implemented:** Isolated refuse-existing synthetic fixture, real CSV/activation/ClamAV/decisions/history/calendar/reports walkthrough, restart/cleanup guards and truthful 8–10-minute speaking plan; PR #118.
 - **Remaining functionality:** No current-feature walkthrough gap found; future statutory demonstration not delivered or claimed.
-- **Verification only:** Fresh actual browser/persisted-state rehearsal recorded; human presentation untimed, hosted blocked, broad AT/devices untested.
+- **Verification only:** Fresh actual browser/persisted-state rehearsal recorded; human presentation untimed; retained hosted gates subsequently passed via #121, while broad AT/devices remain untested.
 - **Dependencies/decision:** Recommend closure only for explicit current-feature pitch criteria; if umbrella intended statutory/production pitch, retain that portion under #98 rather than claim it delivered.
 - **Source:** [inspected contract/source](../../docs/operations/pitch-rehearsal.md). **Dated evidence:** [pitch-rehearsal](../verification/pitch-rehearsal.md). **Merged evidence:** [PR #118](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/118).
 
@@ -629,6 +637,6 @@ Follow-up from CodeRabbit review on PR for issue #3.
 
 - **Implemented:** Dependency-ordered roadmap and merged usable slices through #119; security, shell, identity, private files, CSV, dashboards, exports, tests and current-feature pitch.
 - **Remaining functionality:** Qualified rules, statutory engine/categories and pilot operations gates remain. Tracker embeds obsolete planning baseline and deferral statements.
-- **Verification only:** Local dated evidence is extensive, hosted billing block remains; external sign-off not provided.
+- **Verification only:** Local dated evidence and #121 hosted 55/9 gates exist; earlier billing block is historical and external sign-off is not provided.
 - **Dependencies/decision:** Keep open; replace stale body with proposed concise live umbrella, not copied historical roadmap.
 - **Source:** [inspected contract/source](../../docs/planning/08-current-readiness-review.md). **Merged evidence:** [PR #119](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/119).

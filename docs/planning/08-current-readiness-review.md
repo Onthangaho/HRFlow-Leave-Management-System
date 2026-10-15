@@ -1,6 +1,19 @@
 # Current readiness review — 15 October 2026
 
-## Baseline and evidence discipline
+## Current CI update after merged PR #121
+
+PR #121 merged 15 October 2026 18:57:01 UTC as `5d6a9bd56c434705b2a7eee8b52b1d8fd3df1a93`.
+The original review baseline below is retained; PR #120 is now updated from that fetched main.
+Earlier billing blocks are historical. Original #120 run 38781690040 produced **50 backend passes /
+4 failures**. #121 corrected fixture private-directory/database permissions and production snapshot/
+image/archive-directory creation permissions, preserving validators and assertions. Its final
+[Ubuntu run](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38786228861) passed **55 backend and 9 Chromium tests**.
+Positive real-ClamAV coverage remains separate local evidence. This proves retained Linux gates,
+including the tested image recovery path, not comprehensive target-host deployment/scanner/recovery.
+See [permission-fix evidence](../verification/linux-fixture-permissions.md). The new #120 run is
+independent and must be inspected after this update; prior #121 success is not its result.
+
+## Original review baseline and evidence discipline
 
 Clean tree inspected; fetched `origin/main`; created `docs/current-readiness-review` at
 `1c660c10a9dda3f8870b78292fd3d8ffe0433008`. [PR #119](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/119)
@@ -24,7 +37,7 @@ reservations, original edit versions and immutable transition audits must surviv
 | Leave calculations | Explain inclusive calendar days, current configured balance minus all approved days, Pending reserves nothing | Mandatory before using HRFlow as authoritative statutory entitlement/pay record: qualified #75, central #22, applicable #85–#88 | No cycles/accrual, holiday deductions or preserved charged-day ledger; partial parent issues stay open |
 | Absence and medical evidence | Optional private evidence, Manager status-only; ordinary Required evidence | Mandatory before medical proof/payment decisions: reviewed #86/#84 workflow | Required Medical rejected; absence must remain recordable; no diagnoses requested |
 | Account onboarding | Synthetic CSV → private Development pickup → activation | Mandatory for fresh real installation: first-admin provisioning and approved production delivery | #81/#79/#89; no production pickup workaround |
-| Security/regressions | Local current-role, credential/session and transaction evidence | Mandatory release gate: obtain actual hosted Linux/Chromium results or explicitly reviewed equivalent platform evidence | PR #119 hosted job never started: billing annotation; no billing change authorised |
+| Security/regressions | Local plus retained hosted Ubuntu/Chromium gates | Retain green gates on current PR; extend uncovered boundaries and target-host checks | #119 billing historical; #120 original 50/4; merged #121 final 55 backend / 9 Chromium passed |
 | Private data | Demonstrate synthetic clean/quarantined evidence and processed profile images | Mandatory: approved privacy/access/retention/legal-hold decisions, scanner operations, custody and incident process | #83/#95 local functionality; no approved bound-evidence purge or legal-hold administration |
 | Recovery | Isolated authenticated encrypted restore with credential invalidation | Mandatory: deployer rehearses restore and authorised access recovery on target host | #82 plus document/image extensions; not a zero-loss promise |
 | Deployment | Local Production-mode checks are evidence only | Mandatory: real TLS/proxy/storage/permissions/backup/operator rehearsal | #81; single host, local SQLite locking, no network file/multi-host promise |
@@ -59,7 +72,7 @@ improvements, not automatically missing functionality. No readiness percentage o
   permissions must be reconciled before workers restart. No parallel original/recovered production lineage.
 - **Target-host operation:** local TLS login/refresh/password change and untrusted-header tests
   were recorded in #81; trusted proxy chain, actual persistent volume permissions, realistic load,
-  Linux recovery and production access recovery remain unexecuted target-host gates. No vendor or
+  broader Linux/target-host recovery and production access recovery remain unexecuted gates beyond the retained image-recovery case. No vendor or
   cost commitment is inferred. SQLite writers serialize database-wide with protected three-second
   contention handling; provider replacement needs more than a connection string.
 
@@ -113,7 +126,7 @@ The following are source facts or explicitly dated measurements, not load-capaci
 |---|---|---|---|---|
 | 1 | #81 offline first-admin provisioning | Removes a concrete fresh-install blocker; no legal or paid service dependency | Medium | One-time empty-store only, explicit department, Identity validators, no defaults/role repair; two-process refusal, rollback, no secrets and real login/current HR checks |
 | 2 | #75 qualified decision register | Unblocks truthful entitlement work; external reviewer required | Medium review | Named reviewer, operative sources/dates, applicability and approved boundary cases; unresolved rules remain blocked |
-| 3 | #76 extend/execute release gates | Adds missing expiry/refresh and target-platform evidence; billing owner is external | Medium | Retain missing negative boundaries, actual Linux/Chromium results when available; no weakened assertions or CI bypass |
+| 3 | #76 extend release gates | Adds missing expiry/refresh and broader target-platform evidence; existing hosted Ubuntu gates now pass | Medium | Retain missing negative boundaries and current-head green CI; no weakened assertions or CI bypass |
 | 4 | #83/#82 privacy/recovery operations | Protects real medical/employee data; HR/privacy retention decisions first | Large | Approved holds/retention and operator restore/access drill; no unapproved purge, reconcile metadata/blob/security outcomes |
 | 5 | #79 production invitation adapter | Needed for real onboarding; provider/custody/cost decision required | Medium | Approved delivery, durable failure/retry, no raw secrets, no DB lock during external calls; no purchase in current phase |
 | 6 | #77/#76 bounded directory and measured client work | Removes known fan-out / helps usable scale; define expected volume first | Medium | Paginated current-HR snapshots, scoped thumbnails, retained drafts/session checks, measured request/byte/latency before/after and keyboard regression |

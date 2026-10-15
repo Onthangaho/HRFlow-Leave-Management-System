@@ -124,7 +124,9 @@ public sealed class ApiFixture : IAsyncDisposable
 
     private async Task InitializeAsync(string origin, CancellationToken cancellationToken, int scannerPort)
     {
-        Directory.CreateDirectory(root); RestrictDirectory(root); Directory.CreateDirectory(Path.Combine(root, "private"));
+        CreatePrivateDirectory(root);
+        CreatePrivateDirectory(PrivateRoot);
+        CreatePrivateFile(DatabasePath);
         await using (var context = Context())
         {
             await context.Database.MigrateAsync(cancellationToken);
@@ -220,6 +222,29 @@ public sealed class ApiFixture : IAsyncDisposable
         var security = new DirectorySecurity(); security.SetAccessRuleProtection(true, false);
         security.AddAccessRule(new FileSystemAccessRule(WindowsIdentity.GetCurrent().User!, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
         new DirectoryInfo(path).SetAccessControl(security);
+    }
+    /// <summary>Creates synthetic storage with explicit permissions rather than inheriting runner umask/ACL defaults.</summary>
+    internal static void CreatePrivateDirectory(string path)
+    {
+        if (OperatingSystem.IsWindows()) Directory.CreateDirectory(path);
+        else Directory.CreateDirectory(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        RestrictDirectory(path);
+    }
+    /// <summary>Precreates a new fixture database privately before SQLite opens it or creates sidecars.</summary>
+    internal static void CreatePrivateFile(string path)
+    {
+        var options = new FileStreamOptions { Mode = FileMode.CreateNew, Access = FileAccess.Write, Share = FileShare.None };
+        if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+        using (new FileStream(path, options)) { }
+        RestrictFile(path);
+    }
+    /// <summary>Checks production storage validation and exact POSIX modes without logging private paths.</summary>
+    internal static void AssertPrivatePath(string path)
+    {
+        HRFlow.Infrastructure.Services.Operations.PrivateOperationsPaths.RequireRestricted(path);
+        if (!OperatingSystem.IsWindows())
+            Assert.Equal(Directory.Exists(path) ? UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
+                : UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(path));
     }
     /// <summary>Private browser runtime state must not inherit broadly readable file permissions.</summary>
     public static void RestrictFile(string path)

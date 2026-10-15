@@ -1,6 +1,6 @@
 # Proposed tracker updates — not published
 
-Prepared 15 October 2026 against merged main/PR #119. **No GitHub issue was edited or closed.**
+Prepared 15 October 2026 against merged main through PR #121. **No GitHub issue was edited or closed.**
 The [reconciliation](09-issue-reconciliation.md) contains the fetched criteria and evidence for all
 29 items. These are proposed contracts for owner review, not authorisation to start implementation.
 
@@ -8,7 +8,7 @@ The [reconciliation](09-issue-reconciliation.md) contains the fetched criteria a
 
 ### HRFlow South African workplace roadmap: shipped slices and remaining release gates
 
-**Baseline:** merged PR #119, 15 October 2026 SAST. This umbrella remains open. It coordinates
+**Baseline:** merged PR #121, 15 October 2026 SAST. This umbrella remains open. It coordinates
 focused existing issues; a merged partial slice does not close a statutory/operational parent.
 See the repository's current readiness review and issue reconciliation in docs/planning.
 
@@ -30,8 +30,9 @@ authoritative. Preserve snapshots, writer reservations, original versions, audit
 
 1. #81 offline first-admin provisioning (actionable without paid hosting); #75 qualified requirements
    decision register in parallel as an external review activity.
-2. #76 incremental regression and actual hosted platform execution. Account owner must resolve
-   billing independently; do not disable workflow, weaken protection or claim local Chrome proves Linux.
+2. #76 incremental regression: merged #121 final hosted Ubuntu/Chromium gates passed 55 backend /
+   9 browser cases. Earlier billing blocks are historical; do not weaken protection or generalise
+   retained gates to all Linux deployment/scanner/recovery scenarios.
 3. #22 reviewed central calculation/history contract; #78 remaining holiday/cycle inputs; #85 annual,
    then applicable #86/#87/#88 categories. Do not infer entitlement from Gender or account creation.
 4. #79 approved production delivery; #89 production onboarding depends on it. No SMTP or service
@@ -107,8 +108,9 @@ work. Categories remain blocked pending relevant reviewed examples, not abandone
 Replace deferral language with: “The focused maintained xUnit/Playwright convention is authorised
 and shipped. Extend existing disposable migrated SQLite/process/session fixtures. No new framework
 collection.” Link tests/README.md and dated #117/#119 results. Outstanding: full expiry/refresh
-boundary coverage and hosted Linux/Chromium execution, plus explicitly separate AT/load/scanner
-matrices. Billing annotation is a job-start blocker, not a failed assertion or passed hosted run.
+boundary coverage and broader platform/AT/load/scanner matrices. #121 final hosted Ubuntu execution
+passed 55 backend / 9 Chromium cases after fixing #120's original 50/4. Historical billing failures
+remain separate. Positive real-ClamAV checks are still local evidence.
 
 ### #78/#84/#90/#92/#96 — preserve remaining parent contracts
 

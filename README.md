@@ -7,7 +7,7 @@ legally compliant or production-ready**.
 
 ## Current status — 15 October 2026
 
-Merged through [PR #119](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/119).
+Merged through [PR #121](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/121), including strict fixture and production creation-permission corrections.
 See the [current readiness review](docs/planning/08-current-readiness-review.md),
 [issue reconciliation](docs/planning/09-issue-reconciliation.md) and
 [unpublished tracker proposals](docs/planning/10-proposed-tracker-updates.md).
@@ -116,8 +116,12 @@ interaction, controlled transport barriers and persisted-row/file checks. PR #11
 backend tests and a combined 12 browser run after FreshClam daily 28153 (14 October 06:24 UTC).
 The full 54-case backend result is earlier recorded evidence, not a new readiness-review run.
 Hosted [PR #119 workflow](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38651078671)
-never started its job due to account billing restriction. Local Windows/Chrome does not prove hosted
-Linux/Chromium execution. Billing and protections have not been changed.
+never started its job due to account billing restriction; that block is historical. Original PR #120
+then ran and produced 50 backend passes / 4 failures. Merged PR #121 corrected confirmed fixture
+and production file/directory creation permissions without weakening validators. Its final
+[hosted Ubuntu run](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38786228861) passed **55 backend and 9 Chromium tests**.
+Positive real-ClamAV coverage remains separate local evidence. These retained Linux gates do not
+verify all Linux deployment, scanner or recovery scenarios. Billing and protections were unchanged.
 
 ## Release boundaries
 

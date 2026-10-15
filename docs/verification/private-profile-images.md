@@ -202,3 +202,7 @@ by this review. The earlier complete 54-case backend result is prior evidence, n
 backend run. Outstanding cases above remain unexecuted; definition freshness does not establish
 comprehensive malware detection, production readiness or Linux behavior. Hosted CI status must be
 read from the actual PR run; its known account billing restriction has not been changed.
+
+## Subsequent hosted evidence
+
+PR #120's Linux run reached 54 backend cases: 50 passed and four failed; it was not blocked by billing. See [the fixture-permission investigation](linux-fixture-permissions.md) for original failure paths, the proposed fixture-only correction and actual reruns. Earlier Windows results above remain dated evidence, not a Linux pass.

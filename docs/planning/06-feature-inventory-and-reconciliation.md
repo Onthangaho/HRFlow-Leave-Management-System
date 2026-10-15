@@ -1,3 +1,5 @@
+> **CI/readiness update, 15 October 2026:** PR #121 is merged. Original #120: 50 backend pass / 4 fail; corrected strict fixture/production creation permissions, validators preserved. Final #121 Ubuntu gates: 55 backend / 9 Chromium passed. Earlier billing blocks are historical; positive real-ClamAV remains separate local evidence, not comprehensive Linux deployment/scanner/recovery verification. See [current readiness](08-current-readiness-review.md).
+
 > **Current review: 15 October 2026, merged PR #119.** Read [current readiness](08-current-readiness-review.md), [29-issue reconciliation](09-issue-reconciliation.md) and [unpublished tracker proposals](10-proposed-tracker-updates.md). The dated entries below are historical evidence, not the current remaining-work queue. No GitHub issue changes or product implementation in this review.
 
 ## Current shipped / partial / blocked inventory
@@ -5,7 +7,7 @@
 - **Shipped:** protected role-aware shell; current-role/credential auth; employee lifecycle and versioned HR management; optional decision notes and request timelines; private scanned documents/images; local activation/password change; CSV onboarding; profile/themes/notification preferences; durable in-app alerts; current-data personal/Manager/HR workspaces and scoped exports; retained regressions and synthetic pitch. PRs #99–#119.
 - **Partially delivered parent scope:** #78 holiday/cycle foundation, #79/#89 production delivery, #81 deployment/provisioning, #83 retention/holds, #84 conditional proof/payment, #90/#92/#96 statutory charged units. Local #82 tooling is delivered, target-host operator acceptance remains separate.
 - **Blocked/new functionality:** qualified #75 approval; #22 central historical-charge engine; #85–#88 statutory categories; first-admin creation and production invitation adapter.
-- **Verification debt, not proof of missing functionality:** hosted billing-blocked Linux/Chromium, comprehensive AT/accessibility, physical disk/ACL faults, broad scanner/EXIF corpora and realistic load. See dated reports for narrower executed cases.
+- **Verification debt, not proof of missing functionality:** broader Linux deployment/scanner/recovery beyond retained #121 hosted gates, comprehensive AT/accessibility, physical disk/ACL faults, broad scanner/EXIF corpora and realistic load. See dated reports for narrower executed cases.
 
 The older inventory below is retained as an 8 October planning record. Use the 29-item reconciliation for current acceptance/closure recommendations.
 
