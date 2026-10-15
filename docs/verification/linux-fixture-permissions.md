@@ -122,3 +122,14 @@ production-unchanged statement applies only to commit 24f023d and its separate W
 A complete hosted job including browser checks remains required after this follow-up.
 
 Local follow-up checks: the recovery/fixture-permission filter passed 2/2 (14s), and the solution build passed with zero warnings/errors (3.68s). These are scoped follow-up runs, not a new full Windows suite. A final hosted run remains pending.
+
+## Confirmed final fix-head hosted result and merge
+
+[Run 38786228861](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38786228861), job 116599260770, ran final fix head
+`0225be71fbc0d1bf08f627c8669e1f88d1320a57` on Ubuntu 24.04 and completed SUCCESS:
+55 backend passed (3.2165 minutes), all 9 Chromium cases passed (21.924 s), plus build/lint/audits.
+No failures/skips/retries masked assertions. Positive real-ClamAV paths were not run in this hosted
+scanner-free gate. This is retained-case coverage, not comprehensive Linux deployment or recovery.
+PR #121 merged 15 October 2026 18:57:01 UTC. The earlier pending/uncommitted statements above
+are historical phase records, superseded by this actual result. PR #120's new merge-head workflow
+requires its own result and cannot inherit the #121 pass.

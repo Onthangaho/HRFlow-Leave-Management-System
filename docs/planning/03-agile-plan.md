@@ -1,3 +1,5 @@
+> **Historical design baseline.** Current source/merged status is reconciled as of 15 October 2026 in [the readiness review](08-current-readiness-review.md) and [issue reconciliation](09-issue-reconciliation.md). Old estimates, test deferral and implementation-pending wording below are not current instructions. Qualified statutory review remains required.
+
 # HRFlow — Phase 4: Agile Planning
 
 **Status:** Approved · **Owner:** Solo Developer · **Input:** `docs/planning/02-requirements.md`
