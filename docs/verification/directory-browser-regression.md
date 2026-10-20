@@ -133,3 +133,21 @@ The instrumented baseline retains original assertions but adds diagnostic browse
 does not reproduce the original uninstrumented timing exactly; those passes cannot rule out an
 unobserved timing race. Screenshots, raw errors and payload-bearing artifacts were not used to
 infer the missing original assertion. No original-failure assertion details have been reconstructed.
+
+## Publication-time hosted recurrence and responsive readiness
+
+First follow-up head `8c925d0` ran on [Ubuntu workflow 39453276553](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39453276553).
+The backend gate passed; browser results were **19 passed /1 failed**, 34.439s suite. The retained
+barrier passed. Safe diagnostics identified `mobile-width` as the failed step, after every HTTP,
+draft and attention assertion passed. At the subsequent diagnostic read, document/viewport widths
+were both 390. This provides new evidence of transient viewport/layout settling in that run, not
+recovered assertion details for PR #125's original failure.
+
+The mobile no-overflow assertion now uses `expect.poll` on the same boolean DOM measurement within
+the existing 10-second assertion timeout. It waits for the actual responsive condition rather than
+assuming `setViewportSize`/theme evaluation synchronously completes layout. No threshold, timeout,
+viewport, CSS, retry count or security assertion changed. Production and CI remain unchanged.
+Finalisation after that hosted failure: browser typecheck passed; the target repeated three times
+passed (11.635/8.215/7.006s, 69.948s invocation). A subsequent complete browser invocation passed
+**20/20**, **96.835s**, with zero retries/skips. These are new separate local executions, not the
+earlier 83.926s suite. The unchanged hosted backend passed **88/88** in the first follow-up run.

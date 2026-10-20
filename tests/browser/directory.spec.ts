@@ -121,7 +121,7 @@ test('HTTP directory: applied pages, drafts, attention links and desktop/mobile 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     await page.evaluate(() => document.documentElement.classList.add('dark'));
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
   await directoryStep(page, testInfo, 'mobile-focus', async () => {
     await page.getByLabel('Search employees', { exact: true }).focus(); await page.keyboard.press('Tab');
