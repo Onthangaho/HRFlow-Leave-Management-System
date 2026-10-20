@@ -82,3 +82,28 @@ The subsequent finalisation authorises only commit/push and a draft PR. No issue
 ## Finalisation review
 
 Reviewed all nine documentation files, including new files. Corrected hypothetical inputs labelled reviewed, over-definite UIF status, and annual carry-forward wording. Source sections/statuses and unresolved dependencies remain explicit; no failed retrieval is replaced by an assumption. The missing primary instruments and qualified review block the relevant conclusions. All 16 decisions remain unsigned with reviewers Unassigned, and all 16 examples remain Pending review. Labour-law/company/privacy decisions and current role/medical-access boundaries remain separate. Finalisation reruns documentation checks only; hosted checks, if triggered, will be reported separately in the draft PR.
+
+## Main integration and hosted evidence after PR #126
+
+PR #126 was confirmed merged at **2026-10-20 16:36:12 UTC**, main merge
+`ea1428703e0f8e91c0e2e9b4084d28b53c2c33cb`. Fetched main was merged into the existing
+`docs/south-african-rule-review` branch for draft PR #125. Relative to updated main this PR remains
+**documentation-only**; the merged test corrections are inherited main changes, not legal-pack scope.
+
+- Original [PR #125 run 39442610037](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39442610037):
+  **88 backend passed; 17 browser passed /1 failed**. The original failed assertion was unavailable.
+- PR #126 independently confirmed HTTP/render synchronization and responsive layout-settling gaps.
+  Its safe diagnostics and controlled-response barrier do not reconstruct the original failure.
+- Final [PR #126 Ubuntu run 39455416451](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39455416451):
+  **88 backend and 20 Chromium passed**. See the [separate investigation and all run results](directory-browser-regression.md).
+  These are recorded hosted results, not tests rerun locally during this documentation update.
+
+None of these engineering results establishes legal approval, current-law completeness or readiness
+to enable statutory calculations. All **16 decisions remain unsigned**, reviewers **Unassigned**,
+and all **16 examples remain Pending review**. Retrieval failures and blocked #75/#22 conclusions
+remain unchanged. Positive real-ClamAV and wider deployment/recovery evidence remain separately scoped.
+
+This integration reruns documentation/link/encoding/whitespace and instruction-equality checks only.
+The new PR #125 hosted workflow result is reported separately after the pushed head completes;
+it must not be inferred from PR #126's passing run. No reviewer contact, issue closure, calculation
+implementation, deployment or PR merge is performed in this update.
