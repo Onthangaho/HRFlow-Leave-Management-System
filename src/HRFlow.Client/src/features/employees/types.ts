@@ -5,6 +5,7 @@ export type ManagerAssignment = 'Preserve' | 'Assign' | 'Clear';
 
 /** Complete editable snapshot, including the version used to detect stale forms. */
 export interface Employee {
+  profileImageVersion: string | null;
   needsEmploymentFacts: boolean;
   needsCurrentSchedule: boolean;
   hasFutureScheduleOnly: boolean;

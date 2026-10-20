@@ -3,6 +3,8 @@ namespace HRFlow.Application.Features.Employees.Queries.GetEmployees;
 /// <summary>Provides a complete editable snapshot; no Identity credentials or tokens are exposed.</summary>
 public sealed class GetEmployeeDto
 {
+    /// <summary>Presence/version hint avoids absent-image probes; content rechecks current authorization.</summary>
+    public Guid? ProfileImageVersion { get; set; }
     /// <summary>Active profiles with unconfirmed employee number or start date, not a legal violation.</summary>
     public bool NeedsEmploymentFacts { get; set; }
     /// <summary>Active confirmed starters with no revision effective on the server SAST business date.</summary>

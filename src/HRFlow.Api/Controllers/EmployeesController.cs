@@ -19,14 +19,20 @@ public sealed class EmployeesController(IMediator mediator, HRFlow.Application.S
 {
     /// <summary>Returns complete edit snapshots for the HR directory and reporting selectors.</summary>
     [HttpGet]
-    public async Task<IActionResult> GetEmployees(CancellationToken cancellationToken) =>
-        Ok(await mediator.Send(new GetEmployeesQuery { ActorIdentityId = GetActorIdentityId() }, cancellationToken));
+    public async Task<IActionResult> GetEmployees([FromQuery] EmployeeDirectoryFilter filter, CancellationToken cancellationToken) =>
+        Ok(await mediator.Send(new GetEmployeesQuery(GetActorIdentityId(), filter), cancellationToken));
+
+    /// <summary>Searches Managers independently of the directory's current page.</summary>
+    [HttpGet("managers")]
+    public async Task<IActionResult> GetManagers([FromQuery] Guid departmentId, [FromQuery] Guid? employeeId,
+        [FromQuery] string? search, [FromQuery] int page = 1, CancellationToken cancellationToken = default) =>
+        Ok(await mediator.Send(new GetManagersQuery(GetActorIdentityId(), departmentId, employeeId, search, page), cancellationToken));
 
     /// <summary>Allows clients to reload a resource after a stale-edit conflict.</summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetEmployee(Guid id, CancellationToken cancellationToken)
     {
-        var employee = (await mediator.Send(new GetEmployeesQuery { EmployeeId = id, ActorIdentityId = GetActorIdentityId() }, cancellationToken)).SingleOrDefault();
+        var employee = await mediator.Send(new GetEmployeeQuery(GetActorIdentityId(), id), cancellationToken);
         return employee is null ? throw new NotFoundException("Employee was not found.") : Ok(employee);
     }
 

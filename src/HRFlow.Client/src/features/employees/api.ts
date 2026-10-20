@@ -29,21 +29,35 @@ const updateEmployee = async (
   return response.data;
 };
 
-/** Reads only the signed-in account's directory cache and cancels old requests when the session changes. */
-export function useEmployees() {
-  const { user } = useAuth();
-  return useQuery<Employee[], Error>({
-    queryKey: employeesQueryKey(user?.id ?? ''),
-    queryFn: async ({ signal }) => (await authHttpClient.get<Employee[]>('/employees', { signal })).data,
-    enabled: Boolean(user?.id),
-  });
+/** Applied filters are part of account/session keys, never labels over previous-page data. */
+export interface DirectoryFilter { search: string; status: string; departmentId: string; attention: string; reportsTo: string; sort: string; page: number; pageSize: number }
+/** Server count, page and as-of metadata belong to the same authorised snapshot. */
+export interface DirectoryPage { items: Employee[]; totalCount: number; page: number; pageSize: number; asOfUtc: string }
+/** Minimal current Manager choice; a lookup never grants permission to commit a stale assignment. */
+export interface ManagerChoice { id: string; fullName: string }
+interface ManagerPage { items: ManagerChoice[]; totalCount: number; page: number; pageSize: number; assignedManager: ManagerChoice | null }
+/** Server authorization/count/page share a snapshot; requests and caches belong to this session. */
+export function useEmployees(filter: DirectoryFilter) {
+  const { user, sessionVersion } = useAuth();
+  return useQuery({ queryKey: [...employeesQueryKey(user?.id ?? ''), sessionVersion, 'directory', filter],
+    queryFn: async ({ signal }) => (await authHttpClient.get<DirectoryPage>('/employees', { signal,
+      params: { ...filter, departmentId: filter.departmentId || undefined, reportsTo: filter.reportsTo || undefined } })).data,
+    enabled: Boolean(user?.roles.includes('HR Administrator')), retry: false, refetchOnMount: 'always' });
+}
+/** Manager search is independent of the current directory page and includes an assigned snapshot. */
+export function useManagers(departmentId: string, employeeId: string | undefined, search: string, page: number) {
+  const { user, sessionVersion } = useAuth();
+  return useQuery({ queryKey: [...employeesQueryKey(user?.id ?? ''), sessionVersion, 'managers', departmentId, employeeId, search, page],
+    queryFn: async ({ signal }) => (await authHttpClient.get<ManagerPage>('/employees/managers', { signal,
+      params: { departmentId, employeeId, search, page } })).data,
+    enabled: Boolean(user?.roles.includes('HR Administrator') && departmentId), retry: false, refetchOnMount: 'always' });
 }
 
 /** Loads department choices without implementing department mutation workflows. */
 export function useDepartments() {
-  const { user } = useAuth();
+  const { user, sessionVersion } = useAuth();
   return useQuery<{ id: string; name: string }[], Error>({
-    queryKey: departmentsQueryKey(user?.id ?? ''),
+    queryKey: [...departmentsQueryKey(user?.id ?? ''), sessionVersion],
     queryFn: async ({ signal }) => (await authHttpClient.get('/departments', { signal })).data,
     enabled: Boolean(user?.id),
   });
@@ -51,9 +65,9 @@ export function useDepartments() {
 
 /** Uses server-supported capabilities rather than a single-role edit that can drop combined membership. */
 export function useRoles() {
-  const { user } = useAuth();
+  const { user, sessionVersion } = useAuth();
   return useQuery<{ name: string }[], Error>({
-    queryKey: rolesQueryKey(user?.id ?? ''),
+    queryKey: [...rolesQueryKey(user?.id ?? ''), sessionVersion],
     queryFn: async ({ signal }) => (await authHttpClient.get('/roles', { signal })).data,
     enabled: Boolean(user?.id),
   });
@@ -65,7 +79,7 @@ function useRefreshManagementQueries() {
   return async () => {
     if (!user?.id || getSessionVersion() !== sessionVersion) return;
     await Promise.all([
-      client.invalidateQueries({ queryKey: employeesQueryKey(user.id) }),
+      client.invalidateQueries({ queryKey: [...employeesQueryKey(user.id), sessionVersion] }),
       client.invalidateQueries({ queryKey: ['pending-leave-requests', user.id] }),
       client.invalidateQueries({ queryKey: ['organisation-pending-leave-requests', user.id] }),
       client.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
@@ -109,7 +123,8 @@ export function useDeactivateEmployee() {
       if (!user || getSessionVersion() !== sessionVersion || employee.identityUserId === user.id) return;
       await client.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] });
       await client.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] });
-      await Promise.all(['employees', 'leave-balances', 'employee-leave-history', 'pending-leave-requests',
+      await client.invalidateQueries({ queryKey: ['employees', user.id, sessionVersion] });
+      await Promise.all(['leave-balances', 'employee-leave-history', 'pending-leave-requests',
         'organisation-pending-leave-requests', 'leave-types', 'managed-leave-types', 'leave-policies',
         'departments', 'roles', 'team-leave-summary', 'department-leave-report', 'report-departments', 'leave-request-timeline'].map(key => client.invalidateQueries({ queryKey: [key, user.id] })));
     },

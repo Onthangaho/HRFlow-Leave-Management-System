@@ -124,6 +124,8 @@ test('controlled transport: delayed non-replayable mutation failure cannot end a
 test('HTTP integration: stale employee form retains draft until explicit reload', async ({ page }) => {
   const fixture = state(); await login(page, 'hr'); await navigation(page).getByRole('link', { name: 'Employee management', exact: true }).click();
   const owner = fixture.employees.unrelated;
+  await page.getByLabel('Search employees', { exact: true }).fill(owner.email);
+  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
   await page.getByRole('button', { name: 'Edit ' + owner.name, exact: true }).click(); await page.getByLabel('Full name', { exact: true }).fill('Retained synthetic draft');
   const token = await apiLogin(page, 'hr'), headers = { Authorization: 'Bearer ' + token };
   const employee = await (await page.request.get(fixture.api + '/api/v1/employees/' + owner.id, { headers })).json();

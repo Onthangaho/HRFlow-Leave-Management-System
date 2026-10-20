@@ -1,11 +1,11 @@
 import { ScheduleWorkspace } from './ScheduleWorkspace';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { isAxiosError } from 'axios';
-import { useCreateEmployee, useUpdateEmployee, useDepartments, useRoles } from '../api';
+import { useCreateEmployee, useUpdateEmployee, useDepartments, useRoles, useManagers, type ManagerChoice } from '../api';
 import { employeeRoles, type Employee, type EmployeeFormValues } from '../types';
 
 const schema = z.object({
@@ -20,7 +20,6 @@ const schema = z.object({
 
 interface EmployeeFormProps {
   employee: Employee | null;
-  employees: Employee[];
   onSuccess: (deliveryState?: string | null) => void;
   onCancel: () => void;
   onReload: () => Promise<void>;
@@ -31,7 +30,7 @@ const inputClass = 'ui-input';
 const errorClass = 'mt-1 text-sm text-rose-700';
 
 /** Preserves the original version, roles, and reporting intent until the user explicitly reloads or saves. */
-export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReload, reloadError }: EmployeeFormProps) {
+export function EmployeeForm({ employee, onSuccess, onCancel, onReload, reloadError }: EmployeeFormProps) {
   const { sessionVersion, getSessionVersion } = useAuth();
   const isEditing = Boolean(employee);
   const departments = useDepartments();
@@ -55,15 +54,18 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
   const departmentId = useWatch({ control, name: 'departmentId' });
   const confirmFacts = useWatch({ control, name: 'confirmEmploymentFacts' });
   const managerAssignment = useWatch({ control, name: 'managerAssignment' });
-  const eligibleManagers = employees.filter(candidate =>
-    candidate.isActive && !candidate.requiresActivation && candidate.id !== employee?.id && candidate.departmentId === departmentId && candidate.roles.includes('Manager'),
-  );
+  const [managerSearch, setManagerSearch] = useState('');
+  const [managerPage, setManagerPage] = useState(1);
+  const managers = useManagers(departmentId, employee?.id, managerSearch, managerPage);
+  const [selectedManager, setSelectedManager] = useState<ManagerChoice | null>(null);
+  const eligibleManagers = managers.isError ? [] : managers.data?.items ?? [];
   const mutation = employee ? update : create;
   const busy = mutation.isPending || isSubmitting;
   const choicesUnavailable = departments.isPending || availableRoles.isPending ||
     Boolean(departments.error || availableRoles.error) || !departments.data?.length || !availableRoles.data?.length;
 
   useEffect(() => {
+    setSelectedManager(null); setManagerSearch(''); setManagerPage(1);
     reset(employee ? {
       confirmEmploymentFacts: false, employeeNumber: employee.employeeNumber ?? '', employmentStartDate: employee.employmentStartDate ?? '',
       fullName: employee.fullName, email: employee.email, departmentId: employee.departmentId,
@@ -135,7 +137,7 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
           <div><label htmlFor="employee-department" className="text-sm font-medium">Department</label>
             <select id="employee-department" className={inputClass} aria-invalid={Boolean(errors.departmentId)}
               aria-describedby={errors.departmentId ? 'department-error' : undefined} {...departmentRegistration} value={departmentId}
-              onChange={event => { void departmentRegistration.onChange(event); setValue('managerId', ''); }}>
+              onChange={event => { void departmentRegistration.onChange(event); setValue('managerId', ''); setSelectedManager(null); setManagerSearch(''); setManagerPage(1); }}>
               <option value="">Select a department</option>
               {departments.data?.map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
             </select>
@@ -149,15 +151,25 @@ export function EmployeeForm({ employee, employees, onSuccess, onCancel, onReloa
             </div>{errors.roles && <p id="roles-error" className={errorClass}>{errors.roles.message}</p>}</fieldset>
           {employee && <div><label htmlFor="manager-change" className="text-sm font-medium">Manager assignment</label>
             <select id="manager-change" className={inputClass} {...managerRegistration}
-              onChange={event => { void managerRegistration.onChange(event); setValue('managerId', ''); }}>
+              onChange={event => { void managerRegistration.onChange(event); setValue('managerId', ''); setSelectedManager(null); }}>
               <option value="Preserve">Keep current manager</option><option value="Assign">Assign a manager</option><option value="Clear">Clear manager assignment</option>
             </select><p className="mt-1 text-sm text-slate-600">Current manager: {employee.managerName || 'No manager'}</p></div>}
-          {(!employee || managerAssignment === 'Assign') && <div><label htmlFor="employee-manager" className="text-sm font-medium">Manager</label>
-            <select id="employee-manager" className={inputClass} {...register('managerId')}
+          {(!employee || managerAssignment === 'Assign') && <div><label htmlFor="manager-search" className="text-sm font-medium">Search eligible Managers</label>
+            <input id="manager-search" type="search" className={inputClass} value={managerSearch} maxLength={100}
+              onChange={event => { setManagerSearch(event.target.value); setManagerPage(1); }} />
+            <label htmlFor="employee-manager" className="text-sm font-medium">Manager</label>
+            <select id="employee-manager" className={inputClass} {...register('managerId')} disabled={managers.isPending || managers.isError}
+              onChange={event => { setValue('managerId', event.target.value); setSelectedManager(eligibleManagers.find(m => m.id === event.target.value) ?? null); }}
               aria-invalid={Boolean(errors.managerId)} aria-describedby="manager-help manager-error">
               <option value="">{employee ? 'Select a manager' : 'No manager'}</option>
+              {selectedManager && !eligibleManagers.some(m => m.id === selectedManager.id) && <option value={selectedManager.id}>{selectedManager.fullName} (selected)</option>}
               {eligibleManagers.map(manager => <option key={manager.id} value={manager.id}>{manager.fullName}</option>)}
             </select>
+            {departmentId && <div className="mt-2 flex flex-wrap items-center gap-2"><button type="button" className="ui-secondary" disabled={managerPage === 1 || managers.isFetching} onClick={() => setManagerPage(p => p - 1)}>Previous Managers</button>
+              <span>Manager page {managerPage}{managers.data && !managers.isError ? `; ${managers.data.totalCount} eligible` : ''}</span>
+              <button type="button" className="ui-secondary" disabled={managers.isFetching || !managers.data || managerPage * 25 >= managers.data.totalCount} onClick={() => setManagerPage(p => p + 1)}>Next Managers</button></div>}
+            {departmentId && managers.isPending && <p role="status">Loading eligible Managers…</p>}
+            {managers.isError && <p role="alert">Manager choices could not load. <button type="button" className="underline" onClick={() => void managers.refetch()}>Retry Managers</button></p>}
             <p id="manager-help" className="mt-1 text-xs text-slate-600">{departmentId && eligibleManagers.length === 0
               ? 'No eligible managers in this department.' : 'Choose a manager in the selected department.'}</p>
             <p id="manager-error" className={errorClass}>{errors.managerId?.message}</p></div>}

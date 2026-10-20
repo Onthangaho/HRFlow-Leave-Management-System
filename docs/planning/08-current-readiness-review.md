@@ -1,5 +1,10 @@
 # Current readiness review — 15 October 2026
 
+## Bounded-directory follow-up — 20 October 2026
+
+PR #122 is merged; first-admin implementation is no longer a missing feature, while its target-host and production-delivery gates remain. The focused directory/thumbnail finding below now has a bounded implementation for review: [contract](../adr/0027-bounded-employee-directory.md), [measured before/after and retained tests](../verification/bounded-employee-directory.md). At 1,007 synthetic profiles, the default response fell from 716,061 bytes/all rows to 18,548 bytes/25 rows; the local warm median fell from 385.04 to 171.68 ms. Small-store and first-call timings did not improve. These are local observations, not load capacity. The old source findings remain the dated baseline; HR aggregate/report and other unbounded reads remain outstanding. Issue search found no dedicated pagination item; none was created/edited and #77 is not declared complete.
+
+
 ## Offline first-administrator follow-up — 15 October 2026
 
 PR #120 is merged. The #81 empty-store operator bootstrap is now implemented locally for review; see the [runbook](../operations/offline-first-administrator.md) and [new execution evidence](../verification/offline-first-administrator.md). This supersedes the first-admin implementation recommendation below, not the historical review evidence. Production delivery and target-host deployment/operational gates remain open. No tracker proposals were published, and #81 remains open.
@@ -121,7 +126,7 @@ The following are source facts or explicitly dated measurements, not load-capaci
    a separate Tab stop; a roving-grid enhancement could reduce keyboard burden, but its list/date
    alternative already works. Full WCAG contrast/AT conformance is unverified, not assumed failed.
 7. **Documented behavior limits:** team “Today” depends on browser time converted to SAST; receipt
-   timestamps are client receipt, not server snapshots. Page navigation unmounts forms; no universal
+   timestamps are client receipt, not server snapshots. Route navigation unmounts forms; no universal
    unsaved-route blocker is claimed. Image tests cover explicit stale recovery, Cancel focus/Escape
    restoration and mobile dark flow; this is not exhaustive keyboard/AT coverage of every dialog.
 

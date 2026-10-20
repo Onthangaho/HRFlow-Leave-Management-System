@@ -43,8 +43,7 @@ export function EmployeeDeactivationDialog({ employee, returnFocus, onClose, onS
     try {
       const latest = (await authHttpClient.get<Employee>(`/employees/${snapshot.id}`, { signal: controller.signal })).data;
       if (!currentSession()) return;
-      queryClient.setQueryData<Employee[]>(['employees', user?.id], existing =>
-        existing?.map(record => record.id === latest.id ? latest : record));
+      void queryClient.invalidateQueries({ queryKey: ['employees', user?.id, sessionVersion] });
       if (!latest.isActive) { onInactive(latest); return; }
       setSnapshot(latest); setReason(''); setValidation(''); mutation.reset();
     } catch (error) {
