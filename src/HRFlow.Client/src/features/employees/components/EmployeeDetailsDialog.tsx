@@ -1,7 +1,7 @@
 import { ScheduleWorkspace } from './ScheduleWorkspace';
 import { ConfirmationDialog } from '../../../components/ConfirmationDialog';
 import type { Employee } from '../types';
-import { PrivateAvatar } from '../../account/ProfileImage';
+import { PrivateAvatar } from '../../account/PrivateAvatar';
 
 /** HR-only preserved lifecycle details never offer editing, reactivation or deletion. */
 export function EmployeeDetailsDialog({ employee, returnFocus, onClose }: {

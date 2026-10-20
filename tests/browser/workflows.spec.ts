@@ -4,12 +4,20 @@ import { test, expect, type Page, type Route } from '@playwright/test';
 interface Fixture { password: string; api: string; client: string; typeId: string; employees: Record<string, { id: string; email: string; name: string }> }
 const state = () => JSON.parse(fs.readFileSync(process.env.HRFLOW_TEST_STATE!, 'utf8')) as Fixture;
 const navigation = (page: Page) => page.getByRole('navigation', { name: 'Primary', exact: true });
+async function overviewReady(page: Page, actor: string) {
+  if (actor === 'hr') await expect(page.getByText('HR snapshot loaded.', { exact: true })).toBeVisible();
+  else {
+    await expect(page.getByRole('heading', { name: 'Current configured balances', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Refresh dashboard', exact: true })).toBeEnabled();
+  }
+}
 async function login(page: Page, actor: string) {
   const fixture = state(); await page.goto(fixture.client + '/login');
   await page.getByLabel('Email', { exact: true }).fill(fixture.employees[actor].email);
   await page.getByLabel('Password', { exact: true }).fill(fixture.password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(navigation(page).getByRole('link', { name: 'Overview', exact: true })).toBeVisible();
+  await overviewReady(page, actor);
 }
 async function logout(page: Page) { await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page).toHaveURL(/\/login$/); }
 async function loginInPlace(page: Page, actor: string) {
@@ -18,6 +26,7 @@ async function loginInPlace(page: Page, actor: string) {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(navigation(page).getByRole('link', { name: 'Overview', exact: true })).toBeVisible();
   await navigation(page).getByRole('link', { name: 'Overview', exact: true }).click();
+  await overviewReady(page, actor);
 }
 async function apiLogin(page: Page, actor: string) {
   const fixture = state(); const response = await page.request.post(fixture.api + '/api/v1/auth/login', { data: { email: fixture.employees[actor].email, password: fixture.password } });

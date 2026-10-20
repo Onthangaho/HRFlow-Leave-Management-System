@@ -19,7 +19,8 @@ export default async function setup() {
     { cwd: repo, stdio: ['pipe', 'ignore', 'ignore'], windowsHide: true, detached: process.platform !== 'win32' });
   let server;
   async function stop() {
-    if (server) await server.close();
+    if (server?.close) await server.close();
+    else if (server?.httpServer) await new Promise(resolve => server.httpServer.close(resolve));
     if (listener.listening) await new Promise(resolve => listener.close(resolve));
     const exited = new Promise(resolve => child.once('exit', resolve));
     if (child.exitCode === null) {
@@ -48,10 +49,18 @@ export default async function setup() {
     state.client = origin; fs.writeFileSync(statePath, JSON.stringify(state));
     process.env.HRFLOW_TEST_STATE = statePath;
     process.env.VITE_API_BASE_URL = state.api + '/api/v1';
-    const { createServer } = await import(pathToFileURL(path.join(repo, 'src/HRFlow.Client/node_modules/vite/dist/node/index.js')));
-    server = await createServer({ root: path.join(repo, 'src/HRFlow.Client'), server: { host: '127.0.0.1', port, strictPort: true } });
-    await new Promise(resolve => listener.close(resolve));
-    await server.listen();
+    const { createServer, build, preview } = await import(pathToFileURL(path.join(repo, 'src/HRFlow.Client/node_modules/vite/dist/node/index.js')));
+    const root = path.join(repo, 'src/HRFlow.Client');
+    if (process.env.HRFLOW_BROWSER_PRODUCTION === '1') {
+      const outDir = path.join(directory, 'client');
+      await build({ root, logLevel: 'silent', build: { outDir, emptyOutDir: true } });
+      await new Promise(resolve => listener.close(resolve));
+      server = await preview({ root, build: { outDir }, preview: { host: '127.0.0.1', port, strictPort: true } });
+    } else {
+      server = await createServer({ root, logLevel: 'silent', server: { host: '127.0.0.1', port, strictPort: true, forwardConsole: false } });
+      await new Promise(resolve => listener.close(resolve));
+      await server.listen();
+    }
     return stop;
   } catch { await stop(); throw new Error('Disposable browser setup failed; no secrets or payloads reported.'); }
 }

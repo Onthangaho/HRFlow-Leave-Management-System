@@ -224,3 +224,10 @@ does not claim to rerun them. It confirmed source/tracker state, current PR73 me
 requirements and focused issues. No issue closures, board changes, product code or publication of
 the documentation branch were performed. Qualified legal interpretation, production load,
 formal accessibility and cross-provider safety remain unverified gates.
+
+## 20 October 2026: focused client-loading review
+
+After merged PR #125, perf/client-route-loading addresses the readiness review's eager route/Overview
+imports without changing permissions or calculation scope. See [design](../adr/0028-deferred-client-features.md)
+and [measured bytes, timing trade-offs and retained gates](../verification/client-route-loading.md).
+This does not complete #77 or remove company-pilot/legal gates; no issue was created or edited.

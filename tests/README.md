@@ -1,5 +1,25 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Deferred client-feature gates
+
+`loading.spec.ts` adds all seven nonempty role compositions plus real direct-route/history checks and labelled controlled
+module failure/delay tests. Default CI runs these against the development server. Production-built
+verification is opt-in and uses the same private fixture with a private Vite build/preview destination:
+
+```powershell
+$env:HRFLOW_BROWSER_PRODUCTION='1'
+$env:HRFLOW_BROWSER_CHANNEL='chrome' # omit to use installed Playwright Chromium
+npm.cmd --prefix tests/browser test
+Remove-Item Env:HRFLOW_BROWSER_PRODUCTION -ErrorAction SilentlyContinue
+```
+
+For role byte/timing measurement, also set `HRFLOW_LOADING_MEASURE=1` and `HRFLOW_LOADING_OUTPUT` to
+an absolute ignored `.local-verification/client-loading-<label>.json` path in an existing directory. This selects only `loading.measure.ts`; clear
+both variables before regression gates. Output contains only asset basenames, byte counts and timings,
+never credentials or API payloads. One fresh context per role measures cold Overview, a completed
+secondary route, logout and warm re-entry in the same cache. No throttling or capacity claim.
+See [design](../docs/adr/0028-deferred-client-features.md) and [all executions/limits](../docs/verification/client-route-loading.md).
+
 ## Directory browser readiness and safe diagnostics
 
 Follow-up to PR #125 run 39442610037: the original assertion was withheld by the safe reporter and
