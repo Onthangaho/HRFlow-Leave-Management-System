@@ -14,6 +14,69 @@ namespace HRFlow.RegressionTests;
 /// <summary>Real SQLite directory reads verify bounded projections and current server authorization.</summary>
 public sealed class EmployeeDirectoryTests
 {
+    /// <summary>HR presence hints omit retained absence generations without changing own-account concurrency history.</summary>
+    [Fact]
+    public async Task ImageHintsDistinguishContentFromRetainedAbsenceVersions()
+    {
+        await using var fixture = await ApiFixture.StartAsync();
+        var hr = await fixture.LoginAsync("hr"); var owner = await fixture.LoginAsync("employee");
+        var employee = fixture.Employee("employee").Id;
+
+        async Task AssertHints(Guid? expected)
+        {
+            await using var before = fixture.Context();
+            var original = await before.ProfileImages.AsNoTracking().OrderBy(i => i.Id).ToArrayAsync();
+            var requests = await before.LeaveRequests.CountAsync(); var audits = await before.AuditEntries.CountAsync();
+            using var page = await fixture.SendAsync(hr, "employees?search=" + Uri.EscapeDataString(fixture.Employee("employee").Email));
+            Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+            var item = Assert.Single((await ApiFixture.JsonAsync(page))["items"]!.AsArray());
+            using var detail = await fixture.SendAsync(hr, $"employees/{employee}");
+            Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
+            Assert.Equal(expected, item!["profileImageVersion"]?.GetValue<Guid>());
+            Assert.Equal(expected, (await ApiFixture.JsonAsync(detail))["profileImageVersion"]?.GetValue<Guid>());
+            await using var after = fixture.Context();
+            var remaining = await after.ProfileImages.AsNoTracking().OrderBy(i => i.Id).ToArrayAsync();
+            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(original), System.Text.Json.JsonSerializer.Serialize(remaining));
+            Assert.Equal(requests, await after.LeaveRequests.CountAsync()); Assert.Equal(audits, await after.AuditEntries.CountAsync());
+        }
+
+        await AssertHints(null);
+        // Projection fixtures use real processed raster facts, not a scanner substitute or upload-security claim.
+        using var input = new MemoryStream(ProfileImageTests.Raster());
+        var storage = new HRFlow.Infrastructure.Services.PrivateProfileImageStorage(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+        var bytes = await storage.ProcessAsync(input, ".png", "image/png", new(0, 0, 1), default);
+        var image = new ProfileImage { OwnerId = employee, Status = ProfileImageStatus.Current, Size = bytes.Length,
+            Checksum = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)) };
+        await using (var db = fixture.Context()) { db.ProfileImages.Add(image); await db.SaveChangesAsync(); }
+        await AssertHints(image.Version);
+        using var removed = await fixture.SendAsync(owner, $"me/image?expectedVersion={image.Version}", HttpMethod.Delete);
+        Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
+        Guid absenceVersion;
+        await using (var db = fixture.Context())
+        {
+            Assert.Equal(ProfileImageStatus.Removed, (await db.ProfileImages.FindAsync(image.Id))!.Status);
+            var absence = await db.ProfileImages.SingleAsync(i => i.OwnerId == employee && i.Status == ProfileImageStatus.Current);
+            Assert.Equal(0, absence.Size); Assert.NotEqual(image.Version, absence.Version); absenceVersion = absence.Version;
+        }
+        await AssertHints(null);
+        using var own = await fixture.SendAsync(owner, "me/image");
+        var metadata = await ApiFixture.JsonAsync(own);
+        Assert.Equal(absenceVersion, metadata["version"]!.GetValue<Guid>()); Assert.False(metadata["hasImage"]!.GetValue<bool>());
+        using var stale = await fixture.SendAsync(owner, $"me/image?expectedVersion={image.Version}", HttpMethod.Delete);
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        var replacement = new ProfileImage { OwnerId = employee, Status = ProfileImageStatus.Current, Size = bytes.Length, Checksum = image.Checksum };
+        await using (var db = fixture.Context())
+        {
+            var absence = await db.ProfileImages.SingleAsync(i => i.OwnerId == employee && i.Status == ProfileImageStatus.Current);
+            absence.Status = ProfileImageStatus.Removed; await db.SaveChangesAsync();
+            db.ProfileImages.Add(replacement); await db.SaveChangesAsync();
+        }
+        Assert.NotEqual(absenceVersion, replacement.Version); await AssertHints(replacement.Version);
+        await using var final = fixture.Context();
+        Assert.Equal(3, await final.ProfileImages.CountAsync(i => i.OwnerId == employee));
+        Assert.Equal(ProfileImageStatus.Removed, (await final.ProfileImages.SingleAsync(i => i.Version == absenceVersion)).Status);
+    }
+
     /// <summary>Data command count stays constant as directory cardinality grows; gate queries are measured separately from this reader.</summary>
     [Fact]
     public async Task ProjectionUsesThreeCommandsAndStablePages()
