@@ -123,8 +123,7 @@ on its unchanged PR #125 head, still Draft. Local fixture/build output and the r
 ## Limits and follow-up
 
 Original assertion details remain unavailable; no claim the first hosted failure is conclusively
-fixed. This branch adds safe recurrence evidence and closes the confirmed readiness gap. No new hosted
-Linux run can be claimed for this unpublished branch. Positive real-ClamAV, comprehensive accessibility,
+fixed. This branch adds safe recurrence evidence and closes the confirmed readiness gap. At the implementation cutoff no follow-up hosted run had executed; publication-time results follow below. Positive real-ClamAV, comprehensive accessibility,
 mobile hardware, load and deployment checks were not run. The 88-test complete backend gate is not
 claimed as a new local run for this test-only change. No screenshots or traces were captured/published.
 Implementation evidence above predates publication. Finalisation authorises only the focused commit/push and follow-up PR; PR #125 remains unchanged. No merge, issue/reviewer contact or unrelated feature is authorised.
