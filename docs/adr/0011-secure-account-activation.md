@@ -141,3 +141,9 @@ pending accounts through an approved operational plan before rollback. Disposabl
 up/down preservation was executed, not a production rollback rehearsal.
 
 See [verification and limitations](../verification/secure-account-activation.md).
+
+## Production delivery follow-up proposal - 20 October 2026
+
+[ADR 0029](0029-production-activation-delivery-proposal.md) maps the current implementation and
+proposes the remaining #79 production transport/recovery contract. It does not replace this shipped
+activation design, enable delivery or claim provider approval. Private pickup remains Development-only.

@@ -231,3 +231,11 @@ After merged PR #125, perf/client-route-loading addresses the readiness review's
 imports without changing permissions or calculation scope. See [design](../adr/0028-deferred-client-features.md)
 and [measured bytes, timing trade-offs and retained gates](../verification/client-route-loading.md).
 This does not complete #77 or remove company-pilot/legal gates; no issue was created or edited.
+
+## 20 October 2026: activation delivery design only (#79)
+
+PR #127 is merged. The [delivery proposal](../adr/0029-production-activation-delivery-proposal.md)
+traces current manual/CSV/resend transactions and proposes bounded authenticated SMTP with explicit
+rotated resend, pending organisation/provider/privacy approval. [Review evidence](../verification/activation-delivery-design.md)
+is source/documentation inspection only. Production delivery stays unavailable; no service connected,
+mail sent, issue changed or #79 completion claimed. General status email remains deferred.
