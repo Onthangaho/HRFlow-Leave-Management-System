@@ -1,5 +1,9 @@
 # Current readiness review — 15 October 2026
 
+## South African rule review pack — 20 October 2026
+
+PR #124 is merged. This documentation-only pass refreshes [requirements/source status](04-south-african-leave-requirements.md), adds an [unsigned reviewer register](11-south-african-rule-decisions.md), [pending worked examples](12-south-african-rule-examples.md) and [#22 implementation proposal](13-calculation-foundation-review.md). It does not remove the qualified-law/company/privacy gates below. No reviewer is assigned; missing current instruments, allocation/age transitions, worked-time provenance, precision and historical opening decisions still block statutory enablement. #78 remains Closed in GitHub, with its unimplemented approved holiday-source criterion explicitly carried forward. Source inspection/research and documentation checks are new; product tests/builds and prior CI evidence were not rerun in this pass. See [verification and retrieval limitations](../verification/south-african-rule-review.md).
+
 ## Bounded-directory follow-up — 20 October 2026
 
 PR #122 is merged; first-admin implementation is no longer a missing feature, while its target-host and production-delivery gates remain. The focused directory/thumbnail finding below now has a bounded implementation for review: [contract](../adr/0027-bounded-employee-directory.md), [measured before/after and retained tests](../verification/bounded-employee-directory.md). At 1,007 synthetic profiles, the default response fell from 716,061 bytes/all rows to 18,548 bytes/25 rows; the local warm median fell from 385.04 to 171.68 ms. Small-store and first-call timings did not improve. These are local observations, not load capacity. The old source findings remain the dated baseline; HR aggregate/report and other unbounded reads remain outstanding. Issue search found no dedicated pagination item; none was created/edited and #77 is not declared complete.
