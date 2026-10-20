@@ -1,7 +1,7 @@
-import { PrivateAvatar } from '../../features/account/ProfileImage';
+import { PrivateAvatar } from '../../features/account/PrivateAvatar';
 import { useOwnProfile } from '../../features/account/api';
 import { useAccountTheme } from '../../features/account/useAccountTheme';
-import { NotificationControl } from '../../features/notifications/NotificationsPage';
+import { NotificationControl } from '../../features/notifications/NotificationControl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';

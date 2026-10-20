@@ -1,5 +1,15 @@
 # Current readiness review — 15 October 2026
 
+## Client-loading follow-up — 20 October 2026
+
+PR #125 is merged; qualified decisions remain unsigned. The eager-import finding below now has a
+focused local implementation on perf/client-route-loading: [decision](../adr/0028-deferred-client-features.md)
+and [production before/after measurements and actual checks](../verification/client-route-loading.md).
+Routes and role-specific Overview workspaces defer code behind the unchanged shell and auth/session
+providers. More requests and potentially slower transitions remain explicit trade-offs; reducing main
+bundle size does not prove faster user workflows or production capacity. API aggregate performance,
+scanner/operational gates and #75/#22 calculations remain separate. No tracker updates were published.
+
 ## South African rule review pack — 20 October 2026
 
 PR #124 is merged. This documentation-only pass refreshes [requirements/source status](04-south-african-leave-requirements.md), adds an [unsigned reviewer register](11-south-african-rule-decisions.md), [pending worked examples](12-south-african-rule-examples.md) and [#22 implementation proposal](13-calculation-foundation-review.md). It does not remove the qualified-law/company/privacy gates below. No reviewer is assigned; missing current instruments, allocation/age transitions, worked-time provenance, precision and historical opening decisions still block statutory enablement. #78 remains Closed in GitHub, with its unimplemented approved holiday-source criterion explicitly carried forward. Source inspection/research and documentation checks are new; product tests/builds and prior CI evidence were not rerun in this pass. See [verification and retrieval limitations](../verification/south-african-rule-review.md).

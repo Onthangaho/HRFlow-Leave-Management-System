@@ -1,5 +1,5 @@
 import type { Employee } from '../types';
-import { PrivateAvatar } from '../../account/ProfileImage';
+import { PrivateAvatar } from '../../account/PrivateAvatar';
 
 interface EmployeeTableProps {
   employees: Employee[];
