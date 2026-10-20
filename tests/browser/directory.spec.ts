@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import { directoryStep, safeDirectoryDiagnostics } from './directory-diagnostics.js';
+import { readDirectory } from './directory-readiness.js';
 import { test, expect, type Page } from '@playwright/test';
 const fixture = () => JSON.parse(fs.readFileSync(process.env.HRFLOW_TEST_STATE!, 'utf8'));
 async function directory(page: Page) {
@@ -14,6 +16,47 @@ async function search(page: Page, value: string) {
   await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Directory results' })).not.toHaveAttribute('aria-busy', 'true');
 }
+
+test('diagnostic contract: only fixed labels, source and numeric state reach the reporter', () => {
+  const value = { step: 'mobile-width', failed: true, source: { file: 'directory.spec.ts', line: 42 },
+    viewport: { width: 390, height: 844 }, state: { rows: 25, scrollWidth: 400, innerWidth: 390, loading: false },
+    unexpected: 'INTERNAL-FIXTURE-SENTINEL' };
+  const output = safeDirectoryDiagnostics('directory-diagnostic ' + JSON.stringify(value));
+  expect(output).toHaveLength(1); expect(output[0]).not.toContain('INTERNAL-FIXTURE-SENTINEL');
+  for (const invalid of [null, { ...value, step: 'untrusted-label' }, { ...value, source: { file: 'unexpected-file', line: 42 } },
+    { ...value, state: { ...value.state, rows: 'INTERNAL-FIXTURE-SENTINEL' } }, { ...value, viewport: { width: -1, height: 844 } }])
+    expect(safeDirectoryDiagnostics('directory-diagnostic ' + JSON.stringify(invalid))).toEqual([]);
+  expect(safeDirectoryDiagnostics('Unstructured worker output')).toEqual([]);
+  expect(safeDirectoryDiagnostics('directory-diagnostic malformed-json')).toEqual([]);
+});
+
+test('controlled directory transport: refresh waits for response and render before retained-draft assertions', async ({ page }, info) => {
+  await directoryStep(page, info, 'refetch-barrier', async () => {
+    await directory(page); await search(page, 'DIR-0074'); await expect(page.locator('tbody tr')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Edit Directory person 0074', exact: true }).click();
+    await page.getByLabel('Full name', { exact: true }).fill('Retained response-barrier draft');
+    let release!: () => void, entered!: () => void, clicked!: () => void;
+    const barrier = new Promise<void>(resolve => { release = resolve; });
+    const ready = new Promise<void>(resolve => { entered = resolve; });
+    const clickDone = new Promise<void>(resolve => { clicked = resolve; });
+    await page.route(/\/api\/v1\/employees(?:\?.*)?$/, async route => {
+      const response = await route.fetch(); entered(); await barrier;
+      await route.fulfill({ response });
+    });
+    let completed = false;
+    const refresh = readDirectory(page, { search: 'DIR-0074' }, async () => {
+      await page.getByRole('button', { name: 'Refresh directory', exact: true }).click(); clicked();
+    }).then(() => { completed = true; });
+    try {
+      await ready; await clickDone;
+      // The former value-only assertion succeeds here even though the response is deliberately withheld.
+      await expect(page.getByLabel('Full name', { exact: true })).toHaveValue('Retained response-barrier draft');
+      await expect(page.getByRole('region', { name: 'Directory results', exact: true })).toHaveAttribute('aria-busy', 'true');
+      expect(completed).toBe(false);
+    } finally { release(); await refresh; }
+    await expect(page.getByLabel('Full name', { exact: true })).toHaveValue('Retained response-barrier draft');
+  });
+});
 
 test('HTTP directory: retained removed-image generation has no hint or thumbnail request', async ({ page }) => {
   const data = fixture();
@@ -37,36 +80,57 @@ test('HTTP directory: retained removed-image generation has no hint or thumbnail
   expect(requests).toBe(0);
 });
 
-test('HTTP directory: applied pages, drafts, attention links and desktop/mobile layouts', async ({ page }) => {
-  await directory(page); await expect(page.locator('tbody tr')).toHaveCount(25);
+test('HTTP directory: applied pages, drafts, attention links and desktop/mobile layouts', async ({ page }, testInfo) => {
+  await directoryStep(page, testInfo, 'initial-page', async () => { await directory(page); await expect(page.locator('tbody tr')).toHaveCount(25); });
   const firstName = await page.locator('tbody tr').first().innerText();
-  await page.getByRole('button', { name: 'Next page', exact: true }).click();
-  await expect(page.locator('tbody tr').first()).not.toHaveText(firstName);
-  await expect(page.getByText('Page 2 of 4', { exact: true })).toBeVisible();
-  await page.getByLabel('Search employees', { exact: true }).fill('DIR-0074');
-  await expect(page.getByText('Page 2 of 4', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(1);
-  await expect(page.getByRole('button', { name: 'Edit Directory person 0074', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Edit Directory person 0074', exact: true }).click();
-  await page.getByLabel('Full name', { exact: true }).fill('Retained pagination draft');
-  await page.getByRole('button', { name: 'Refresh directory', exact: true }).click();
-  await expect(page.getByLabel('Full name', { exact: true })).toHaveValue('Retained pagination draft');
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await page.getByRole('navigation', { name: 'Primary', exact: true }).getByRole('link', { name: 'Overview', exact: true }).click();
-  await page.locator('a[href="/admin/employees?attention=schedule"]').click();
-  await expect(page.getByRole('combobox', { name: 'Administrative attention', exact: true })).toHaveValue('schedule');
-  await expect(page.getByText(/75 matching employees/)).toBeVisible();
-  await page.setViewportSize({ width: 1280, height: 1000 });
-  if (process.env.HRFLOW_DIRECTORY_SCREENSHOTS === '1') await page.screenshot({ path: '../../docs/verification/screenshots/bounded-directory/desktop.png' });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  await page.evaluate(() => document.documentElement.classList.add('dark'));
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByLabel('Search employees', { exact: true }).focus(); await page.keyboard.press('Tab');
-  await expect(page.getByLabel('Employment status', { exact: true })).toBeFocused();
-  await page.getByRole('region', { name: 'Directory results', exact: true }).evaluate(element => element.scrollIntoView({ block: 'start' }));
-  if (process.env.HRFLOW_DIRECTORY_SCREENSHOTS === '1') await page.screenshot({ path: '../../docs/verification/screenshots/bounded-directory/mobile-dark.png' });
+  await directoryStep(page, testInfo, 'next-page', async () => {
+    await readDirectory(page, { page: '2' }, () => page.getByRole('button', { name: 'Next page', exact: true }).click());
+    await expect(page.locator('tbody tr')).toHaveCount(25);
+    await expect(page.locator('tbody tr').first()).not.toHaveText(firstName);
+    await expect(page.getByText('Page 2 of 4', { exact: true })).toBeVisible();
+  });
+  await directoryStep(page, testInfo, 'draft-search', async () => {
+    await page.getByLabel('Search employees', { exact: true }).fill('DIR-0074');
+    await expect(page.getByText('Page 2 of 4', { exact: true })).toBeVisible();
+  });
+  await directoryStep(page, testInfo, 'applied-search', async () => {
+    await readDirectory(page, { page: '1', search: 'DIR-0074' }, () => page.getByRole('button', { name: 'Apply filters', exact: true }).click());
+    await expect(page.locator('tbody tr')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Edit Directory person 0074', exact: true })).toBeVisible();
+  });
+  await directoryStep(page, testInfo, 'edit-draft', async () => {
+    await page.getByRole('button', { name: 'Edit Directory person 0074', exact: true }).click();
+    await page.getByLabel('Full name', { exact: true }).fill('Retained pagination draft');
+  });
+  await directoryStep(page, testInfo, 'refetch-draft', async () => {
+    await readDirectory(page, { page: '1', search: 'DIR-0074' }, () => page.getByRole('button', { name: 'Refresh directory', exact: true }).click());
+    await expect(page.getByLabel('Full name', { exact: true })).toHaveValue('Retained pagination draft');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  });
+  await directoryStep(page, testInfo, 'attention-link', async () => {
+    await page.getByRole('navigation', { name: 'Primary', exact: true }).getByRole('link', { name: 'Overview', exact: true }).click();
+    await readDirectory(page, { attention: 'schedule' }, () => page.locator('a[href="/admin/employees?attention=schedule"]').click());
+    await expect(page.getByRole('combobox', { name: 'Administrative attention', exact: true })).toHaveValue('schedule');
+    await expect(page.getByText(/75 matching employees/)).toBeVisible();
+  });
+  await directoryStep(page, testInfo, 'desktop-view', async () => {
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    if (process.env.HRFLOW_DIRECTORY_SCREENSHOTS === '1') await page.screenshot({ path: '../../docs/verification/screenshots/bounded-directory/desktop.png' });
+  });
+  await directoryStep(page, testInfo, 'mobile-width', async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+    await page.evaluate(() => document.documentElement.classList.add('dark'));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+  await directoryStep(page, testInfo, 'mobile-focus', async () => {
+    await page.getByLabel('Search employees', { exact: true }).focus(); await page.keyboard.press('Tab');
+    await expect(page.getByLabel('Employment status', { exact: true })).toBeFocused();
+  });
+  await directoryStep(page, testInfo, 'mobile-results', async () => {
+    await page.getByRole('region', { name: 'Directory results', exact: true }).evaluate(element => element.scrollIntoView({ block: 'start' }));
+    if (process.env.HRFLOW_DIRECTORY_SCREENSHOTS === '1') await page.screenshot({ path: '../../docs/verification/screenshots/bounded-directory/mobile-dark.png' });
+  });
 });
 
 test('HTTP directory: create, Manager lookup beyond page, Preserve edit, resend, schedule and deactivation', async ({ page }) => {

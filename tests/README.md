@@ -1,5 +1,29 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Directory browser readiness and safe diagnostics
+
+Follow-up to PR #125 run 39442610037: the original assertion was withheld by the safe reporter and
+has not been reproduced locally. A separate held-response regression demonstrates why draft values
+alone cannot prove Refresh completion. `readDirectory` waits for the applied collection request and
+rendered idle state; production code is unchanged. See [all runs and limitations](../docs/verification/directory-browser-regression.md).
+
+The reporter emits only allowlisted `directory-diagnostic` records: fixed step, relative test-definition
+location, viewport/row/width counts and booleans. It never prints raw errors, HTML, payloads or arbitrary
+worker stdout. A pure contract test retains that privacy boundary. Keep screenshot/trace/video off and
+clear `HRFLOW_DIRECTORY_SCREENSHOTS`, `HRFLOW_DIRECTORY_MEASURE`, `HRFLOW_DIRECTORY_FIXTURE_ROWS` and
+`HRFLOW_IMAGE_SCANNER_TESTS` overrides for diagnosis. Bounded repetition is not a configured retry:
+
+```powershell
+npm.cmd --prefix tests/browser test -- --grep 'HTTP directory: applied pages' --repeat-each=3
+npm.cmd --prefix tests/browser test -- --grep 'diagnostic contract|refresh waits for response'
+npm.cmd --prefix tests/browser test
+```
+
+The default suite adds one pure diagnostic-contract test and one controlled-response barrier case.
+Real HTTP workflows and controlled transport remain labelled separately. Existing timeouts/retries,
+security assertions and private fixture cleanup are unchanged. Early foundation/hosted notes below
+are historical evidence; consult dated verification reports for each run rather than inferring CI.
+
 ## Bounded directory regression slice
 
 `EmployeeDirectoryTests` retains SQL command-count, stable paging/ties, search/attention/Manager lookup
