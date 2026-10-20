@@ -1,70 +1,25 @@
-using HRFlow.Application.Interfaces;
+﻿using HRFlow.Application.Interfaces;
 using HRFlow.Application.Services;
 using HRFlow.Domain.Models.Employees;
-using HRFlow.Domain.Interfaces;
-using HRFlow.Domain.Interfaces.Services;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-
 namespace HRFlow.Application.Features.Employees.Queries.GetEmployees;
-
-/// <summary>Returns management snapshots for the directory or one resource after a successful write.</summary>
-public sealed class GetEmployeesQuery : IRequest<IReadOnlyList<GetEmployeeDto>>
+/// <summary>Server-derived actor and applied filters; there is no unbounded fallback.</summary>
+public sealed record GetEmployeesQuery(Guid ActorIdentityId, EmployeeDirectoryFilter Filter) : IRequest<EmployeeDirectoryPage>;
+/// <summary>Reloads a complete edit snapshot independently of list filters.</summary>
+public sealed record GetEmployeeQuery(Guid ActorIdentityId, Guid EmployeeId) : IRequest<GetEmployeeDto?>;
+/// <summary>Searches eligible Managers and returns the assigned reporting snapshot separately.</summary>
+public sealed record GetManagersQuery(Guid ActorIdentityId, Guid DepartmentId, Guid? EmployeeId, string? Search, int Page = 1) : IRequest<ManagerChoices>;
+/// <summary>Authorization and projections share a deferred snapshot, without reserving a writer.</summary>
+public sealed class GetEmployeesQueryHandler(IEmployeeDirectoryReader reader, ILeaveReportingReadTransaction transaction,
+    CurrentAccountAuthorization authorization) : IRequestHandler<GetEmployeesQuery, EmployeeDirectoryPage>,
+    IRequestHandler<GetEmployeeQuery, GetEmployeeDto?>, IRequestHandler<GetManagersQuery, ManagerChoices>
 {
-    public Guid? EmployeeId { get; set; }
-    /// <summary>The server-derived Identity actor, not the employee being edited.</summary>
-    public Guid ActorIdentityId { get; set; }
-}
-
-/// <summary>Combines profile/reporting IDs with complete Identity roles so edits preserve existing capabilities.</summary>
-public sealed class GetEmployeesQueryHandler(
-    IApplicationDbContext context, IEmployeeRoleLookupService roleLookup,
-    ILeaveReportingReadTransaction transaction, CurrentAccountAuthorization authorization, IAccountActivationService activation, TimeProvider clock) : IRequestHandler<GetEmployeesQuery, IReadOnlyList<GetEmployeeDto>>
-{
+    private Task<T> Read<T>(Guid actor, Func<CancellationToken, Task<T>> read, CancellationToken token) =>
+        transaction.ExecuteAsync(async ct => { await authorization.RequireIdentityAsync(actor, [EmployeeRoles.HrAdministrator], ct); return await read(ct); }, token);
     /// <inheritdoc />
-    public async Task<IReadOnlyList<GetEmployeeDto>> Handle(GetEmployeesQuery request, CancellationToken cancellationToken)
-    {
-        return await transaction.ExecuteAsync<IReadOnlyList<GetEmployeeDto>>(async token =>
-        {
-            cancellationToken = token;
-            await authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.HrAdministrator], token);
-
-            var employees = await context.Employees.AsNoTracking()
-                .Include(e => e.Department).Include(e => e.Manager)
-                .Where(e => !request.EmployeeId.HasValue || e.Id == request.EmployeeId)
-                .OrderBy(e => e.FullName).ToListAsync(cancellationToken);
-            var today = HRFlow.Application.Features.LeaveRequests.Queries.GetPersonalDashboard.GetPersonalDashboardQueryHandler.BusinessDate(clock.GetUtcNow());
-            var schedules = await context.WeeklyScheduleRevisions.AsNoTracking().Select(s => new { s.EmployeeId, s.EffectiveFrom }).ToListAsync(token);
-            var scheduleDates = schedules.ToLookup(s => s.EmployeeId, s => s.EffectiveFrom);
-            var actorIds = employees.Where(e => e.DeactivatedById.HasValue)
-                .Select(e => e.DeactivatedById!.Value).Distinct().ToArray();
-            var actorNames = await context.Employees.AsNoTracking().Where(e => actorIds.Contains(e.Id))
-                .ToDictionaryAsync(e => e.Id, e => e.FullName, cancellationToken);
-            var results = new List<GetEmployeeDto>();
-            foreach (var employee in employees)
-            {
-                var state = await activation.GetStatusAsync(employee.IdentityUserId, cancellationToken);
-                var attention = EmploymentAttention.For(employee, today, scheduleDates[employee.Id]);
-                results.Add(new GetEmployeeDto
-                {
-                    NeedsEmploymentFacts = attention.NeedsEmploymentFacts, NeedsCurrentSchedule = attention.NeedsCurrentSchedule, HasFutureScheduleOnly = attention.HasFutureScheduleOnly,
-                    RequiresActivation = state.RequiresActivation, InvitationDeliveryState = state.DeliveryState, ActivatedAtUtc = state.ActivatedAtUtc,
-                    EmployeeNumber = employee.EmployeeNumber, EmploymentStartDate = employee.EmploymentStartDate,
-                    Id = employee.Id, FullName = employee.FullName, Email = employee.Email,
-                    DepartmentId = employee.DepartmentId, DepartmentName = employee.Department.Name,
-                    ManagerId = employee.ManagerId, ManagerName = employee.Manager?.FullName,
-                    Version = employee.Version, IsActive = employee.IsActive,
-                    IdentityUserId = employee.IdentityUserId,
-                    // SQLite retains the UTC value but not DateTime.Kind; emit an explicit UTC offset for the UI.
-                    DeactivatedAtUtc = employee.DeactivatedAtUtc.HasValue
-                        ? DateTime.SpecifyKind(employee.DeactivatedAtUtc.Value, DateTimeKind.Utc) : null,
-                    DeactivationReason = employee.DeactivationReason,
-                    DeactivatedByName = employee.DeactivatedById.HasValue
-                        ? actorNames.GetValueOrDefault(employee.DeactivatedById.Value) : null,
-                    Roles = await roleLookup.GetRolesByIdentityUserIdAsync(employee.IdentityUserId, cancellationToken)
-                });
-            }
-            return results;
-        }, cancellationToken);
-    }
+    public Task<EmployeeDirectoryPage> Handle(GetEmployeesQuery query, CancellationToken token) => Read(query.ActorIdentityId, ct => reader.ReadAsync(query.Filter, ct), token);
+    /// <inheritdoc />
+    public Task<GetEmployeeDto?> Handle(GetEmployeeQuery query, CancellationToken token) => Read(query.ActorIdentityId, ct => reader.DetailAsync(query.EmployeeId, ct), token);
+    /// <inheritdoc />
+    public Task<ManagerChoices> Handle(GetManagersQuery query, CancellationToken token) => Read(query.ActorIdentityId, ct => reader.ManagersAsync(query.DepartmentId, query.EmployeeId, query.Search, query.Page, ct), token);
 }

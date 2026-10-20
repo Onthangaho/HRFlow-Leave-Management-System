@@ -1,5 +1,32 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Bounded directory regression slice
+
+`EmployeeDirectoryTests` retains SQL command-count, stable paging/ties, search/attention/Manager lookup
+and current-authority HTTP checks using migrated SQLite. `DirectoryMeasurementTests` recreates
+32/1,007-profile stores and prints safe count/byte/timing measurements, not request payloads.
+The browser fixture includes 75 extra synthetic profiles by default, so directory/form callers must
+search/page rather than assuming every employee is mounted. The new `directory.spec.ts` distinguishes
+real API/forms/onboarding from controlled image/session transport; the existing leave/session cases
+remain enabled. `directory-measure.spec.ts` verifies no absent-image probes and at most 25 rows.
+
+After a full Debug solution build:
+
+```powershell
+dotnet test tests/HRFlow.RegressionTests --no-build --filter FullyQualifiedName~EmployeeDirectoryTests
+dotnet test tests/HRFlow.RegressionTests --no-build --filter FullyQualifiedName~DirectoryMeasurement --logger 'console;verbosity=normal'
+$env:HRFLOW_BROWSER_CHANNEL='chrome'
+npm.cmd --prefix tests/browser test
+```
+
+For optional safe count-only local measurements set `HRFLOW_DIRECTORY_FIXTURE_ROWS=25` or `1000`
+and `HRFLOW_DIRECTORY_MEASURE=after`, then run only `directory-measure.spec.ts` with an existing
+ignored `.local-verification` folder. Remove overrides before the default suite. Opt-in
+`HRFLOW_DIRECTORY_SCREENSHOTS=1` captures the synthetic directory only; normal CI screenshots,
+traces, video and artifact uploads remain disabled. No new framework/dependencies or scanner fixture.
+See [contracts](../docs/adr/0027-bounded-employee-directory.md) and
+[executed evidence/limitations](../docs/verification/bounded-employee-directory.md).
+
 ## Offline first-administrator coverage (#81)
 
 `FirstAdministratorTests` uses disposable migrated private SQLite stores, generated credentials,

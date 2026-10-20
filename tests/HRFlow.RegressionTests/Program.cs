@@ -47,6 +47,9 @@ using var stopped = new CancellationTokenSource();
 var input = Task.Run(() => { Console.ReadLine(); stopped.Cancel(); });
 await using var fixture = await ApiFixture.StartAsync(args[2], stopped.Token,
     int.TryParse(Environment.GetEnvironmentVariable("HRFLOW_TEST_CLAMAV_PORT"), out var scannerPort) ? scannerPort : 0);
+var directoryRows = int.TryParse(Environment.GetEnvironmentVariable("HRFLOW_DIRECTORY_FIXTURE_ROWS"), out var configuredRows) ? configuredRows : 75;
+if (directoryRows is > 0 and <= 1000)
+    await DirectoryFixtureData.SeedAsync(fixture, directoryRows);
 var pending = Path.Combine(directory, "private-state-" + Guid.NewGuid().ToString("N") + ".partial");
 await File.WriteAllTextAsync(pending, JsonSerializer.Serialize(fixture.BrowserState));
 ApiFixture.RestrictFile(pending);

@@ -63,7 +63,9 @@ test('Real ClamAV HTTP/browser: crop, replace, header, HR visibility and version
   await page.getByLabel('Password', { exact: true }).fill(state.password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByRole('navigation', { name: 'Primary', exact: true }).getByRole('link', { name: 'Employee management', exact: true }).click();
-  await expect(page.getByRole('row').filter({ hasText: state.employees.employee.email }).getByRole('img', { name: 'Profile', exact: true })).toBeVisible();
+  await page.getByLabel('Search employees', { exact: true }).fill(state.employees.employee.email);
+  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
+  await expect(page.getByRole('row').filter({ hasText: state.employees.employee.email }).locator('img')).toBeVisible();
   if (process.env.HRFLOW_IMAGE_SCREENSHOTS === '1') await page.screenshot({ path: '../../docs/verification/screenshots/private-profile-images/hr-directory.png', fullPage: true });
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByLabel('Email', { exact: true }).fill(state.employees.employee.email);

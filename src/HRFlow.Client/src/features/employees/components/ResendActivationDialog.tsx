@@ -19,7 +19,7 @@ export function ResendActivationDialog({ employee, onClose, onSuccess }: { emplo
       const result = await authHttpClient.post('/employees/' + employee.id + '/activation/resend', { expectedVersion: employee.version }, { skipAuthReplay: true });
       if (getSessionVersion() !== sessionVersion) return;
       await query.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] });
-      await query.invalidateQueries({ queryKey: ['employees', user.id] });
+      await query.invalidateQueries({ queryKey: ['employees', user.id, sessionVersion] });
       if (getSessionVersion() === sessionVersion) onSuccess(result.data.invitationDeliveryState);
     } catch (failure) {
       if (getSessionVersion() === sessionVersion) setError(isAxiosError(failure) && typeof failure.response?.data?.detail === 'string' ? failure.response.data.detail : 'Unable to resend. Check delivery status before trying again.');
@@ -28,6 +28,6 @@ export function ResendActivationDialog({ employee, onClose, onSuccess }: { emplo
   return <ConfirmationDialog title="Resend activation invitation" confirmLabel="Resend invitation" neutral busy={busy} onCancel={onClose} onConfirm={() => void submit()}>
     <p className="break-words">Send a new invitation for <strong>{employee.fullName}</strong> ({employee.email})? The previous invitation will stop working. This does not change roles or active status.</p>
     <p className="mt-3 text-sm">Development invitations use private local pickup, not email.</p>
-    {error && <div role="alert" className="mt-3 text-rose-800"><p>{error}</p><button type="button" disabled={busy} className="ui-secondary mt-2" onClick={() => { void query.invalidateQueries({ queryKey: ['employees', user?.id] }); onClose(); }}>Close and refresh employee status</button></div>}
+    {error && <div role="alert" className="mt-3 text-rose-800"><p>{error}</p><button type="button" disabled={busy} className="ui-secondary mt-2" onClick={() => { void query.invalidateQueries({ queryKey: ['employees', user?.id, sessionVersion] }); onClose(); }}>Close and refresh employee status</button></div>}
   </ConfirmationDialog>;
 }

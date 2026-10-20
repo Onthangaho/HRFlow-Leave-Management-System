@@ -63,7 +63,14 @@ roles are additive. HR alone never confers personal submission or decision autho
 - `GET /reports/department-leave`: HR, organisation-wide or validated department filter.
   `GetDepartmentLeaveReportQueryHandler`, deferred snapshot for active status/membership
   and report data; 366-day inclusive range. No employee-sensitive payload or decisions.
-- `GET /employees`: HR, organisation directory including inactive lifecycle details.
+- `GET /employees`: HR, organisation directory including inactive lifecycle details. The bounded
+  collection envelope, filters/count/page and image-presence projection are documented in
+  [ADR 0027](../adr/0027-bounded-employee-directory.md). Current credentials/HR membership and data
+  share the existing deferred snapshot through GetEmployeesQueryHandler/EmployeeDirectoryReader.
+  No unbounded compatibility response remains.
+- `GET /employees/managers`: current active/activated HR only, independently paged eligible Manager
+  search plus the edited employee's assigned reporting snapshot; same deferred authorization/data
+  protection. No acting Manager identity is accepted from query parameters.
   `GetEmployeesQueryHandler` + `CurrentAccountAuthorization`, deferred snapshot covering
   profiles, reporting/lifecycle information, current actor names and complete roles.
 - `GET /employees/{id}`: same HR authority/snapshot, one employee or 404.

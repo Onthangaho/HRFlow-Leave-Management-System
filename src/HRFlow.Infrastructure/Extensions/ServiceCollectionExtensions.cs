@@ -77,6 +77,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReportCsvWriter, ReportCsvWriter>();
         services.AddHostedService<OnboardingCleanupWorker>();
         services.AddScoped<IEmployeeRoleLookupService, EmployeeRoleLookupService>();
+        services.AddScoped<HRFlow.Application.Features.Employees.Queries.GetEmployees.IEmployeeDirectoryReader, EmployeeDirectoryReader>();
         services.AddScoped<ILeaveApprovalAuthorizationService, LeaveApprovalAuthorizationService>();
         services.AddScoped<ILeaveDecisionTransaction, SqliteWriteTransaction>();
         services.AddScoped<IEmployeeManagementTransaction, SqliteWriteTransaction>();
