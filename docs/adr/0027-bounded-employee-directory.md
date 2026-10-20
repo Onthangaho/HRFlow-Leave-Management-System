@@ -44,8 +44,10 @@ Optional query filters, combined with AND before counting/paging:
 
 One captured UTC as-of instant supplies invitation expiry, SAST business date and response metadata.
 `GET /employees/{id}` retains the complete single-employee edit DTO, independently of list filters.
-Both forms of the HR-only DTO gain nullable `profileImageVersion`; no image blob, public URL or
-private path is returned. Existing lifecycle reasons remain HR-only; no public selector changes.
+Both forms of the HR-only DTO gain nullable `profileImageVersion`, only for Current rows with
+`Size > 0`. Empty Current rows preserve own-account concurrency versions but supply no directory/detail
+hint; no image blob, public URL or private path is returned. Existing lifecycle reasons remain HR-only;
+no public selector changes. See the [removed-image correction verification](../verification/removed-profile-image-hints.md).
 
 `GET /employees/managers?departmentId=...&employeeId=...&search=...&page=1` is HR-only, with fixed
 25-row pages. Returns `{ items: [{ id, fullName }], totalCount, page, pageSize, assignedManager }`.

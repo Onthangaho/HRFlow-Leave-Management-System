@@ -15,6 +15,28 @@ async function search(page: Page, value: string) {
   await expect(page.getByRole('region', { name: 'Directory results' })).not.toHaveAttribute('aria-busy', 'true');
 }
 
+test('HTTP directory: retained removed-image generation has no hint or thumbnail request', async ({ page }) => {
+  const data = fixture();
+  const login = await page.request.post(data.api + '/api/v1/auth/login', { data: { email: data.employees.employee.email, password: data.password } });
+  expect(login.status()).toBe(200);
+  const headers = { Authorization: 'Bearer ' + (await login.json()).accessToken };
+  const original = await (await page.request.get(data.api + '/api/v1/me/image', { headers })).json();
+  expect(original.hasImage).toBe(false);
+  expect((await page.request.delete(data.api + `/api/v1/me/image?expectedVersion=${original.version}`, { headers })).status()).toBe(204);
+  const absence = await (await page.request.get(data.api + '/api/v1/me/image', { headers })).json();
+  expect(absence.hasImage).toBe(false); expect(absence.version).not.toBe(original.version);
+  let requests = 0;
+  page.on('request', request => { if (request.url() === data.api + `/api/v1/employees/${data.employees.employee.id}/image`) requests++; });
+  await directory(page); await search(page, data.employees.employee.email);
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await page.locator('tbody tr').scrollIntoViewIfNeeded();
+  await expect(page.locator('tbody tr img')).toHaveCount(0);
+  await expect(page.locator('tbody tr').getByLabel('Profile initials')).toBeVisible();
+  await page.getByRole('button', { name: 'Refresh directory', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Directory results' })).not.toHaveAttribute('aria-busy', 'true');
+  expect(requests).toBe(0);
+});
+
 test('HTTP directory: applied pages, drafts, attention links and desktop/mobile layouts', async ({ page }) => {
   await directory(page); await expect(page.locator('tbody tr')).toHaveCount(25);
   const firstName = await page.locator('tbody tr').first().innerText();

@@ -69,7 +69,8 @@ public sealed class EmployeeDirectoryReader(HRFlowDbContext db, TimeProvider clo
             ActivatedAtUtc = x.User!.IdentityId == null ? null : x.User.ActivatedAtUtc,
             DeactivatedAtUtc = x.Employee.DeactivatedAtUtc, DeactivationReason = x.Employee.DeactivationReason,
             DeactivatedByName = db.Employees.Where(e => e.Id == x.Employee.DeactivatedById).Select(e => e.FullName).FirstOrDefault(),
-            ProfileImageVersion = db.ProfileImages.Where(i => i.OwnerId == x.Employee.Id && i.Status == ProfileImageStatus.Current).Select(i => (Guid?)i.Version).FirstOrDefault()
+            // Empty Current rows retain the owner's concurrency generation, but do not represent downloadable content.
+            ProfileImageVersion = db.ProfileImages.Where(i => i.OwnerId == x.Employee.Id && i.Status == ProfileImageStatus.Current && i.Size > 0).Select(i => (Guid?)i.Version).FirstOrDefault()
         }).ToListAsync(token);
         var ids = items.Select(x => Guid.TryParse(x.IdentityUserId, out var id) ? id : Guid.Empty).Distinct().ToArray();
         if (items.Count > 0)
