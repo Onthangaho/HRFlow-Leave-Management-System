@@ -5,9 +5,9 @@ and HR Administrators. It demonstrates layered .NET/React engineering, current-p
 security, versioned writes, auditable decisions and private-file handling. It is **not certified
 legally compliant or production-ready**.
 
-## Current status — 15 October 2026
+## Current status — 21 October 2026
 
-Merged through [PR #121](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/121), including strict fixture and production creation-permission corrections.
+Merged through [PR #133](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/133), including restored-store activation safety, guarded activation coordination, HR attention aggregation and Manager calendar keyboard interaction.
 See the [current readiness review](docs/planning/08-current-readiness-review.md),
 [issue reconciliation](docs/planning/09-issue-reconciliation.md) and
 [unpublished tracker proposals](docs/planning/10-proposed-tracker-updates.md).
@@ -19,7 +19,8 @@ Shipped current-feature workflows:
 - HR employee create/edit/deactivate, combined roles/reporting, confirmed employment facts and weekly
   schedule history, CSV mapping/preview/confirmation, leave type/policy management and organisation reports.
 - Immutable transition audit timelines, recipient-scoped notifications and optional category preferences.
-- Secure one-time activation using private **Development-only** pickup; password change revokes sessions.
+- Secure one-time activation with guarded invitation/recipient acknowledgements and private **Development-only** pickup; production delivery remains unavailable. Password change revokes sessions.
+- Offline first-administrator provisioning and reviewed existing-account recovery are separate working operator tools.
 - Own-account allowlisted profile fields, System/Light/Dark theme and private processed profile images.
 - Private scanned supporting documents, medical-content restrictions and company requirement snapshots.
 - Scoped spreadsheet-protected CSV exports, operator encrypted backup/restore and synthetic pitch fixture.
@@ -122,6 +123,12 @@ and production file/directory creation permissions without weakening validators.
 [hosted Ubuntu run](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/38786228861) passed **55 backend and 9 Chromium tests**.
 Positive real-ClamAV coverage remains separate local evidence. These retained Linux gates do not
 verify all Linux deployment, scanner or recovery scenarios. Billing and protections were unchanged.
+
+Current merged #133 final [hosted Ubuntu run](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39676852702)
+passed **115 backend and 51 Chromium tests**, with build/lint/audit/typecheck. This reconciliation
+checked that existing result, not reran it. The [recovery report](docs/verification/restored-activation-safety.md)
+preserves the earlier local 111/112 failure and unexplained startup/refusal timeouts; cleanup corrections
+are not proven root-cause fixes. No positive real-ClamAV or target-host readiness is inferred from CI.
 
 ## Release boundaries
 
