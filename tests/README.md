@@ -270,3 +270,19 @@ capture is opt-in, calendar-only synthetic content; ordinary CI keeps screenshot
 Run npm.cmd --prefix tests/browser test -- team-calendar.spec.ts, then the full default suite with the
 existing private fixtures. [Contract](../docs/adr/0031-team-calendar-keyboard-navigation.md) and
 [actual executions/limits](../docs/verification/team-calendar-keyboard.md).
+
+## Restored-store activation safety
+
+ActivationRecoveryTests invokes the real encrypted operator CLI and unchanged API executable in
+sequential original/recovered lineages. The test-only RecoveryStartupHook replaces Development
+IActivationDelivery only, observes real startup/worker events and cannot enable Production delivery.
+PrivateActivationSmtp remains loopback/synthetic-only and observes actual attempts in both processes.
+Run the focused test, then the complete backend suite with all other fixture writers stopped. No
+browser, scanner, provider or test framework addition. [Contract, exact commands, failures/results
+and limitations](../docs/verification/restored-activation-safety.md). Never deploy the runtime hook.
+
+RecoveryLifecycleTests separately isolates Production pickup refusal and checks cleanup after injected
+caller failure before/after startup. FixtureProcessDiagnostics retains only fixed stages and numeric/
+boolean exit/EOF/resource observations. Run the combined RecoveryLifecycleTests|ActivationRecoveryTests
+filter before the complete backend gate, sequentially with unrelated fixture writers stopped. The
+historical complete-run timeout is not explained merely by later passes; see the follow-up evidence.

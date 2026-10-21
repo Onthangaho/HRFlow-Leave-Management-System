@@ -232,3 +232,11 @@ calendar. [Design](../adr/0031-team-calendar-keyboard-navigation.md) and
 [verification](../verification/team-calendar-keyboard.md) separate actual browser evidence from
 unexecuted screen-reader/physical-device checks. API scope, counts, exports, calculations and delivery
 are unchanged; no issue was created, edited or closed.
+
+## 21 October 2026: retained recovery/activation safety (#79/#82/#76)
+
+After merged PR #132, test/restored-activation-safety joins the existing encrypted recovery and
+activation fixtures in a focused drill. [Evidence and limits](../verification/restored-activation-safety.md)
+cover cleared restored authority, normal startup, real HTTP denial and explicit reviewed recovery/
+resend with observed private SMTP attempts. No new recovery mechanism or Production delivery. Local
+evidence is separate from target-host/hosted verification; no issue is completed or edited.

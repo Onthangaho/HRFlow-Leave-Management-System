@@ -21,6 +21,7 @@ public sealed class ApiFixture : IAsyncDisposable
     private readonly string root = Path.Combine(Path.GetTempPath(), "hrflow-regression-" + Guid.NewGuid().ToString("N"));
     private readonly string pickupProfile = "Regression-" + Guid.NewGuid().ToString("N");
     private readonly List<Process> processes = [];
+    private readonly Dictionary<Process, FixtureProcessDiagnostics> diagnostics = [];
     private readonly Dictionary<string, (TaskCompletionSource Signal, int Remaining)> entries = [];
     private readonly object gate = new();
     private readonly HttpClient client = new() { Timeout = TimeSpan.FromSeconds(15) };
@@ -66,6 +67,9 @@ public sealed class ApiFixture : IAsyncDisposable
     public Employee Employee(string actor) => employees[actor];
     /// <summary>Allows controlled persisted lifecycle/role changes through a separate connection.</summary>
     public ApplicationUser User(string actor) => users[actor];
+    /// <summary>Reuses identical signing/refresh material in isolated recovery lineages, proving revocation rather than a key mismatch.</summary>
+    internal Dictionary<string, string> AuthenticationEnvironment() => processes[0].StartInfo.Environment
+        .Where(e => e.Key.StartsWith("Authentication__", StringComparison.Ordinal)).ToDictionary(e => e.Key, e => e.Value!);
     /// <summary>Uses real login and never prints credentials/tokens in failure messages.</summary>
     public async Task<string> LoginAsync(string actor)
     {
@@ -190,26 +194,48 @@ public sealed class ApiFixture : IAsyncDisposable
     public async Task RestartAsync(CancellationToken cancellationToken = default)
     {
         var starts = processes.Select(p => p.StartInfo).ToArray();
-        foreach (var process in processes)
-        { if (!process.HasExited) { process.Kill(true); await process.WaitForExitAsync(cancellationToken).WaitAsync(TimeSpan.FromSeconds(5)); } process.Dispose(); }
-        processes.Clear();
+        await StopAsync();
         for (var index = 0; index < starts.Length; index++) await StartServerAsync(starts[index], index, cancellationToken);
+    }
+    /// <summary>Stops and awaits every owned writer but retains the private store for offline operations; never stops unrelated processes.</summary>
+    public async Task StopAsync()
+    {
+        var stopped = true;
+        foreach (var process in processes)
+        {
+            try { if (!process.HasExited) process.Kill(true); await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5)); }
+            catch { diagnostics[process].Write(FixtureProcessDiagnostics.Stage.ApiStop); stopped = false; }
+        }
+        if (!stopped) throw new InvalidOperationException("Owned fixture process cleanup failed; private stores retained.");
+        foreach (var process in processes)
+        {
+            Assert.True(diagnostics[process].OutputComplete, "Owned API output must drain before disposal.");
+            process.Dispose();
+        }
+        diagnostics.Clear();
+        processes.Clear();
     }
     private async Task StartServerAsync(ProcessStartInfo start, int index, CancellationToken cancellationToken)
     {
             var process = new Process { StartInfo = start };
+            var diagnostic = new FixtureProcessDiagnostics(process); diagnostics.Add(process, diagnostic);
             var listening = new TaskCompletionSource<Uri>(TaskCreationOptions.RunContinuationsAsynchronously);
             process.OutputDataReceived += (_, line) => { Observe(line.Data); const string prefix = "Now listening on: "; var value = line.Data; if (value is not null && value.Contains(prefix)) listening.TrySetResult(new Uri(value[(value.IndexOf(prefix, StringComparison.Ordinal) + prefix.Length)..].Trim())); }; process.ErrorDataReceived += (_, _) => { };
             process.Start(); processes.Add(process); process.BeginOutputReadLine(); process.BeginErrorReadLine();
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); timeout.CancelAfter(TimeSpan.FromSeconds(30));
-            urls[index] = await listening.Task.WaitAsync(timeout.Token);
-            while (true)
+            try { urls[index] = await listening.Task.WaitAsync(timeout.Token); }
+            catch { diagnostic.Write(FixtureProcessDiagnostics.Stage.ApiListening); throw; }
+            try
             {
-                if (process.HasExited) throw new InvalidOperationException("Disposable API exited before readiness; private configuration was not logged.");
-                try { using var response = await client.GetAsync(new Uri(urls[index], "health/ready"), timeout.Token); if (response.IsSuccessStatusCode) break; }
-                catch (HttpRequestException) { }
-                await Task.Delay(25, timeout.Token); // Readiness polling, never concurrency ordering.
+                while (true)
+                {
+                    if (process.HasExited) throw new InvalidOperationException("Disposable API exited before readiness; private configuration was not logged.");
+                    try { using var response = await client.GetAsync(new Uri(urls[index], "health/ready"), timeout.Token); if (response.IsSuccessStatusCode) break; }
+                    catch (HttpRequestException) { }
+                    await Task.Delay(25, timeout.Token); // Readiness polling, never concurrency ordering.
+                }
             }
+            catch { diagnostic.Write(FixtureProcessDiagnostics.Stage.ApiReady); throw; }
     }
     private void Observe(string? line)
     {
@@ -257,18 +283,8 @@ public sealed class ApiFixture : IAsyncDisposable
     /// <summary>Stops owned process trees before deleting only this fixture's generated private directories.</summary>
     public async ValueTask DisposeAsync()
     {
-        var processesStopped = true;
-        foreach (var process in processes)
-        {
-            try
-            {
-                if (!process.HasExited) { process.Kill(entireProcessTree: true); await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5)); }
-            }
-            catch { processesStopped = false; } // Attempt every owned process; retain stores if any writer could still be alive.
-            finally { process.Dispose(); }
-        }
+        await StopAsync();
         client.Dispose(); SqliteConnection.ClearAllPools();
-        if (!processesStopped) throw new InvalidOperationException("Owned fixture process cleanup failed; private stores retained for safe operator cleanup.");
         var pickup = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HRFlow", "ActivationPickup", pickupProfile);
         foreach (var owned in new[] { root, pickup })
         {

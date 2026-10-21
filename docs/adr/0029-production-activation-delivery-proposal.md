@@ -287,3 +287,11 @@ production mode disabled by default and require explicit approved configuration;
 verification. Do not add general email notifications, webhooks, password reset, new account recovery,
 paid-service dependencies for tests, or automatic delivery from restored data. Return exact source,
 migration consequences, local evidence and remaining provider/domain gates; do not enable deployment.
+
+## 21 October 2026: retained restored-store drill
+
+A separate [recovery/activation drill](../verification/restored-activation-safety.md) exercises real
+encrypted restore, normal API startup with a test-only Development SMTP substitution, cleared
+invitation authority, old HTTP credential/token denial, durable Created CSV outcomes and explicit
+reviewed recovery/resend. Historical execution results in this document are unchanged. This does
+not approve a provider or enable Production delivery; ADR 0029 decisions remain Pending/Unassigned.

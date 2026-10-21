@@ -82,3 +82,11 @@ npm.cmd --prefix tests/browser test
 [Actual runs and limitations](../verification/activation-delivery-coordination.md) distinguish real HTTP,
 controlled browser response loss and local SMTP from unimplemented provider verification. Do not set
 production SMTP credentials: no supported production adapter exists in this slice.
+
+## 21 October 2026: retained restored-store drill
+
+A separate [recovery/activation drill](../verification/restored-activation-safety.md) exercises real
+encrypted restore, normal API startup with a test-only Development SMTP substitution, cleared
+invitation authority, old HTTP credential/token denial, durable Created CSV outcomes and explicit
+reviewed recovery/resend. Historical execution results in this document are unchanged. This does
+not approve a provider or enable Production delivery; ADR 0029 decisions remain Pending/Unassigned.
