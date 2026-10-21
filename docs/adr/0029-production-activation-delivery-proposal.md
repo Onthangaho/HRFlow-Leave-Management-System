@@ -1,8 +1,17 @@
 # ADR 0029: Production activation delivery proposal
 
-Status: **Proposed, not approved or implemented**. Reviewed 20 October 2026 for open #79.
+Status: **Production transport proposed, not approved or implemented**. Reviewed 20 October 2026 for open #79.
 Base: merged PR #127, commit 40c2617577ebf4d661d6db1c596156426d18fe90.
-No service connection, message sending, purchase, provider selection or production enablement.
+No external service connection, external message sending, purchase, provider selection or production enablement.
+
+## 21 October 2026: coordination slice
+
+PR #128 is merged. Reusable generation/recipient-aware coordination, safe HR statuses and private
+loopback SMTP/MIME tests now implement a bounded local slice; no production adapter/provider is
+approved. D1-D5 remain Pending/Unassigned. The source map below is the original 20 October inspection;
+see the [current contract](../operations/activation-delivery-coordination.md) and
+[separately dated execution evidence](../verification/activation-delivery-coordination.md) for changes.
+No new external source claims are made by this implementation note.
 
 ## Recommendation and decisions requiring approval
 
@@ -28,7 +37,7 @@ Owner decisions, all **Unassigned / Pending**:
 - D6: release/deployment approval after private local tests and real provider/domain verification.
   No such approval is supplied by this document. #79 remains open.
 
-## Existing source behaviour (inspection, not newly executed tests)
+## Historical source map (20 October inspection, not current execution evidence)
 
 [AccountActivationService](../../src/HRFlow.Infrastructure/Services/Auth/AccountActivationService.cs)
 is the shared coordinator. Prepare generates 32 cryptographically random bytes, hex encodes them,
@@ -58,7 +67,7 @@ Deactivation does not erase the invitation hash; redemption checks active profil
 
 Current DeliverAsync reads recipient outside the writer reservation, invokes delivery, then enters a
 second protected transaction. It updates the state only if RequiresActivation and the hash still match.
-It does **not** currently guard recipient/version, target active status or expiry at acknowledgement;
+At that inspection it did **not** guard recipient/version, target active status or expiry at acknowledgement;
 it can return a local success state even if no matching state was updated. Only IOException and
 UnauthorizedAccessException are converted to DeliveryFailed; network-provider exceptions are not a
 completed contract. Cancellation or failed acknowledgement can leave PendingDelivery after delivery.
@@ -124,7 +133,8 @@ here rely on the retrieved Email API, not that missing page. Do not infer DNS ve
 
 ## Proposed configuration and custody contract
 
-These are proposed keys/constraints, not currently accepted configuration:
+Provider keys/constraints below remain proposed, not accepted configuration. The coordinator now accepts
+Activation:DeliveryTimeoutSeconds (1-30, default15) for local delivery; it enables no SMTP provider:
 
 - Explicit delivery mode Disabled (default), approved SMTP, or Development-only pickup. No production
   pickup/sink fallback. Replace the startup blanket rejection only for the implemented approved mode.
@@ -153,7 +163,8 @@ These are proposed keys/constraints, not currently accepted configuration:
 
 Reuse the existing activation mechanism; no second activation entity or notification outbox with links.
 An explicit nonsecret invitation generation/attempt ID, recipient revision and safe outcome metadata
-may require a small migration; confirm during implementation. Profile version alone is broad: unrelated
+were evaluated in the coordinator slice: two nullable columns record recipient and dispatch claim; the
+existing hash identifies generation without a second token authority. Profile version alone is broad: unrelated
 employment edits must not invalidate a good link. The token hash remains the invitation authority.
 
 1. Under existing writer protection, recheck initiating credentials/current HR, target active/pending,
@@ -262,7 +273,11 @@ account/sender authority, DNS SPF/DKIM/DMARC design, TLS/authentication, quotas,
 bounces/nonreceipt response, provider retention and target-host egress/monitoring. Those checks require
 owner approval and remain unexecuted. This design neither sends email nor certifies deliverability.
 
-## One bounded next implementation prompt
+## Original implementation proposal (provider portion remains blocked)
+
+The coordination/local-test portion is now implemented in this branch. Do not execute the production
+adapter portion below until D1-D5 and release prerequisites are approved; it is not task authorization.
+
 
 After D1-D5 owner approval, implement only the approved authenticated SMTP activation adapter and the
 safe generation-aware acknowledgement/status changes described here, with hash-only persistence and

@@ -169,7 +169,7 @@ public sealed class CsvOnboardingService(HRFlowDbContext db, EmployeeManagementS
    }
    if(identityId!=Guid.Empty)
    {
-    var state=await activation.DeliverAsync(identityId,invitation,token);
+    var state=await activation.DeliverAsync(actor,identityId,invitation,token);
     await writes.ExecuteAsync(async ct=>{await auth.RequireIdentityAsync(actor,[EmployeeRoles.HrAdministrator],ct);var b=await OwnedAsync(actor,id,ct);var rows=Decode<List<ImportRow>>(b.RowsJson);var i=rows.FindIndex(r=>r.Row==number&&r.EmployeeId==employeeId);if(i>=0){rows[i]=rows[i] with{DeliveryState=state};Save(b,rows);}},token);
    }
   }
@@ -177,7 +177,13 @@ public sealed class CsvOnboardingService(HRFlowDbContext db, EmployeeManagementS
  }
  private Task RecordFailureAsync(Guid actor,Guid id,int row,string key,CancellationToken token)=>writes.ExecuteAsync(async ct=>{await auth.RequireIdentityAsync(actor,[EmployeeRoles.HrAdministrator],ct);var b=await OwnedAsync(actor,id,ct);if(b.ConfirmationKey!=key)return;var rows=Decode<List<ImportRow>>(b.RowsJson);var i=rows.FindIndex(r=>r.Row==row&&r.State=="Ready");if(i>=0){rows[i]=rows[i] with{State="Failed",Errors=["Persistence failed; no account was committed. Revalidate explicitly before retrying."]};Save(b,rows);}},token);
  /// <inheritdoc />
- public Task<ImportPreview> GetAsync(Guid actor,Guid id,CancellationToken token)=>reads.ExecuteAsync(async ct=>{await auth.RequireIdentityAsync(actor,[EmployeeRoles.HrAdministrator],ct);return View(await OwnedAsync(actor,id,ct));},token);
+ public Task<ImportPreview> GetAsync(Guid actor,Guid id,CancellationToken token)=>reads.ExecuteAsync(async ct=>{await auth.RequireIdentityAsync(actor,[EmployeeRoles.HrAdministrator],ct);var preview=View(await OwnedAsync(actor,id,ct));
+   var ids=preview.Rows.Where(r=>r.EmployeeId.HasValue).Select(r=>r.EmployeeId!.Value).ToArray();
+   var accounts=await (from e in db.Employees.AsNoTracking() where ids.Contains(e.Id)
+       join u in db.Users.AsNoTracking() on e.IdentityUserId equals u.Id.ToString()
+       select new { e.Id, e.IsActive, u.RequiresActivation, u.ActivationExpiresAtUtc, u.InvitationDeliveryState }).ToListAsync(ct);
+   var states=accounts.ToDictionary(x=>x.Id,x=>x.RequiresActivation&&!x.IsActive?"Unavailable":x.RequiresActivation&&x.ActivationExpiresAtUtc<=DateTime.UtcNow?"Expired":x.InvitationDeliveryState);
+   return preview with { Rows=preview.Rows.Select(r=>r.EmployeeId is {} employee&&states.TryGetValue(employee,out var current)?r with { DeliveryState=current }:r).ToArray() };},token);
  /// <inheritdoc />
  public async Task<ImportPreview> CancelAsync(Guid actor,Guid id,CancellationToken token){ImportPreview? result=null;await writes.ExecuteAsync(async ct=>{await auth.RequireIdentityAsync(actor,[EmployeeRoles.HrAdministrator],ct);var b=await OwnedAsync(actor,id,ct);b.Cancelled=true;b.Version=Guid.NewGuid();result=View(b);},token);return result!;}
  /// <inheritdoc />

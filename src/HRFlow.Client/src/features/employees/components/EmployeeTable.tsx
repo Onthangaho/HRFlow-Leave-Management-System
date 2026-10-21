@@ -1,3 +1,4 @@
+import { activationFeedback } from '../activationFeedback';
 import type { Employee } from '../types';
 import { PrivateAvatar } from '../../account/PrivateAvatar';
 
@@ -37,7 +38,7 @@ export function EmployeeTable({ onResend, employees, onEdit, editing, onDeactiva
                   {employee.isActive ? 'Active' : 'Inactive'}
                 </span>
                 <p className="mt-2 text-xs text-slate-600">{employee.requiresActivation ? 'Pending activation' : 'Activated'}</p>
-                {employee.requiresActivation && <p className="text-xs">{employee.invitationDeliveryState === 'PickupReady' ? 'Private pickup ready' : employee.invitationDeliveryState === 'Expired' ? 'Invitation expired' : employee.invitationDeliveryState === 'DeliveryFailed' ? 'Delivery failed' : 'Delivery pending'}</p>}
+                {employee.requiresActivation && <p className="text-xs">{activationFeedback(employee.invitationDeliveryState)}</p>}
               </td>
               <td className="px-4 py-4 text-sm">{employee.departmentName}</td>
               <td className="px-4 py-4 text-sm">{employee.roles.join(', ') || 'No roles'}</td>

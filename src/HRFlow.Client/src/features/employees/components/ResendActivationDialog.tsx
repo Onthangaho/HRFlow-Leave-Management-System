@@ -27,7 +27,7 @@ export function ResendActivationDialog({ employee, onClose, onSuccess }: { emplo
   };
   return <ConfirmationDialog title="Resend activation invitation" confirmLabel="Resend invitation" neutral busy={busy} onCancel={onClose} onConfirm={() => void submit()}>
     <p className="break-words">Send a new invitation for <strong>{employee.fullName}</strong> ({employee.email})? The previous invitation will stop working. This does not change roles or active status.</p>
-    <p className="mt-3 text-sm">Development invitations use private local pickup, not email.</p>
+    <p className="mt-3 text-sm">Development invitations use private local pickup, not email. A timeout may leave delivery unconfirmed. Refresh before explicitly resending; each resend rotates and invalidates the previous invitation.</p>
     {error && <div role="alert" className="mt-3 text-rose-800"><p>{error}</p><button type="button" disabled={busy} className="ui-secondary mt-2" onClick={() => { void query.invalidateQueries({ queryKey: ['employees', user?.id, sessionVersion] }); onClose(); }}>Close and refresh employee status</button></div>}
   </ConfirmationDialog>;
 }

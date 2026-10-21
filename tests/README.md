@@ -239,3 +239,13 @@ browser gates in one invocation; `1` remains the image-only selection.
 ## Linux fixture storage gate
 
 Fixture roots/private directories must be explicitly owner-only (0700), and databases precreated with 0600 before SQLite opens them; parent privacy and runner umask do not replace per-path validation. FixturePermissionTests and image recovery assertions retain this boundary using production path checks. See [actual hosted failure and correction evidence](../docs/verification/linux-fixture-permissions.md).
+
+## Activation coordination (#79 local slice)
+
+ActivationDeliveryTests adds 16 cases with real SQLite/Identity coordination, in-memory private MIME,
+loopback SMTP, explicit network barriers and separate-process versioned resend. The SMTP fixture is
+test-assembly-only; no provider or external sending is configured. activation.spec.ts adds four browser
+cases: actual HR create/resend with controlled lost/delayed responses, mobile retained draft, replacement
+sessions and harmless activation GET. No message artifacts, screenshots, traces or video are retained.
+See [contract](../docs/operations/activation-delivery-coordination.md) and
+[exact executions](../docs/verification/activation-delivery-coordination.md).

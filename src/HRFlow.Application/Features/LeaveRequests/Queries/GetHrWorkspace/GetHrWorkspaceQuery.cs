@@ -57,7 +57,7 @@ public sealed class GetHrWorkspaceQueryHandler(IApplicationDbContext context, Cu
             var state = await activation.GetStatusAsync(employee.IdentityUserId, token);
             if (!state.RequiresActivation) continue;
             pendingActivation++;
-            if (state.DeliveryState == ActivationDeliveryStates.DeliveryFailed) failed++;
+            if (state.DeliveryState is ActivationDeliveryStates.DeliveryFailed or ActivationDeliveryStates.DeliveryUnknown) failed++;
             if (state.DeliveryState == ActivationDeliveryStates.PendingDelivery) prepared++;
         }
         var departments = await context.Departments.AsNoTracking().OrderBy(d => d.Name).ThenBy(d => d.Id)

@@ -47,7 +47,7 @@ public sealed class EmployeeManagementService(
         }, cancellationToken);
         logger.LogInformation("Employee created. EmployeeId: {EmployeeId}; ActorIdentityUserId: {ActorIdentityUserId}",
             result!.EmployeeId, actorIdentityUserId);
-        result!.InvitationDeliveryState = await activation.DeliverAsync(accountId, invitation, cancellationToken);
+        result!.InvitationDeliveryState = await activation.DeliverAsync(actorIdentityUserId, accountId, invitation, cancellationToken);
         return result;
     }
 
@@ -150,6 +150,8 @@ public sealed class EmployeeManagementService(
             if (identity.RequiresActivation && identity.NormalizedEmail != userManager.NormalizeEmail(email.Trim()))
             {
                 identity.ActivationTokenHash = null;
+                identity.ActivationRecipientNormalizedEmail = null;
+                identity.ActivationDispatchStartedAtUtc = null;
                 identity.ActivationExpiresAtUtc = null;
                 identity.InvitationDeliveryState = ActivationDeliveryStates.DeliveryFailed;
             }

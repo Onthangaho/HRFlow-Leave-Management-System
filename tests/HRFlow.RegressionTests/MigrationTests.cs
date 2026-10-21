@@ -37,7 +37,7 @@ public sealed class MigrationTests
             var profile = await db.Employees.SingleAsync(); Assert.Equal(employee, profile.Id); Assert.Equal("Synthetic legacy employee", profile.FullName);
             Assert.Null(profile.EmployeeNumber); Assert.Null(profile.EmploymentStartDate); Assert.Empty(await db.WeeklyScheduleRevisions.ToListAsync()); Assert.True(profile.IsActive);
             Assert.Equal(dept, profile.DepartmentId); Assert.Equal(user.ToString(), profile.IdentityUserId);
-            var identity = await db.Users.SingleAsync(); Assert.Equal(user, identity.Id); Assert.True(hash == identity.PasswordHash, "Legacy password hash must remain unchanged."); Assert.False(identity.RequiresActivation); Assert.Equal("LEGACY@SYNTHETIC.INVALID", identity.NormalizedEmail);
+            var identity = await db.Users.SingleAsync(); Assert.Equal(user, identity.Id); Assert.True(hash == identity.PasswordHash, "Legacy password hash must remain unchanged."); Assert.False(identity.RequiresActivation); Assert.Null(identity.ActivationRecipientNormalizedEmail); Assert.Null(identity.ActivationDispatchStartedAtUtc); Assert.Equal("LEGACY@SYNTHETIC.INVALID", identity.NormalizedEmail);
             var link = Assert.Single(await db.UserRoles.ToListAsync()); Assert.Equal(user, link.UserId); Assert.Equal(role, link.RoleId);
             var leave = await db.LeaveRequests.SingleAsync(); Assert.Equal(request, leave.Id); Assert.Equal(LeaveRequestStatus.Approved, leave.Status); Assert.Equal(employee, leave.ProcessedById);
             Assert.Equal(new DateTime(2026, 1, 1), leave.StartDate); Assert.Equal(new DateTime(2026, 1, 2), leave.EndDate); Assert.Null(leave.SubmissionRequirements); Assert.Null(leave.Description);

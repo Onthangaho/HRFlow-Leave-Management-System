@@ -207,3 +207,11 @@ no tracker proposal was published. At that original review, first-admin provisio
 Documentation links/formatting/whitespace/sensitive-literal checks and instruction-byte comparison
 were rerun for this finalisation. Product builds/tests/audits were not rerun because executable
 files did not change. Earlier dated test results remain earlier evidence.
+
+## 21 October 2026: #79 coordination, not production delivery
+
+The [coordinator/local SMTP slice](../operations/activation-delivery-coordination.md) adds guarded dispatch
+and acknowledgement, authoritative HR feedback and explicit rotated resend recovery.
+[Verification](../verification/activation-delivery-coordination.md) is local synthetic evidence.
+Provider, sender/domain, authentication/privacy and operational approval remain pending; production
+delivery is disabled and #79 stays open. Legal/calculation and target-host gates are unchanged.

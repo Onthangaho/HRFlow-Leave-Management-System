@@ -22,6 +22,10 @@ public sealed class ProfileImageRecoveryTests
         var storage = new PrivateProfileImageStorage(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> { ["Storage:PrivateFilesRoot"] = privateRoot }).Build());
         var current = new ProfileImage { Status = "Current" }; var removed = new ProfileImage { Status = "Removed" }; var pending = new ProfileImage();
         var account = new ApplicationUser { Id = Guid.NewGuid(), UserName = "owner@synthetic.invalid", Email = "owner@synthetic.invalid", SecurityStamp = Guid.NewGuid().ToString() };
+        var pendingAccount = new ApplicationUser { Id = Guid.NewGuid(), UserName = "pending@synthetic.invalid", Email = "pending@synthetic.invalid", SecurityStamp = Guid.NewGuid().ToString(), RequiresActivation = true,
+            ActivationTokenHash = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)),
+            ActivationRecipientNormalizedEmail = "PENDING@SYNTHETIC.INVALID", ActivationDispatchStartedAtUtc = DateTime.UtcNow,
+            ActivationExpiresAtUtc = DateTime.UtcNow.AddHours(1), InvitationDeliveryState = "PendingDelivery" };
         var originalCredentialVersion = account.CredentialVersion;
         try
         {
@@ -34,8 +38,9 @@ public sealed class ProfileImageRecoveryTests
                 await db.Database.MigrateAsync(); var department = new Department { Name = "Synthetic recovery" }; db.Departments.Add(department);
                 account.PasswordHash = new Microsoft.AspNetCore.Identity.PasswordHasher<ApplicationUser>().HashPassword(account,
                     Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)));
-                db.Users.Add(account);
+                db.Users.AddRange(account, pendingAccount);
                 var employee = Employee.Create("Synthetic owner", "owner@synthetic.invalid", department.Id); employee.SetIdentityUser(account.Id.ToString()); db.Employees.Add(employee);
+                var pendingEmployee = Employee.Create("Synthetic pending", "pending@synthetic.invalid", department.Id); pendingEmployee.SetIdentityUser(pendingAccount.Id.ToString()); db.Employees.Add(pendingEmployee);
                 current.OwnerId = removed.OwnerId = pending.OwnerId = employee.Id; db.ProfileImages.AddRange(current, removed, pending); await db.SaveChangesAsync();
             }
             var key = Path.Combine(root,"private.key"); var package = Path.Combine(root,"backup.package"); var destination = Path.Combine(root,"restored");
@@ -55,8 +60,14 @@ public sealed class ProfileImageRecoveryTests
                 var rows = await db.ProfileImages.AsNoTracking().OrderBy(i=>i.Id).ToArrayAsync(); Assert.Equal(3, rows.Length);
                 Assert.Equal(current.Checksum, rows.Single(i=>i.Id==current.Id).Checksum); Assert.Equal(current.Version, rows.Single(i=>i.Id==current.Id).Version);
                 Assert.Equal("Processing", rows.Single(i=>i.Id==pending.Id).Status); Assert.Equal("Removed", rows.Single(i=>i.Id==removed.Id).Status);
-                var recovered = await db.Users.SingleAsync(); Assert.Null(recovered.PasswordHash); Assert.NotEqual(originalCredentialVersion,recovered.CredentialVersion);
-                Assert.False(recovered.RequiresActivation); Assert.True((await db.Employees.SingleAsync()).IsActive);
+                var recovered = await db.Users.SingleAsync(u => u.Id == account.Id); Assert.Null(recovered.PasswordHash); Assert.Null(recovered.ActivationTokenHash); Assert.Null(recovered.ActivationRecipientNormalizedEmail); Assert.Null(recovered.ActivationDispatchStartedAtUtc); Assert.Equal("NotRequired", recovered.InvitationDeliveryState); Assert.NotEqual(originalCredentialVersion,recovered.CredentialVersion);
+                var recoveredPending = await db.Users.SingleAsync(u => u.Id == pendingAccount.Id);
+                Assert.True(recoveredPending.RequiresActivation); Assert.Null(recoveredPending.PasswordHash);
+                Assert.Null(recoveredPending.ActivationTokenHash); Assert.Null(recoveredPending.ActivationRecipientNormalizedEmail);
+                Assert.Null(recoveredPending.ActivationDispatchStartedAtUtc); Assert.Null(recoveredPending.ActivationExpiresAtUtc);
+                Assert.Equal("Expired", recoveredPending.InvitationDeliveryState);
+                Assert.True((await db.Employees.SingleAsync(e => e.IdentityUserId == pendingAccount.Id.ToString())).IsActive);
+                Assert.False(recovered.RequiresActivation); Assert.True((await db.Employees.SingleAsync(e => e.Id == current.OwnerId)).IsActive);
             }
             var restored = new PrivateProfileImageStorage(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> { ["Storage:PrivateFilesRoot"] = Path.Combine(destination,"private") }).Build());
             using var verified = await restored.OpenVerifiedAsync(current.Id, current.Size, current.Checksum, default);

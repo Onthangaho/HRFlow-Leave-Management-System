@@ -76,7 +76,7 @@ export function EmployeeForm({ employee, onSuccess, onCancel, onReload, reloadEr
   let failure = '';
   let conflict = false;
   if (mutation.error) {
-    failure = 'Unable to save this employee. Please try again.';
+    failure = 'Unable to confirm this employee operation. Refresh status before explicitly retrying.';
     if (isAxiosError(mutation.error)) {
       const problem = mutation.error.response?.data;
       conflict = mutation.error.response?.status === 409;
@@ -112,6 +112,7 @@ export function EmployeeForm({ employee, onSuccess, onCancel, onReload, reloadEr
       {!availableRoles.isPending && availableRoles.data?.length === 0 && <p role="alert" className={errorClass}>No roles are available. Contact your administrator.</p>}
       {failure && <div role="alert" className="mt-4 whitespace-pre-line rounded-lg bg-rose-50 p-3 text-sm text-rose-800">
         {failure}
+        {!employee && <p className="mt-2">If the response was interrupted, an account may already be committed. Keep this draft while refreshing the directory; do not automatically create it again.</p>}
         {conflict && employee && <button type="button" disabled={busy} className="ml-2 underline"
           onClick={() => { void onReload().then(() => update.reset()); }}>Reload latest values</button>}
       </div>}
