@@ -1,4 +1,4 @@
-> **Historical design baseline.** Current source/merged status is reconciled as of 15 October 2026 in [the readiness review](08-current-readiness-review.md) and [issue reconciliation](09-issue-reconciliation.md). Old estimates, test deferral and implementation-pending wording below are not current instructions. Qualified statutory review remains required.
+> **Current reconciliation, 21 October 2026, merged PR #133:** [roadmap](05-product-roadmap.md), [inventory](06-feature-inventory-and-reconciliation.md), [readiness](08-current-readiness-review.md), [all 29 issue contracts](09-issue-reconciliation.md) and [unpublished proposals](10-proposed-tracker-updates.md) supersede current-state assumptions below. These dated discovery/design/catalogue notes are historical intent, not present implementation instructions. Focused maintained xUnit/Playwright are authorised; blanket test deferral is obsolete. Production invitation delivery remains unavailable, #75 decisions unsigned and closed #78 holiday-source scope incomplete. No legal approval is implied.
 
 # HRFlow — Phase 2/3: Requirements
 

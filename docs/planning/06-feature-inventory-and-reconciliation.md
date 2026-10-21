@@ -1,250 +1,59 @@
-> **20 October 2026:** PR #122 is confirmed merged. The authorised focused directory improvement is implemented locally for review on perf/bounded-employee-directory: [API/design](../adr/0027-bounded-employee-directory.md), [measurements and executed checks](../verification/bounded-employee-directory.md). This addresses the readiness fan-out finding; no new/edited issue or #77 completion claim. No migrations/dependency changes, production capacity or legal claim. Earlier entries remain dated history.
+﻿# Current feature inventory — after merged PR #133
 
-> **15 October 2026 follow-up:** PR #120 merged. #81 offline first-admin provisioning is implemented locally for review on feat/offline-first-admin: [operations](../operations/offline-first-administrator.md), [verification](../verification/offline-first-administrator.md). One-time empty-store only, no recovery/second-admin or invitation-delivery bypass. Remaining deployment and qualified calculation gates stay open. Earlier entries are dated history.
+**21 October 2026.** Fetched main 59d20de0deb34ae20abf5b00fd43090edb2813a3.
+This updates the living inventory; dated verification reports are unchanged.
+[Issue criteria/status](09-issue-reconciliation.md), [roadmap](05-product-roadmap.md) and
+[readiness/remaining work](08-current-readiness-review.md) distinguish feature delivery from release gates.
+No product tests, benchmarks, legal-source checks or scanner runs were executed during this review.
 
-> **CI/readiness update, 15 October 2026:** PR #121 is merged. Original #120: 50 backend pass / 4 fail; corrected strict fixture/production creation permissions, validators preserved. Final #121 Ubuntu gates: 55 backend / 9 Chromium passed. Earlier billing blocks are historical; positive real-ClamAV remains separate local evidence, not comprehensive Linux deployment/scanner/recovery verification. See [current readiness](08-current-readiness-review.md).
+## Shipped capabilities and their boundaries
 
-> **Current review: 15 October 2026, merged PR #119.** Read [current readiness](08-current-readiness-review.md), [29-issue reconciliation](09-issue-reconciliation.md) and [unpublished tracker proposals](10-proposed-tracker-updates.md). The dated entries below are historical evidence, not the current remaining-work queue. No GitHub issue changes or product implementation in this review.
+| Capability | Confirmed current behaviour | Exact boundary / evidence |
+|---|---|---|
+| Account access | Expiring signed JWT, 30-second skew, current role/credential checks, active/activated gate, same-session bounded refresh | [JWT inventory/evidence](../verification/jwt-current-permissions.md); no persistent browser sessions |
+| Decisions/history | Current eligible Manager, no self/HR decision, current balance/overlap checks, optional 500-character note, atomic transition audit/outbox, scoped timeline | [Decision notes](../verification/manager-decision-notes.md); no audit edit API |
+| Shell and loading | Stable providers/shell, responsive additive navigation, lazy routes/workspaces, module error recovery | [Route loading](../verification/client-route-loading.md); smaller entry is not universal faster navigation |
+| Employment/directory | Confirmed unique numbers/start dates, Unknown legacy facts, weekly revisions, versioned HR changes; paged search and independent Manager lookup | [Employment](../verification/employment-data-foundation.md), [directory](../verification/bounded-employee-directory.md); future start does not defer activated access; no holiday-source engine |
+| Activation/import | Passwordless create, hash-only invitation, explicit resend, per-row CSV idempotency and shared creation core, server-held preview and preview PII cleanup | [Coordination](../verification/activation-delivery-coordination.md), [CSV](../verification/hr-csv-onboarding.md); production transport disabled; nonblank Gender rejected explicitly |
+| Password/profile/preferences | Own Identity password change revokes old credentials; allowlisted preferred name/private phone, separate versions, theme and delivery-time optional preferences | [Password](../verification/password-change-session-revocation.md), [preferences](../verification/profile-and-preferences.md); no HR password editing or mandatory security-notification channel |
+| Supporting evidence | Private PDF/JPEG/PNG, real fail-closed ClamAV adapter, quarantine, clean-byte binding and publication fences, scoped content/access audit | [Documents](../verification/private-supporting-documents.md); bind only on initial submission; draft-only removal, no approved bound retention/holds |
+| Requirements | Leave type modes/class/instructions authoritative, bounded plain text, immutable submission snapshot, version-conflict recovery | [Requirements](../verification/request-evidence-requirements.md); legacy Unknown, Required Medical rejected; no statutory conditions/pay review |
+| Images | Private processed/scanned 256px image, own mutations/current HR reads, versions, removal markers/reconciliation | [Images](../verification/private-profile-images.md); no originals/public URLs; [removed rows omit thumbnail hints](../verification/removed-profile-image-hints.md) |
+| Notifications | Atomic minimal outbox and idempotent worker, recipient inbox/count/read, scoped deep links, future delivery suppression | [In-app](../verification/in-app-leave-notifications.md); no email/SMS or automatic retention cleanup |
+| Personal workspace | Owner balances/Pending/upcoming/history, explicit SAST periods/units, refresh/session guards | [Personal](../verification/personal-leave-dashboard.md); configured balance minus Approved calendar days, not statutory annual accrual |
+| Manager workspace | Eligible queue attention, current reports, inactive history labels, distinct active people per date, calendar/list/export | [Workspace](../verification/manager-workspace-calendar.md), [keyboard](../verification/team-calendar-keyboard.md); one date Tab stop, focus separate from selection; browser-clock today is not server authority |
+| HR workspace | All-date operational attention and period trends/reports; fresh current-HR snapshot, aggregated employee/schedule/activation attention | [Aggregation](../verification/hr-workspace-query-efficiency.md); fixed attention query count, report/trend/import cardinalities remain |
+| Exports | Applied fresh scope, 366/62-day limits, counts/people/calendar-days separated, formula-safe Text: fields, row/byte rejection, session-safe download | [Exports](../verification/scoped-report-exports.md); no preserved statutory charge units; Excel/LibreOffice not exercised |
+| Operations | Fail-safe single-host configuration, offline first-admin, encrypted isolated recovery, existing-identity password recovery | [First-admin](../operations/offline-first-administrator.md), [backup/restore](../operations/backup-restore.md); neither is production invitation delivery |
+| Recovery safety | Real encrypted tool, sequential original/restored lineages, invalidated old authority over HTTP, no automatic dispatch/CSV recreation, explicit fresh resend | [Retained drill](../verification/restored-activation-safety.md), PR #133; no target-host guarantee |
+| Tests/demo | Maintained xUnit/Playwright, private migrated stores, real/controlled cases labelled, synthetic real-ClamAV demo/runbook | [Tests](../../tests/README.md), [pitch](../operations/pitch-rehearsal.md); blanket test deferral is superseded |
 
-## Current shipped / partial / blocked inventory
+## Incomplete or blocked functionality
 
-- **Shipped:** protected role-aware shell; current-role/credential auth; employee lifecycle and versioned HR management; optional decision notes and request timelines; private scanned documents/images; local activation/password change; CSV onboarding; profile/themes/notification preferences; durable in-app alerts; current-data personal/Manager/HR workspaces and scoped exports; retained regressions and synthetic pitch. PRs #99–#119.
-- **Partially delivered parent scope:** #78 holiday/cycle foundation, #79/#89 production delivery, #81 deployment/provisioning, #83 retention/holds, #84 conditional proof/payment, #90/#92/#96 statutory charged units. Local #82 tooling is delivered, target-host operator acceptance remains separate.
-- **Blocked/new functionality:** qualified #75 approval; #22 central historical-charge engine; #85–#88 statutory categories; first-admin creation and production invitation adapter.
-- **Verification debt, not proof of missing functionality:** broader Linux deployment/scanner/recovery beyond retained #121 hosted gates, comprehensive AT/accessibility, physical disk/ACL faults, broad scanner/EXIF corpora and realistic load. See dated reports for narrower executed cases.
+- #22: effective-dated reviewed calculations, cycle/allocation inputs, fractional units, holiday sources,
+  approval charges and truthful cutover. Current computed totals do not store historical debits.
+- #75: 16 unsigned decisions and 16 Pending review examples. Missing authoritative retrieval/reconciliation
+  is a blocker, not evidence of approved law. #85-#88 category implementations are blocked/not started.
+- Closed #78 still lacks the holiday-source criterion. Only confirmed facts/fixed schedules shipped.
+- #79: approved production provider/authentication/sender/processing/operational ownership absent.
+  Shipped coordination does not supply transport. Test SMTP and Development pickup are not fallbacks.
+- #83/#84: later Pending evidence attachment is absent; retention/holds and reviewed conditional
+  evidence/payment-versus-absence workflows remain separate gaps. No bound-evidence auto-deletion.
+- #89: production onboarding depends on #79; optional nonblank Gender support is not implemented.
+  Existing explicit rejection must be accepted in the tracker or separately scoped, not hidden.
+- #90/#92/#96: cycles/paid-unpaid/preserved charge-unit completion depends on #75/#22.
+- #76: some real token expiry/refresh boundaries lack maintained fixtures; controlled 401/refresh
+  tests are not equivalent. Broader target-host/AT/scanner/load checks are verification, not new UI.
 
-The older inventory below is retained as an 8 October planning record. Use the 29-item reconciliation for current acceptance/closure recommendations.
+## Current versus historical evidence
 
+Current source was inspected now. Existing final #133 hosted Ubuntu 115 backend / 51 Chromium result
+was checked read-only. No application build/test/audit was run now. Earlier report failures and dates
+remain intact: billing is historical; original #120 50/4, #121 55/9 and #133's unresolved local timeout
+are not rewritten. Source safety plus focused evidence supports closure recommendations; a green job
+alone does not complete a legal/operational parent.
 
-> 14 October 2026: PR #118 is confirmed merged. #95 private profile images are implemented locally for review on feat/private-profile-images. [ADR 0025](../adr/0025-private-profile-images.md), [operations](../operations/private-profile-images.md), [executed verification and limits](../verification/private-profile-images.md). Separate image-only storage/lifecycle; no public originals, medical permission changes or deployment. Earlier status entries are historical.
-
-> 14 October 2026: PR #117 is merged. #97 current-feature pitch rehearsal is locally implemented on feat/repeatable-pitch-demo: [runbook](../operations/pitch-rehearsal.md), [ADR 0024](../adr/0024-isolated-current-feature-pitch.md), [actual browser/persisted-row/regression evidence and screenshots](../verification/pitch-rehearsal.md). Development-only fresh private fixtures; no product/schema/dependency change. Hosted GitHub/Linux/Chromium remains billing-blocked. Statutory/cycle/legal, production invitation/deployment and broader reliability gates remain outstanding; #97 stays open. Prepared for independent review, not merged or deployed. Earlier status entries below are historical.
-
-> 14 October 2026: PR #116 is merged. The first explicitly authorised #76 regression slice is implemented locally for review on test/critical-workflow-regressions. [Retained commands and coverage](../../tests/README.md), [strategy](../adr/0023-focused-regression-gates.md), [executed evidence and limitations](../verification/critical-workflow-regressions.md). Focused xUnit/Playwright tests replace the blanket deferral only in this scope. Medical/scanner recovery, comprehensive accessibility, load/deployment and #75/#22-qualified legal calculations remain untested. Hosted CI has not run. No commit/PR/deployment; #76 remains open. Earlier entries below are historical.
-
-> 14 October 2026: PR #115 is merged. #96 current-data scoped CSV exports are locally implemented for review on feat/scoped-report-exports. [API/CSV/safety contract](../adr/0022-scoped-current-data-report-exports.md), [executed API/SQLite/browser evidence and screenshots](../verification/scoped-report-exports.md). Existing deferred projections/calculations reused; no schema/dependency/charging change. #22-dependent charged units remain outstanding and #96 stays open. Prepared for independent PR review; not merged or deployed. Earlier entries below are historical.
-
-> 14 October 2026: PR #114 is merged. #92 current-data HR workspace is locally implemented for review on feat/hr-workspace. [Design/API/attention definitions](../adr/0021-current-data-hr-workspace.md), [actual verification/screenshots/limits](../verification/hr-workspace.md). Read-only operations and reconciled period trends; no schema/dependency/calculation change. #92 stays open for #85/#22/#75. No commit/PR/deployment or next feature. Earlier entries below are historical.
-
-> 14 October 2026: PR #113 is merged. #91 Manager workspace/calendar is locally implemented for review on feat/manager-workspace-calendar. [Design/API](../adr/0020-manager-workspace-calendar.md), [actual verification/screenshots/limits](../verification/manager-workspace-calendar.md). Existing personal dashboard and decision workflow preserved; no new calculation, schema or dependency. Prepared for independent PR review; not merged or deployed. #92 not started. Earlier entries below are historical.
-
-> 14 October 2026: PR #112 is merged. #90 current-data personal dashboard is locally implemented for review on feat/personal-leave-dashboard. [API/design](../adr/0019-personal-leave-dashboard.md), [actual verification/screenshots/limits](../verification/personal-leave-dashboard.md). Existing calendar-day balances are explicit; statutory/cycle completion remains #85/#22/#75-dependent. Prepared for independent PR review; not merged or deployed. #91/#92 not started. Earlier entries below are historical.
-
-> 14 October 2026: PR #111 is merged. #89 CSV onboarding is locally implemented for review on feat/hr-csv-onboarding: [ADR 0018](../adr/0018-hr-csv-onboarding.md), [API/operations](../operations/hr-csv-onboarding.md), [executed evidence and limits](../verification/hr-csv-onboarding.md). Production invitation delivery, qualified calculations and testing convention gates remain unchanged. Prepared for independent PR review; not merged or deployed. Earlier entries below are historical.
-
-> 9 October 2026: PR #110 is merged. #78 confirmed employment facts and fixed weekly schedule history are locally implemented for review on feat/employment-data-foundation. [ADR 0017](../adr/0017-confirmed-employment-data.md), [API/operations](../operations/employment-data-foundation.md), [actual evidence and limits](../verification/employment-data-foundation.md). Legacy values remain Unknown; calendar-day charging is unchanged. #78 stays open for #75/#22-dependent statutory/cycle/holiday scope. Prepared for independent PR review; no CSV onboarding or deployment. Earlier entries are historical status.
-
-> 9 October 2026: PR #109 is confirmed merged. #84 company request requirements and immutable submission snapshots are locally implemented for review on feat/request-evidence-requirements. [Design](../adr/0016-request-evidence-requirements.md), [API/configuration](../operations/request-evidence-requirements.md), [executed evidence/limits](../verification/request-evidence-requirements.md). Medical upload-before-absence gates are unsupported; conditional proof/payment and statutory calculations remain #22/#75-dependent. #84 remains open; prepared for independent PR review, not merged or deployed. Earlier entries are historical status.
-
-> 9 October 2026: PR #108 is merged. #83 private supporting documents is locally implemented for review: [design](../adr/0015-private-supporting-documents.md), [scanner/storage operations](../operations/supporting-documents.md), [actual verification and limits](../verification/private-supporting-documents.md). Real ClamAV, medical-content scope, owned draft binding and attachment-aware recovery; no production, statutory retention, #84 requirements or #95 images claim. Earlier entries are historical status.
-
-> 9 October 2026: PR #107 is merged. #82 operator backup/recovery is locally implemented for review: [runbook](../operations/backup-restore.md), [measured evidence/limits](../verification/verified-backup-restore.md). No deployment, scheduling or future-upload recovery claim; repeat after #83. Earlier entries are historical status.
-
-> 9 October 2026: PR #106 is merged. #81 configuration and local Production-mode verification is implemented locally for review: [operations](../operations/single-host-configuration.md), [evidence/limits](../verification/safe-deployment-configuration.md). No hosting/deployment; first-admin, invitation delivery, backup/restore and load gates remain open. Earlier entries are historical status.
-
-> 9 October 2026: PR #105 notifications is merged. Issue #94 own-profile and working preferences is locally implemented for review: [design](../adr/0014-own-profile-and-preferences.md), [executed verification and limitations](../verification/profile-and-preferences.md). Separate versions, private phone, server theme and delivery-time suppression; no images, email/SMS, commit or deployment. Earlier entries below are historical status.
-
-> 9 October 2026: PR #104 is merged. Issue #93 durable in-app notifications is locally implemented for independent review: see [design](../adr/0013-durable-in-app-notifications.md) and [verification/limitations](../verification/in-app-leave-notifications.md). Preferences remain #94; no email/SMS or deployment. Earlier entries below are historical status.
-
-> 9 October 2026 update: PR #103 is merged. #80 password change/session revocation is locally implemented for independent review on feat/password-change-session-revocation, prepared for PR review and not merged or deployed. See [ADR 0012](../adr/0012-password-change-session-revocation.md) and [executed verification/limitations](../verification/password-change-session-revocation.md). Own-account change revokes prior JWT/refresh generations atomically; broader profile/preferences remain planned. Earlier implementation notes below are dated historical status.
-
-# Feature inventory and backlog reconciliation
-
-> Current-state update: PR #99 merged on 8 October 2026. Its JWT lifetime validation, explicit 30-second skew, current active Identity permission checks and session-safe bounded refresh supersede the authentication gaps recorded at the PR #73 baseline below. See ../security/endpoint-authorization-inventory.md and ../verification/jwt-current-permissions.md. #74 remains open; historical verification is not rerun or replaced here.
-
-> Current workflow update: PR #101 merged the shell #77. Optional Manager decision notes (#21) are now locally implemented for review, extending the existing queue and AuditEntry, with authorised personal/timeline display and server-confirmed outcomes. See [decision contract](../adr/0010-manager-decision-notes.md) and [verification](../verification/manager-decision-notes.md). #21 was renamed/reworded to its remaining scope and stays open. The review baseline below remains historical; no legal/test gate is bypassed.
-
-Reviewed 8 October 2026 against fetched `origin/main`, **f47e20c4245ae71384a4a7b0fcbc80a9274f750f**.
-The starting working tree was clean. Documentation branch: `docs/hrflow-south-africa-product-roadmap`.
-[PR #73](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/73) was verified
-**MERGED**, 8 October 2026 at 17:21:34 UTC. This review does not rerun earlier product verification.
-
-## Historical baseline capabilities confirmed in source (PR #73)
-
-The following evidence describes the original review, not current-main regressions. See
-the implementation updates above for JWT validation, shell, notes and local activation.
-
-- Identity login/rotating hashed refresh tokens; in-memory client sessions; logout clears protected
-  caches; Axios can refresh an expired access token and retry once in the same session; invalid refresh
-  ends that session, and explicitly non-replayable operations opt out. Combined roles provide additive navigation.
-  **Important qualification:** `src/HRFlow.Api/Program.cs` sets `ValidateLifetime = false`.
-  JWT expiry is therefore not enforced as the older authentication plan implies. Every protected
-  request checks persisted active status, but that is not a replacement for expiry/current roles.
-- HR employee create/edit, full role collections, explicit Preserve/Assign/Clear manager assignment,
-  version conflicts, relationship/cycle/direct-report/last-active-HR safeguards; profile and Identity
-  saves share one transaction. Initial creation currently takes a password; secure invitations
-  are **not** implemented. Department selectors exist; full department CRUD does not.
-- Deactivation blocks login/refresh/old-token protected access, rotates the version, cancels Pending
-  leave atomically with acting-HR reason audits, preserves terminal history and reporting links.
-  HR search/filter, deactivation confirmation and inactive read-only details shipped in PR #70.
-- Shared policy/type CRUD with versions, normalized type uniqueness, reference-restricted deletion,
-  explanatory HR forms and a real Employee/Manager type/date submission form (PRs #67/#68).
-  No general request description, configurable proof or document upload exists.
-- Personal balances/history/Pending cancellation; eligible Manager queue/approve/reject; HR's
-  organisation Pending monitoring is read-only. Self-decision and HR-only decision remain forbidden.
-  Approval revalidates current policy, history and reporting under writer protection (PR #64).
-- Approved current direct-report month view; inactive history labelled, distinct active people
-  counted once per period, not daily absence. HR period/department reports clip calendar request-days,
-  distinguish inactive contributions and use CURRENT department; no historical department snapshots.
-- AuditEntry remains the sole domain transition/persistence mechanism. New submission null→Pending
-  events, correlation IDs, truthful legacy gaps, UTC timelines, current actor names, HR-only sensitive
-  deactivation context and owner/Manager/HR detail scopes shipped in PR #73.
-- Shared accessible controls/dialogs and responsive feature pages exist. HomePage is still a
-  role-link landing page with account details, not API-backed role dashboards or a shared app shell.
-
-Evidence: Domain `Employee`, `LeavePolicy`, `LeaveRequest`, `AuditEntry`; Application
-`Features/LeaveRequests` and management/reporting features; Infrastructure `EmployeeManagementService`,
-`AuthService`, `LeaveApprovalAuthorizationService`, `SqliteWriteTransaction`,
-`SqliteTeamLeaveReadTransaction`; API controllers/Program; client feature pages/auth/query-key code.
-See [ADRs 0002](../adr/0002-consistent-leave-decisions.md), [0003](../adr/0003-hr-employee-management.md),
-[0004](../adr/0004-leave-policy-management.md), [0005](../adr/0005-employee-deactivation.md),
-[0006](../adr/0006-manager-team-leave-summary.md), [0007](../adr/0007-hr-department-leave-reporting.md)
-and [0008](../adr/0008-leave-request-audit-timeline.md).
-
-## Incomplete foundations and risks
-
-1. **Current-role checks are uneven.** New management writes, decisions, team summary, department
-   reporting and timelines recheck persisted permissions inside protection/snapshots. Older queue,
-   HR monitoring, HR employee reads, personal history/balances/selector and submission/cancellation
-   paths must be reviewed end-to-end: controller JWT claims alone can outlive role removal.
-   `GetPendingLeaveRequestsQueryHandler` trusts controller scope, and submission/cancel check active
-   ownership without rechecking the owner's current Employee/Manager membership. Do not claim
-   uniform live permission enforcement. Proposed security work must cover **all protected routes**.
-2. **Current balance is not a statutory engine.** `LeaveBalanceCalculator` subtracts all Approved
-   inclusive calendar durations from current `DefaultBalance` for each type. No employment start,
-   schedules, cycles, accrual, holiday exclusions, effective dates or historical charges exist.
-   Pending reserves nothing; Rejected/Cancelled consume nothing. Current-policy reductions can
-   produce a negative displayed balance while preserving historical approvals. Zero entitlement
-   blocks positive requests, including the nominal Unpaid seed; it does not mean unlimited unpaid leave.
-3. **Reasons are not manager notes.** AuditEntry.Reason currently carries HR deactivation context;
-   approve/reject commands and UI accept no decision note. Do not repurpose that sensitive field
-   indiscriminately or add a competing audit system.
-4. **No production claim:** no newly executed load/accessibility audit, deployment or restore drill.
-   SQLite-specific writer reservation and read snapshots are deliberate, not portable by configuration.
-   Automated tests are deferred; earlier disposable checks are evidence, not a retained regression suite.
-5. Missing: CSV onboarding, secure activation/password change, request descriptions/evidence,
-   private files/profile images, preferences, durable notifications, calendar UI, safe exports and
-   real role dashboards. These are planned, not partially advertised as working settings.
-
-## Existing issue recommendations: no closures or edits performed
-
-### #17 — GET balance + PATCH cancel endpoints
-
-[Verified issue](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/17).
-Implemented: owner-derived GET `/api/v1/leave-requests/balances`, POST
-`/api/v1/leave-requests/{id}/cancel`, protected owner validation, 403 for another owner's cancellation,
-409 for terminal requests, atomic status/audit persistence. See `LeaveRequestsController`,
-`GetLeaveBalancesQuery`, `CancelLeaveRequestCommandHandler`, PRs #59/#60/#64 and ADR 0002's
-real HTTP/two-process evidence. Existing issue describes an arbitrary employee-ID balance route
-and PATCH, which are **not** the shipped contract.
-
-Recommendation: update the issue description to acknowledge the accepted safer owner-derived GET
-and actual POST contract, then close after reviewer confirmation of that contract and its stated
-non-owner 403 criterion. Do not add duplicate routes just to resemble old wording. Security follow-up
-is tracked separately, not hidden by calling this original contract unfinished. No closure now.
-
-### #21 — Manager approval queue UI
-
-[Verified issue](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/21).
-Implemented: eligible Pending queue, inline decisions, safe errors, disabled duplicates and
-authoritative query invalidation without a page reload (PRs #58/#64). Missing: the description's
-decision note; the original “optimistic mutation” wording also differs from intentional server-confirmed
-updates. Closed #18's note wording does not prove notes exist.
-
-Recommendation: **keep and reuse #21**, rename/update to the remaining complete decision-note workflow;
-do not create a duplicate. Proposed scope: optional trimmed note up to 500 characters, no diagnosis
-prompt, Application validation + existing domain/audit persistence in the decision transaction,
-nullable metadata for legacy decisions, queue confirmation form and authorised timeline display.
-Make rejection-note requirement an explicit product decision rather than silently imposing it.
-Notes are visible only to owner/current eligible Manager/HR; never log their text. One terminal event
-and note persist together; forbidden/stale/policy-failed/rolled-back decisions persist neither.
-Use current rules/no self/no HR override, retain draft on conflict, no automatic replay; invalidate
-same-session queue/history/timeline/team/report data. Verify two-process decision races and all
-role/privacy/UI boundaries. Essential for pitch; Medium. Depends on uniform current authorization;
-does not require statutory engine work. Replace obsolete optimistic AC with confirmed invalidation.
-
-### #22 — LeaveType and LeavePolicy entities
-
-[Verified issue](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/22).
-Implemented: entities/mappings/migrations, current configurable entitlement and overlap, shared
-policies, API/UI versions and CRUD. `LeavePolicy.DefaultBalance` is read by the calculator rather
-than a hardcoded allowance. **Missing:** actual accrual rule in the issue's description/AC; a fixed
-integer balance is not accrual. PRs #50/#67/#68 and ADR 0004 establish the existing simpler model.
-
-Recommendation: keep #22, update its remaining scope to the **shared effective-dated calculation
-foundation**, then deliver leave-category slices through dependent issues. Proposed foundation:
-reviewed rule kinds/units/cycle anchors, effective-dated employment/schedule/policy references,
-one calculation result shared by submission, approval, balances and reporting, approved charged-unit
-snapshots and explained results. Retain legacy calendar basis/unknown historical rule truth;
-never backfill fabricated employment dates or silently reinterpret old approvals. Schema upgrade
-must produce a dry-run legacy exception report and preserve requests/audits. HR configuration/forms
-remain versioned. Pending validation uses reviewed current applicable rules; submission snapshots
-are historical facts, not a guarantee of later approval. Explicit unpaid mode, company enhancements,
-precision and cycle-spanning allocation are designed here; category rules need separate legal sign-off.
-Essential for pitch; Large. Depends on legal review and employment/schedule foundation. Verify
-boundary examples, migration/rollback, cross-process balance races and unchanged role/audit/session
-behaviour. No annual reset/carry-forward guess. No parallel new “accrual engine” duplicate issue.
-
-### #36 — Harden dev admin seeding per CodeRabbit review
-
-[Verified issue](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/36).
-Implemented: PR #37, self-guarded `DevelopmentIdentitySeeder.SeedDevelopmentAdministratorAsync`,
-configurable `Seeding:HrAdministratorPassword`, README configuration/troubleshooting. Current startup
-`DatabaseSeeder.SeedAsync` is itself Development-guarded, migrates before protected seeding, and
-does not reprovision existing accounts/roles or reactivate inactive profiles (later PRs #67/#69).
-
-Recommendation: reconcile exact method criterion against both guarded implementations, retain
-historical PR #37 evidence, then close after review. No remaining product implementation found.
-This documentation phase makes the README's old delete-and-restart note safe: reset only a known
-disposable local store; preserve/back up any store with needed data and review migration preflight.
-No automatic legacy repair is introduced. Do not delete real data to satisfy old troubleshooting text.
-
-## Other historical tracker discrepancies (8 October review)
-
-Closed #19 described HR deciding leave; current rules correctly prohibit it. Closed #20 mentions
-PATCH; actual decision routes are POST. Closed #31 proposed AuditLog/interceptor; the accepted
-implementation deliberately reuses AuditEntry instead. Closed #5 described Axios 401 replay;
-current authentication supports valid same-session refresh and one bounded retry, with explicit non-replayable exceptions. Closed #15's general reason
-is not implemented in the minimal form; planned configurable descriptions address that gap.
-These are documentation/reconciliation notes, not authority to reopen/close or rewrite issues now.
-
-## Evidence quality and limitations of this review
-
-Read the eight existing verification reports: dependency security, deactivation backend/UI,
-policy backend/UI, team summary, department reporting and audit timeline. Earlier reports contain
-real HTTP/persisted-row and Chromium checks; initial API-only/static/adapter checks remain separately
-labelled. Later browser addenda supersede earlier *unexecuted* UI items, not their original evidence.
-Do not rewrite those reports as newly executed checks. Their explicit limits include physical devices,
-other engines, formal accessibility, production load, forced read interleavings and audit migration Down.
-
-This phase executed source/document/tracker inspection, fetch/branch creation and documentation
-checks only. No real application/database/browser workflow, build, npm audit, new migration or product
-test is claimed. Qualified labour-law review and a complete up-to-date legal consolidation remain
-external gates. [Requirements](04-south-african-leave-requirements.md) and
-[roadmap](05-product-roadmap.md) distinguish proposed capabilities from shipped behaviour.
-
-## Planning-phase verification record
-
-- `git status` was clean on main before fetching/branching. Base `f47e20c` is the PR #73 merge;
-  `gh pr view 73` returned MERGED with the recorded UTC merge time.
-- Open/relevant closed issue and merged-PR inspection found only #17/#21/#22/#36 open before
-  expansion. Their titles/bodies were read; none was edited or closed.
-- Created **24 focused issues #74–#97**, then **umbrella #98**. Retrieved all open issue bodies
-  again and compared each new title/body with the local catalogue: **24 matched**. Dependency
-  creation order was checked; existing #21/#22 reuse is explicit. Umbrella existence/linked
-  issue list was checked. No unrelated project-board action was taken.
-- Both instruction files were compared byte-for-byte: **identical**. The eleven intended
-  documentation files were checked for local link targets, balanced fences, final newlines and
-  trailing whitespace; new documents were scanned for credential/token/machine-path patterns.
-- `git diff --check` passed. Git emitted normal LF→CRLF working-copy notices, not whitespace
-  errors. New-file whitespace was checked separately because an ordinary diff omits untracked files.
-- Temporary issue tooling initially could not run through the Windows Python alias; Node tooling
-  succeeded instead. A credential scan initially falsely matched the words “bearer JWTs”; its
-  token pattern was corrected and the complete check rerun. Neither is a product check/pass.
-- New-file Git checking caught an extra blank line at the catalogue's end; it was removed and
-  checks rerun. No-index diff exit 1 indicates new content, not a whitespace failure.
-- No builds, npm audit, application HTTP/SQLite/browser checks, automated tests, migration or legal
-  sign-off were executed in this phase. Earlier product evidence remains linked and dated separately.
-
-Only documentation changes remain for review; temporary issue-creation/inspection tooling is not
-part of the deliverable. No commit, push, PR, merge, deployment or issue closure was performed.
+The original PR #73 inventory is available in Git history and the dated reports/ADRs. Its
+ValidateLifetime=false, initial-password creation, no retained tests, unbounded directory and
+many-Tab calendar findings are superseded by the implementation links above, not current regressions.
+This file and the roadmap are living summaries, not a new competing planning document.
