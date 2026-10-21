@@ -1,5 +1,14 @@
 # Current readiness review — 15 October 2026
 
+## Invitation delivery design - 20 October 2026
+
+PR #127 merged; its hosted Ubuntu 88 backend/33 default Chromium pass is historical evidence for
+that performance branch, not delivery verification. Production activation delivery is still a pilot
+blocker. [Proposed architecture and approval decisions](../adr/0029-production-activation-delivery-proposal.md)
+and [design review checks](../verification/activation-delivery-design.md) add no product capability.
+Provider/account, sender/domain, custody/privacy and target-host delivery checks remain unapproved.
+No automatic retry is proposed without a separate recoverable-token security decision; #79 stays open.
+
 ## Client-loading follow-up — 20 October 2026
 
 PR #125 is merged; qualified decisions remain unsigned. The eager-import finding below now has a
