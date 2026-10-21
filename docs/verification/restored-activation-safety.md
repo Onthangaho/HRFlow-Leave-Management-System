@@ -251,3 +251,30 @@ No controlled blocked-pipe, OS-denied kill or resource-stress experiment was run
 can distinguish native-exit/EOF stages if another failure occurs, but do not retrospectively provide
 missing observations. The isolated refusal uses the original synthetic migrated store; its guard runs
 before storage/maintenance initialization. The full drill separately exercises the restored store.
+
+## Publication follow-up: remaining cleanup bounds
+
+Independent review after publishing 39651c7 found that ToolAsync bounded native exit but subsequently
+awaited ReadToEndAsync without a bound. Exit plus both streams now share the existing 45-second
+cancellation deadline. SMTP accept-task and connection-task shutdown likewise share its existing
+five seconds. Neither deadline was increased. Operator timeout diagnostics contain only exit/task
+completion booleans. Private-store deletion now also requires proven SMTP cleanup, not only stopped
+API hosts; otherwise the store is retained and cleanup fails. No automatic command replay was added.
+These source-review corrections do not explain the original refusal timeout.
+
+Separate additional Windows executions:
+
+- Output/accept-bound build: zero warnings/errors, 13.79s; affected recovery/lifecycle/activation SMTP
+  filter: 20/20 passed, 2.6053 minutes (156.32s).
+- After adding the pre-deletion SMTP guard: build zero warnings/errors, 4.62s; the same affected filter
+  passed 20/20 in 2.4360 minutes (146.16s). This is a separate run on the final test-source changes.
+- The local 115/115 complete invocation above predates these publication follow-ups. It is not
+  relabelled as a new full local execution. Final-head hosted gates are inspected separately.
+
+Initial published-head [hosted run 39674879918](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39674879918)
+passed on Ubuntu at 39651c7: 115 backend tests in 6.6970 minutes and 51 Chromium tests (121430.451ms
+browser duration), plus build/lint/audit/typecheck steps. Its log was inspected privately for totals;
+no raw logs or sensitive artifacts are committed. This evidence belongs to the initial head before
+the follow-up bounds, not a later head. Hosted success neither reconstructs the historical timeout
+nor proves target-host storage/TLS/proxy/provider/scanner readiness. Positive real-ClamAV coverage
+was not rerun. Subsequent PR-head results belong in the PR's separately inspected workflow record.

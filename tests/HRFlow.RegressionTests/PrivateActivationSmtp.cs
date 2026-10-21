@@ -134,8 +134,9 @@ internal sealed class PrivateActivationSmtp : IActivationDelivery, IAsyncDisposa
     }
     public async ValueTask DisposeAsync()
     {
-        Release.TrySetResult(); stopped.Cancel(); listener.Stop(); await accepting;
-        await Task.WhenAll(connections).WaitAsync(TimeSpan.FromSeconds(5)); accepted.Clear(); messages.Writer.TryComplete(); while (messages.Reader.TryRead(out _)) { } stopped.Dispose();
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        Release.TrySetResult(); stopped.Cancel(); listener.Stop(); await accepting.WaitAsync(deadline.Token);
+        await Task.WhenAll(connections).WaitAsync(deadline.Token); accepted.Clear(); messages.Writer.TryComplete(); while (messages.Reader.TryRead(out _)) { } stopped.Dispose();
         Stopped = true;
     }
 }

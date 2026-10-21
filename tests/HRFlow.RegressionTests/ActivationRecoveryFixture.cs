@@ -48,12 +48,19 @@ internal sealed class ActivationRecoveryFixture : IAsyncDisposable
         var start = StartInfo(Path.Combine(ApiFixture.RepositoryRoot, "tools/HRFlow.Operations/bin/Debug/net8.0/HRFlow.Operations.dll"));
         foreach (var arg in new[] { command, "--application-root", ApiFixture.RepositoryRoot }.Concat(args)) start.ArgumentList.Add(arg);
         using var process = Process.Start(start)!;
-        var stdout = process.StandardOutput.ReadToEndAsync(); var stderr = process.StandardError.ReadToEndAsync();
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+        var stdout = process.StandardOutput.ReadToEndAsync(deadline.Token); var stderr = process.StandardError.ReadToEndAsync(deadline.Token);
         try
         {
-            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(45));
-            AssertNoLeaks((await stdout) + (await stderr));
+            await process.WaitForExitAsync(deadline.Token);
+            var output = await Task.WhenAll(stdout, stderr).WaitAsync(deadline.Token);
+            AssertNoLeaks(string.Concat(output));
             Assert.Equal(0, process.ExitCode);
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine($"recovery-tool: exited={process.HasExited}; stdout-complete={stdout.IsCompleted}; stderr-complete={stderr.IsCompleted}");
+            throw;
         }
         finally { await StopProcessAsync(process); }
     }
@@ -102,7 +109,8 @@ internal sealed class ActivationRecoveryFixture : IAsyncDisposable
         foreach (var host in hosts)
             try { await host.StopAsync(); } catch (Exception error) { failure ??= error; }
         try { await Smtp.DisposeAsync(); } catch (Exception error) { failure ??= error; }
-        if (hosts.Any(h => !h.Stopped)) throw new InvalidOperationException("Owned API cleanup failed; private recovery store retained.");
+        if (hosts.Any(h => !h.Stopped) || !Smtp.Stopped)
+            throw new InvalidOperationException("Owned API/SMTP cleanup failed; private recovery store retained.");
         SqliteConnection.ClearAllPools();
         var absolute = Path.GetFullPath(Root);
         if (Path.GetDirectoryName(absolute) != Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar)
