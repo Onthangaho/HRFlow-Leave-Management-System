@@ -239,3 +239,11 @@ traces current manual/CSV/resend transactions and proposes bounded authenticated
 rotated resend, pending organisation/provider/privacy approval. [Review evidence](../verification/activation-delivery-design.md)
 is source/documentation inspection only. Production delivery stays unavailable; no service connected,
 mail sent, issue changed or #79 completion claimed. General status email remains deferred.
+
+## 21 October 2026: #79 coordination, not production delivery
+
+The [coordinator/local SMTP slice](../operations/activation-delivery-coordination.md) adds guarded dispatch
+and acknowledgement, authoritative HR feedback and explicit rotated resend recovery.
+[Verification](../verification/activation-delivery-coordination.md) is local synthetic evidence.
+Provider, sender/domain, authentication/privacy and operational approval remain pending; production
+delivery is disabled and #79 stays open. Legal/calculation and target-host gates are unchanged.

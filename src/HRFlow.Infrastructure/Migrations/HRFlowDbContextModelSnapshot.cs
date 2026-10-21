@@ -70,7 +70,14 @@ namespace HRFlow.Infrastructure.Migrations
                     b.Property<DateTime?>("ActivatedAtUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ActivationDispatchStartedAtUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("ActivationExpiresAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivationRecipientNormalizedEmail")
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivationTokenHash")

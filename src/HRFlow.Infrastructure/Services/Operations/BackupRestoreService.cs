@@ -201,7 +201,7 @@ public static class BackupRestoreService
         foreach (var id in ids)
         {
             using var command = connection.CreateCommand(); command.Transaction = transaction;
-            command.CommandText = "UPDATE AspNetUsers SET PasswordHash=NULL, CredentialVersion=$version, SecurityStamp=$stamp, ActivationTokenHash=NULL, ActivationExpiresAtUtc=NULL, InvitationDeliveryState=CASE WHEN RequiresActivation=1 THEN 'Expired' ELSE InvitationDeliveryState END WHERE Id=$id";
+            command.CommandText = "UPDATE AspNetUsers SET PasswordHash=NULL, CredentialVersion=$version, SecurityStamp=$stamp, ActivationTokenHash=NULL, ActivationExpiresAtUtc=NULL, ActivationRecipientNormalizedEmail=NULL, ActivationDispatchStartedAtUtc=NULL, InvitationDeliveryState=CASE WHEN RequiresActivation=1 THEN 'Expired' ELSE InvitationDeliveryState END WHERE Id=$id";
             command.Parameters.AddWithValue("$version", Guid.NewGuid().ToString()); command.Parameters.AddWithValue("$stamp", Guid.NewGuid().ToString()); command.Parameters.AddWithValue("$id", id); command.ExecuteNonQuery();
         }
         using var revoke = connection.CreateCommand(); revoke.Transaction = transaction;

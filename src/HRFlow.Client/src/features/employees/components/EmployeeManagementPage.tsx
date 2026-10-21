@@ -1,3 +1,4 @@
+import { activationFeedback } from '../activationFeedback';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { isAxiosError } from 'axios';
@@ -21,7 +22,8 @@ export function EmployeeManagementPage() {
 function EmployeeManagementWorkspace() {
   const [params] = useSearchParams();
   const attentionLink = params.get('attention') ?? 'all';
-  const [filter, setFilter] = useState(() => initial(attentionLink));
+  const searchLink = (params.get('search') ?? '').slice(0, 100);
+  const [filter, setFilter] = useState(() => ({ ...initial(attentionLink), search: searchLink }));
   const [draft, setDraft] = useState(filter);
   const employees = useEmployees(filter);
   const departments = useDepartments();
@@ -37,7 +39,7 @@ function EmployeeManagementWorkspace() {
   const opener = useRef<HTMLElement | null>(null);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), [sessionVersion]);
-  useEffect(() => { const next = initial(attentionLink); setFilter(next); setDraft(next); setReportsFor(null); }, [attentionLink]);
+  useEffect(() => { const next = { ...initial(attentionLink), search: searchLink }; setFilter(next); setDraft(next); setReportsFor(null); }, [attentionLink, searchLink]);
   useEffect(() => {
     if (!employees.isFetching && !employees.isError && employees.data && filter.page > 1 && !employees.data.items.length) {
       const last = Math.max(1, Math.ceil(employees.data.totalCount / filter.pageSize));
@@ -65,7 +67,7 @@ function EmployeeManagementWorkspace() {
       <button type="button" data-focus-fallback disabled={editing !== undefined || employees.isPending || employees.isError} onClick={() => openForm(null)} className="ui-primary">New Employee</button></section>
     {notice && <p role="status" className="break-words text-emerald-800">{notice}</p>}
     {editing !== undefined && <EmployeeForm employee={editing}
-      onSuccess={delivery => { if (!currentSession()) return; setNotice(editing ? 'Employee updated.' : delivery === 'PickupReady' ? 'Employee created. Private development invitation is ready for pickup.' : 'Employee created, but invitation delivery failed. Use Resend invitation to recover.'); setEditing(undefined); }}
+      onSuccess={delivery => { if (!currentSession()) return; setNotice(editing ? 'Employee updated.' : 'Employee created. ' + activationFeedback(delivery)); setEditing(undefined); }}
       onCancel={() => setEditing(undefined)} onReload={reload} reloadError={reloadError} />}
     <form className="ui-panel space-y-4" aria-label="Directory filters" onSubmit={event => { event.preventDefault(); setFilter({ ...draft, page: 1 }); }}>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -73,7 +75,7 @@ function EmployeeManagementWorkspace() {
         <label className="ui-label">Employment status<select aria-label="Employment status" className="ui-input block w-full" value={draft.status} onChange={e => setDraft({ ...draft, status: e.target.value })}>{['All', 'Active', 'Inactive'].map(value => <option key={value}>{value}</option>)}</select></label>
         <label className="ui-label">Department<select aria-label="Department" className="ui-input block w-full" value={draft.departmentId} onChange={e => setDraft({ ...draft, departmentId: e.target.value })}><option value="">All departments</option>{departments.data?.map(d => <option value={d.id} key={d.id}>{d.name}</option>)}</select></label>
         <label className="ui-label">Administrative attention<select aria-label="Administrative attention" className="ui-input block w-full" value={draft.attention} onChange={e => setDraft({ ...draft, attention: e.target.value })}>
-          <option value="all">All employee records</option><option value="employment">Active: Unknown employment facts</option><option value="schedule">Active starters: No schedule effective today</option><option value="future-schedule">Active starters: Future schedule only</option><option value="activation">Active employment: Pending activation</option><option value="delivery-failed">Active pending accounts: Delivery failed</option><option value="delivery-pending">Active pending accounts: Delivery acknowledgement pending</option>
+          <option value="all">All employee records</option><option value="employment">Active: Unknown employment facts</option><option value="schedule">Active starters: No schedule effective today</option><option value="future-schedule">Active starters: Future schedule only</option><option value="activation">Active employment: Pending activation</option><option value="delivery-failed">Active pending accounts: Failed or uncertain delivery</option><option value="delivery-pending">Active pending accounts: Delivery acknowledgement pending</option>
         </select></label>
         <label className="ui-label">Sort by<select aria-label="Sort by" className="ui-input block w-full" value={draft.sort} onChange={e => setDraft({ ...draft, sort: e.target.value })}><option value="name">Name</option><option value="email">Email</option><option value="number">Employee number</option></select></label>
         <label className="ui-label">Rows per page<select aria-label="Rows per page" className="ui-input block w-full" value={draft.pageSize} onChange={e => setDraft({ ...draft, pageSize: Number(e.target.value) })}>{[25, 50, 100].map(size => <option value={size} key={size}>{size}</option>)}</select></label>
@@ -95,7 +97,7 @@ function EmployeeManagementWorkspace() {
     {deactivating && <EmployeeDeactivationDialog employee={deactivating} returnFocus={opener.current} onClose={() => setDeactivating(null)}
       onSuccess={count => { if (!currentSession()) return; setDeactivating(null); setNotice(`Employee deactivated. ${count} Pending request${count === 1 ? '' : 's'} cancelled.`); }}
       onInactive={employee => { setDeactivating(null); setDetails(employee); }} onManageReports={() => { const next = { ...initial('all'), status: 'Active', reportsTo: deactivating.id }; setReportsFor(deactivating); setFilter(next); setDraft(next); setDeactivating(null); }} />}
-    {inviting && <ResendActivationDialog employee={inviting} onClose={() => setInviting(null)} onSuccess={state => { if (!currentSession()) return; setInviting(null); setNotice(state === 'PickupReady' ? 'New private development invitation ready for pickup.' : 'Invitation delivery failed. You can explicitly resend.'); }} />}
+    {inviting && <ResendActivationDialog employee={inviting} onClose={() => setInviting(null)} onSuccess={state => { if (!currentSession()) return; setInviting(null); setNotice(activationFeedback(state)); }} />}
     {details && <EmployeeDetailsDialog employee={details} returnFocus={opener.current} onClose={() => setDetails(null)} />}
   </div>;
 }

@@ -18,7 +18,7 @@ public sealed class DevelopmentActivationDelivery(IHostEnvironment environment, 
             throw new DomainException("Account invitations are unavailable. Configure an approved delivery provider; private pickup is Development-only.");
     }
     /// <inheritdoc />
-    public async Task DeliverAsync(Guid accountId, string email, Uri link, CancellationToken token)
+    public async Task<ActivationDeliveryOutcome> DeliverAsync(Guid accountId, string email, Uri link, CancellationToken token)
     {
         EnsureConfigured();
         // Fixed location cannot be redirected into a repository, web root or shared directory by configuration.
@@ -37,5 +37,6 @@ public sealed class DevelopmentActivationDelivery(IHostEnvironment environment, 
         var path = Path.Combine(folder, accountId + "-" + Guid.NewGuid() + ".txt");
         await File.WriteAllTextAsync(path, email + Environment.NewLine + link.AbsoluteUri, token);
         if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        return ActivationDeliveryOutcome.PickupReady;
     }
 }

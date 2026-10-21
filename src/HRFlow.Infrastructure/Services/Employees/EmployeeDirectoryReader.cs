@@ -65,7 +65,7 @@ public sealed class EmployeeDirectoryReader(HRFlowDbContext db, TimeProvider clo
             Version = x.Employee.Version, IsActive = x.Employee.IsActive, IdentityUserId = x.Employee.IdentityUserId,
             NeedsEmploymentFacts = x.Facts, NeedsCurrentSchedule = x.Schedule, HasFutureScheduleOnly = x.FutureOnly,
             RequiresActivation = x.User!.IdentityId != null && x.User.RequiresActivation,
-            InvitationDeliveryState = x.User!.IdentityId == null ? "Unavailable" : x.User.RequiresActivation && x.User.ActivationExpiresAtUtc <= now ? "Expired" : x.User.InvitationDeliveryState,
+            InvitationDeliveryState = x.User!.IdentityId == null ? "Unavailable" : !x.Employee.IsActive && x.User.RequiresActivation ? "Unavailable" : x.User.RequiresActivation && x.User.ActivationExpiresAtUtc <= now ? "Expired" : x.User.InvitationDeliveryState,
             ActivatedAtUtc = x.User!.IdentityId == null ? null : x.User.ActivatedAtUtc,
             DeactivatedAtUtc = x.Employee.DeactivatedAtUtc, DeactivationReason = x.Employee.DeactivationReason,
             DeactivatedByName = db.Employees.Where(e => e.Id == x.Employee.DeactivatedById).Select(e => e.FullName).FirstOrDefault(),
@@ -107,7 +107,7 @@ public sealed class EmployeeDirectoryReader(HRFlowDbContext db, TimeProvider clo
             "future-schedule" => query.Where(x => x.FutureOnly),
             "activation" => query.Where(x => x.Employee.IsActive && x.User!.IdentityId != null && x.User.RequiresActivation),
             "delivery-failed" => query.Where(x => x.Employee.IsActive && x.User!.IdentityId != null && x.User.RequiresActivation
-                && !(x.User.ActivationExpiresAtUtc <= now) && x.User.InvitationDeliveryState == "DeliveryFailed"),
+                && !(x.User.ActivationExpiresAtUtc <= now) && (x.User.InvitationDeliveryState == "DeliveryFailed" || x.User.InvitationDeliveryState == "DeliveryUnknown")),
             "delivery-pending" => query.Where(x => x.Employee.IsActive && x.User!.IdentityId != null && x.User.RequiresActivation
                 && !(x.User.ActivationExpiresAtUtc <= now) && x.User.InvitationDeliveryState == "PendingDelivery"),
             _ => throw new DomainException("Select a supported attention filter.") };

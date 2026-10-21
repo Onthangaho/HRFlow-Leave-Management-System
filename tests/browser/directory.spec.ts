@@ -264,7 +264,13 @@ test('HTTP directory: CSV onboarding still previews and confirms then refreshes 
   await page.getByRole('button', { name: 'Confirm selected Ready rows', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Create 1 accounts', exact: true }).click();
   await expect(page.getByRole('cell', { name: 'Created', exact: true })).toBeVisible();
-  await page.getByRole('navigation', { name: 'Primary', exact: true }).getByRole('link', { name: 'Employee management', exact: true }).click();
+  await expect(page.getByText('Private development invitation is ready for pickup. This is not email delivery.', { exact: true })).toBeVisible();
+  const refreshed = page.waitForResponse(r => /\/onboarding\/previews\/[0-9a-f-]+$/i.test(new URL(r.url()).pathname) && r.request().method() === 'GET');
+  await page.getByRole('button', { name: 'Refresh committed row and invitation status', exact: true }).click();
+  expect((await refreshed).status()).toBe(200);
+  await expect(page.getByRole('cell', { name: 'Created', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Open employee status / explicit resend', exact: true }).click();
+  await expect(page.getByLabel('Search employees', { exact: true })).toHaveValue('CSV-DIR');
   await search(page, 'csv-directory@synthetic.invalid');
   await expect(page.getByRole('button', { name: 'Edit Synthetic CSV Directory', exact: true })).toBeVisible();
 });

@@ -75,6 +75,7 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
         modelBuilder.Entity<ApplicationUser>().Property(u => u.RequiresActivation).HasDefaultValue(false);
         modelBuilder.Entity<ApplicationUser>().Property(u => u.InvitationDeliveryState).HasMaxLength(32).HasDefaultValue(ActivationDeliveryStates.NotRequired);
         modelBuilder.Entity<ApplicationUser>().Property(u => u.ActivationTokenHash).HasMaxLength(64);
+        modelBuilder.Entity<ApplicationUser>().Property(u => u.ActivationRecipientNormalizedEmail).HasMaxLength(256);
         modelBuilder.Entity<ApplicationUser>().HasIndex(u => u.ActivationTokenHash).IsUnique();
 
         modelBuilder.Entity<OnboardingBatch>().Property(b => b.Version).IsConcurrencyToken();
