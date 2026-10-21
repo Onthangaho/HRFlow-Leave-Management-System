@@ -128,3 +128,11 @@ disabled and the loopback SMTP fixture remains test-assembly-only. The generatio
 dispatch outside transactions, guarded acknowledgement and durable Created CSV outcome boundaries
 remain intact. Model consistency was rerun: no pending model changes. Downgrade consequences were
 reviewed; no downgrade was executed. Earlier local suites were not newly rerun during this review.
+
+## 21 October 2026: retained restored-store drill
+
+A separate [recovery/activation drill](../verification/restored-activation-safety.md) exercises real
+encrypted restore, normal API startup with a test-only Development SMTP substitution, cleared
+invitation authority, old HTTP credential/token denial, durable Created CSV outcomes and explicit
+reviewed recovery/resend. Historical execution results in this document are unchanged. This does
+not approve a provider or enable Production delivery; ADR 0029 decisions remain Pending/Unassigned.

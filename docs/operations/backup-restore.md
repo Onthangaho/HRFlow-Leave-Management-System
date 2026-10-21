@@ -101,7 +101,8 @@ against every possible hostile SQLite schema alteration; packages and keys need 
 A backup may resurrect old passwords, sessions, invitations, roles or deactivations. Historical
 revocations **do not automatically survive**. Therefore restoration always clears all password hashes,
 rotates every credential version/security stamp, revokes outstanding refresh tokens and clears
-activation token hashes/expiry. Pending activation remains pending (delivery state becomes Expired);
+activation token hashes/expiry, normalized recipient and dispatch claims. Pending activation remains
+pending (delivery state becomes Expired);
 inactive remains inactive. Profiles, roles, versions, employment lifecycle, requests, audits, settings,
 notification events/inbox and historical decisions otherwise remain unchanged. Security-field changes
 are deliberate recovery deltas, not an exact byte-for-byte database restore.
@@ -157,9 +158,24 @@ and requires security reconciliation/invalidation again; never silently combine 
 Proposed planning targets (not guarantees): daily backups for a maximum 24-hour scheduling RPO and
 four-hour operator recovery RTO, subject to realistic rehearsals, monitoring and custody availability.
 See [measured local results and outstanding checks](../verification/verified-backup-restore.md).
-First-admin provisioning, Production invitations, trusted-proxy integration, hosting and load testing
-remain independent deployment gates.
+Target-host first-admin verification, Production invitations, trusted-proxy integration, hosting and
+load testing remain independent deployment gates.
 
 References checked 9 October 2026: [Microsoft SQLite backup API](https://learn.microsoft.com/dotnet/standard/data/sqlite/backup),
 [SQLite online backup semantics](https://www.sqlite.org/c3ref/backup_finish.html),
 [.NET authenticated AES-GCM](https://learn.microsoft.com/dotnet/api/system.security.cryptography.aesgcm.encrypt?view=net-8.0).
+
+## Retained activation-safety drill (21 October 2026)
+
+[The retained drill and exact results](../verification/restored-activation-safety.md) now join actual
+encrypted operator backup/restore, recover-password, normal API startup, persisted invalidation, HTTP
+denial and private loopback SMTP observations. Original/recovered application lineages never overlap.
+An existing active/activated HR identity is reviewed and recovered while stopped; first-admin does
+not recover or repair an existing store. New Pending-account access requires an explicit authorized
+current-version resend, never a startup/worker retry or repeated CSV confirmation.
+
+Production delivery remains unavailable, including after recovery. The test-only Development runtime
+hook and synthetic SMTP sink must not be used as a production adapter. This Windows drill does not
+replace target-host storage/TLS/proxy/restore exercises, post-cutoff eligibility reconciliation or
+provider approval. Key custody, retention/legal holds and secure operator access remain operational
+responsibilities. Historical recovery measurements above remain dated evidence.
