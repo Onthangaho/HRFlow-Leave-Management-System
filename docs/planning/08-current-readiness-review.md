@@ -215,3 +215,11 @@ and acknowledgement, authoritative HR feedback and explicit rotated resend recov
 [Verification](../verification/activation-delivery-coordination.md) is local synthetic evidence.
 Provider, sender/domain, authentication/privacy and operational approval remain pending; production
 delivery is disabled and #79 stays open. Legal/calculation and target-host gates are unchanged.
+
+## 21 October 2026: focused HR workforce query efficiency
+
+After merged PR #130, perf/hr-workspace-attention-queries moves employee/schedule/activation attention
+to database aggregates inside the same authorized deferred snapshot. [Design](../adr/0030-hr-workforce-attention-aggregation.md)
+and [local measurements/verification](../verification/hr-workspace-query-efficiency.md) preserve the
+current-data contract. Report/trend/import materialization remains separate; no production-capacity,
+statutory or delivery claim. No dedicated matching issue found; #92/readiness scope, no tracker edits.

@@ -249,3 +249,13 @@ cases: actual HR create/resend with controlled lost/delayed responses, mobile re
 sessions and harmless activation GET. No message artifacts, screenshots, traces or video are retained.
 See [contract](../docs/operations/activation-delivery-coordination.md) and
 [exact executions](../docs/verification/activation-delivery-coordination.md).
+
+## HR workforce aggregate regression slice
+
+HrWorkspaceQueryTests uses disposable migrated SQLite, the real handler/authorization and an SQL
+interceptor; 32/1,007-row fixtures assert 12 commands, independently reconcile prior scalar rules and
+exercise both DELETE/WAL snapshot barriers. HTTP authority/report checks and hr-workspace.spec.ts
+cover real Overview filters/attention plus labelled controlled retry/denial/session responses. No
+production diagnostic endpoint, role bypass, new dependency or schema change. Run backend/offline
+fixtures before browser suites. [Contract](../docs/adr/0030-hr-workforce-attention-aggregation.md) and
+[all measurement samples/runs/limits](../docs/verification/hr-workspace-query-efficiency.md).

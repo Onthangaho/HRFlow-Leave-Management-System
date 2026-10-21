@@ -3,9 +3,7 @@ using HRFlow.Application.Interfaces;
 using HRFlow.Application.Services;
 using HRFlow.Application.Features.LeaveRequests.Queries.GetDepartmentLeaveReport;
 using HRFlow.Application.Features.LeaveRequests.Queries.GetPersonalDashboard;
-using HRFlow.Domain.Entities;
 using HRFlow.Domain.Enums;
-using HRFlow.Domain.Models.Auth;
 using HRFlow.Domain.Interfaces;
 using HRFlow.Domain.Models.Employees;
 using MediatR;
@@ -37,7 +35,7 @@ public sealed record HrWorkspaceDto(DateTimeOffset AsOfUtc, DateOnly BusinessTod
     DepartmentLeaveReportDto Report, IReadOnlyList<HrTrendDto> Trends);
 /// <summary>Composes missing operational metrics with existing report calculations without any writer reservation or decision authority.</summary>
 public sealed class GetHrWorkspaceQueryHandler(IApplicationDbContext context, CurrentAccountAuthorization authorization,
-    ILeaveReportingReadTransaction reads, IAccountActivationService activation, IHrImportAttentionReader imports, TimeProvider clock)
+    ILeaveReportingReadTransaction reads, IHrWorkforceAttentionReader workforce, IHrImportAttentionReader imports, TimeProvider clock)
     : IRequestHandler<GetHrWorkspaceQuery, HrWorkspaceDto>
 {
     private const int PreviewLimit = 5;
@@ -47,21 +45,7 @@ public sealed class GetHrWorkspaceQueryHandler(IApplicationDbContext context, Cu
         await authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.HrAdministrator], token);
         var asOf = clock.GetUtcNow();
         var today = GetPersonalDashboardQueryHandler.BusinessDate(asOf);
-        var employees = await context.Employees.AsNoTracking().ToListAsync(token);
-        var schedules = await context.WeeklyScheduleRevisions.AsNoTracking().Select(s => new { s.EmployeeId, s.EffectiveFrom }).ToListAsync(token);
-        var scheduleDates = schedules.ToLookup(s => s.EmployeeId, s => s.EffectiveFrom);
-        var flags = employees.Select(e => EmploymentAttention.For(e, today, scheduleDates[e.Id])).ToArray();
-        var pendingActivation = 0; var failed = 0; var prepared = 0;
-        foreach (var employee in employees.Where(e => e.IsActive))
-        {
-            var state = await activation.GetStatusAsync(employee.IdentityUserId, token);
-            if (!state.RequiresActivation) continue;
-            pendingActivation++;
-            if (state.DeliveryState is ActivationDeliveryStates.DeliveryFailed or ActivationDeliveryStates.DeliveryUnknown) failed++;
-            if (state.DeliveryState == ActivationDeliveryStates.PendingDelivery) prepared++;
-        }
-        var departments = await context.Departments.AsNoTracking().OrderBy(d => d.Name).ThenBy(d => d.Id)
-            .Select(d => new { d.Id, d.Name }).ToListAsync(token);
+        var staff = await workforce.ReadAsync(asOf, token);
         var pending = context.LeaveRequests.AsNoTracking().Where(r => r.Status == LeaveRequestStatus.Pending);
         var pendingCount = await pending.CountAsync(token);
         var rows = await pending.OrderBy(r => r.StartDate).ThenBy(r => r.Id).Take(PreviewLimit)
@@ -88,11 +72,9 @@ public sealed class GetHrWorkspaceQueryHandler(IApplicationDbContext context, Cu
             cursor = bucketEnd.AddDays(1);
         }
         return new HrWorkspaceDto(asOf, today, "Africa/Johannesburg (SAST, UTC+02:00), server business date", "summed Approved inclusive calendar request-days",
-            employees.Count(e => e.IsActive), employees.Count(e => !e.IsActive), departments.Count,
-            departments.Select(d => new HrDepartmentDto(d.Id, d.Name, employees.Count(e => e.DepartmentId == d.Id && e.IsActive),
-                employees.Count(e => e.DepartmentId == d.Id && !e.IsActive))).ToArray(), pendingCount, PreviewLimit,
+            staff.ActiveEmployees, staff.InactiveEmployees, staff.Departments.Count, staff.Departments, pendingCount, PreviewLimit,
             rows.Select(r => new HrPendingDto(r.Id, r.FullName, r.Type, DateOnly.FromDateTime(r.StartDate), DateOnly.FromDateTime(r.EndDate))).ToArray(),
-            new(flags.Count(f => f.NeedsEmploymentFacts), flags.Count(f => f.NeedsCurrentSchedule), flags.Count(f => f.HasFutureScheduleOnly),
-                pendingActivation, failed, prepared, await imports.ReadAsync(request.ActorIdentityId, asOf.UtcDateTime, token)), report, trends);
+            new(staff.UnknownEmploymentFacts, staff.MissingCurrentSchedules, staff.FutureScheduleOnly,
+                staff.PendingActivation, staff.DeliveryFailed, staff.DeliveryPending, await imports.ReadAsync(request.ActorIdentityId, asOf.UtcDateTime, token)), report, trends);
     }, cancellationToken);
 }
