@@ -259,3 +259,14 @@ cover real Overview filters/attention plus labelled controlled retry/denial/sess
 production diagnostic endpoint, role bypass, new dependency or schema change. Run backend/offline
 fixtures before browser suites. [Contract](../docs/adr/0030-hr-workforce-attention-aggregation.md) and
 [all measurement samples/runs/limits](../docs/verification/hr-workspace-query-efficiency.md).
+
+## Manager calendar keyboard slice
+
+team-calendar.spec.ts retains real HTTP Overview/Team leave reads and export-range checks, keyboard
+Tab/arrows/week/leap/range/year limits, distinct focus/selection, responsive focus transfer and combined
+roles. Explicit controlled transport supplies overlapping/inactive display rows, barriers, 503/retry
+and delayed session replacements; these are labelled separately from HTTP scope evidence. Screenshot
+capture is opt-in, calendar-only synthetic content; ordinary CI keeps screenshots/traces/video off.
+Run npm.cmd --prefix tests/browser test -- team-calendar.spec.ts, then the full default suite with the
+existing private fixtures. [Contract](../docs/adr/0031-team-calendar-keyboard-navigation.md) and
+[actual executions/limits](../docs/verification/team-calendar-keyboard.md).

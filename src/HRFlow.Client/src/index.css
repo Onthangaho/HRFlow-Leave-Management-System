@@ -133,6 +133,10 @@ body {
 .confirmation { margin: auto; width: min(32rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; }
 .confirmation::backdrop { background: rgb(15 23 42 / 55%); }
 :where(button, a, input, select, textarea):focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.team-calendar-date { border-width: 2px; }
+.team-calendar-date.team-calendar-selected { border-color: var(--link); background-color: var(--selected-surface); }
+.team-calendar-date:focus-visible { position: relative; z-index: 1; }
+.team-calendar-month [aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .application-shell [class*="hover:-translate"] { transform: none !important; translate: none !important; }

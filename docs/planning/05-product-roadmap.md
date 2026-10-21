@@ -255,3 +255,12 @@ to database aggregates inside the same authorized deferred snapshot. [Design](..
 and [local measurements/verification](../verification/hr-workspace-query-efficiency.md) preserve the
 current-data contract. Report/trend/import materialization remains separate; no production-capacity,
 statutory or delivery claim. No dedicated matching issue found; #92/readiness scope, no tracker edits.
+
+## 21 October 2026: focused Manager calendar interaction (#91)
+
+After merged PR #131, feat/team-calendar-keyboard adds one-date Tab entry, separate keyboard focus
+and selection, explicit range-boundary behaviour and responsive focus repair to the existing read-only
+calendar. [Design](../adr/0031-team-calendar-keyboard-navigation.md) and
+[verification](../verification/team-calendar-keyboard.md) separate actual browser evidence from
+unexecuted screen-reader/physical-device checks. API scope, counts, exports, calculations and delivery
+are unchanged; no issue was created, edited or closed.
