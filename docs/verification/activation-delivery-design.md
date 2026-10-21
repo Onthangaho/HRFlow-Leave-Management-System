@@ -51,3 +51,36 @@ boundary. Official-source attribution remains the dated research above; no fresh
 or email verification is claimed. Documentation checks were rerun on the complete staged patch
 before the authorised commit. Hosted workflow results are reported on the PR separately and do
 not verify a real email transport, domain or mailbox delivery.
+
+
+## Main reconciliation - 21 October 2026
+
+PR #129 confirmed merged at 14:57:02 UTC, merge dd018a7ad8ce1b14e96dd08167b46f5945dc218d.
+Fetched origin/main and merged it into the existing PR #128 branch. Only the two instruction files
+conflicted; their living summaries now preserve the activation-design milestone and the merged
+security correction, with byte-identical contents. The proposal remains unchanged and unapproved.
+The lockfile and security report are inherited from main, not new delivery-PR implementation.
+
+### Historical failed hosted result (preserved)
+
+Original PR #128 [run 39495689726](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39495689726)
+failed at npm audit. Backend restore/build and frontend build/lint passed (existing Fast Refresh
+warning); backend and Chromium tests were skipped. The audit reported follow-redirects 1.16.0 high
+(GHSA-q3jh-wrc6-jgq8, GHSA-8r9p-f939-6h3c) and Vite 8.2.1 moderate (GHSA-698v-4r3x-3vcv).
+That failure is not rewritten as passed or rerun by documentation checks.
+
+### Separate subsequent evidence
+
+Merged #129 [run 39504378768](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39504378768)
+passed hosted Ubuntu build/lint/audits, 88 backend and 33 default Chromium tests. It patches
+follow-redirects to 1.16.1 and Vite to 8.2.4 (embedded launch-editor 2.14.2), preserving manifest
+ranges. Its [verification record](client-audit-advisories.md) retains local production-built browser
+and download evidence separately, plus incomplete attribution of its initial local backend failures.
+These are #129 results, not the result of the updated #128 branch.
+
+New work in this reconciliation is merge/source inspection and documentation checks only: relative
+links/anchors, strict UTF-8/formatting, whitespace/conflict markers, bounded sensitive-content scan
+and instruction byte comparison. No local product build/test or external-source retrieval was rerun.
+The updated #128 hosted workflow is triggered after push; its actual result is reported separately
+on the PR. No claim of real email delivery, provider/domain approval, production enablement or legal
+compliance follows from either hosted regression run. No service connected or message sent.
