@@ -1,0 +1,428 @@
+{
+  "conditions": {
+    "platform": "Windows x64",
+    "cpu": "Intel Core i5-1155G7 2.50GHz",
+    "logicalProcessors": 8,
+    "memoryGiB": 7.8,
+    "dotnetSdk": "9.0.305",
+    "node": "24.12.0",
+    "method": "Fresh logically equivalent migrated fixtures; first endpoint invocation and five serial warm HTTP calls; no OS-cold-cache or production-capacity claim.",
+    "comparison": "Three baseline trials versus first three optimized measurement trials; later focused/complete runs reported separately. Optimized measurement cases passed even where a later independent snapshot fixture failed."
+  },
+  "samples": [
+    {
+      "trial": "exploratory-invalid-instrumentation",
+      "sqlCounterValid": false,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 0,
+      "responseBytes": [
+        3395,
+        3397,
+        3397,
+        3397,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 364.68,
+      "warmEndpointCallsMs": [
+        41.81,
+        43.47,
+        24.87,
+        24.06,
+        22.82
+      ]
+    },
+    {
+      "trial": "exploratory-invalid-instrumentation",
+      "sqlCounterValid": false,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 0,
+      "responseBytes": [
+        3413,
+        3413,
+        3413,
+        3413,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 928.42,
+      "warmEndpointCallsMs": [
+        332.32,
+        600.43,
+        555.64,
+        431.72,
+        491.31
+      ]
+    },
+    {
+      "trial": "baseline-1",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 60,
+      "responseBytes": [
+        3397,
+        3397,
+        3397,
+        3396,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 401.98,
+      "warmEndpointCallsMs": [
+        23.36,
+        34.91,
+        24.32,
+        188.67,
+        37.18
+      ]
+    },
+    {
+      "trial": "baseline-1",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 1645,
+      "responseBytes": [
+        3413,
+        3413,
+        3413,
+        3412,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 1085.97,
+      "warmEndpointCallsMs": [
+        519.36,
+        751.49,
+        507.71,
+        499.69,
+        463.31
+      ]
+    },
+    {
+      "trial": "baseline-2",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 60,
+      "responseBytes": [
+        3397,
+        3397,
+        3396,
+        3397,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 474.38,
+      "warmEndpointCallsMs": [
+        49.83,
+        53.99,
+        48.12,
+        24.29,
+        22.36
+      ]
+    },
+    {
+      "trial": "baseline-2",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 1645,
+      "responseBytes": [
+        3413,
+        3413,
+        3413,
+        3413,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 1025.92,
+      "warmEndpointCallsMs": [
+        497.98,
+        574.27,
+        545.22,
+        479.37,
+        419.78
+      ]
+    },
+    {
+      "trial": "baseline-3",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 60,
+      "responseBytes": [
+        3397,
+        3397,
+        3397,
+        3397,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 505.13,
+      "warmEndpointCallsMs": [
+        36.71,
+        144.55,
+        23.97,
+        28.38,
+        31.51
+      ]
+    },
+    {
+      "trial": "baseline-3",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 1645,
+      "responseBytes": [
+        3413,
+        3412,
+        3413,
+        3413,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 1022.45,
+      "warmEndpointCallsMs": [
+        608.52,
+        529.06,
+        542.2,
+        388.58,
+        586.03
+      ]
+    },
+    {
+      "trial": "optimized-1",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3397,
+        3397,
+        3397,
+        3397,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 459.47,
+      "warmEndpointCallsMs": [
+        18.7,
+        19.66,
+        13.21,
+        12.57,
+        22.33
+      ]
+    },
+    {
+      "trial": "optimized-1",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3413,
+        3413,
+        3413,
+        3413,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 436.57,
+      "warmEndpointCallsMs": [
+        29.5,
+        26.52,
+        37.68,
+        23.76,
+        22.03
+      ]
+    },
+    {
+      "trial": "optimized-2",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3397,
+        3397,
+        3397,
+        3397,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 532,
+      "warmEndpointCallsMs": [
+        27.41,
+        34.56,
+        21.17,
+        19.41,
+        68.05
+      ]
+    },
+    {
+      "trial": "optimized-2",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3413,
+        3411,
+        3413,
+        3413,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 461.86,
+      "warmEndpointCallsMs": [
+        66.26,
+        70.62,
+        26.45,
+        31.55,
+        30.77
+      ]
+    },
+    {
+      "trial": "optimized-3",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3397,
+        3397,
+        3397,
+        3397,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 503.62,
+      "warmEndpointCallsMs": [
+        17.93,
+        25.47,
+        47.3,
+        18.35,
+        20.87
+      ]
+    },
+    {
+      "trial": "optimized-3",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3412,
+        3413,
+        3413,
+        3413,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 406.03,
+      "warmEndpointCallsMs": [
+        43.39,
+        183.06,
+        33.82,
+        30.43,
+        24.28
+      ]
+    },
+    {
+      "trial": "focused-corrected",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3397,
+        3397,
+        3397,
+        3396,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 545.51,
+      "warmEndpointCallsMs": [
+        30.48,
+        173.17,
+        11.93,
+        13.13,
+        16.2
+      ]
+    },
+    {
+      "trial": "focused-corrected",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3413,
+        3413,
+        3413,
+        3412,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 376.94,
+      "warmEndpointCallsMs": [
+        32.32,
+        48.5,
+        19.48,
+        23.54,
+        21.07
+      ]
+    },
+    {
+      "trial": "complete-backend",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 32,
+      "schedules": 14,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3397,
+        3397,
+        3397,
+        3397,
+        3397,
+        3397
+      ],
+      "firstEndpointCallMs": 421.01,
+      "warmEndpointCallsMs": [
+        23.51,
+        22.47,
+        21.78,
+        44.32,
+        18.06
+      ]
+    },
+    {
+      "trial": "complete-backend",
+      "sqlCounterValid": true,
+      "workspaceEmployees": 1007,
+      "schedules": 500,
+      "handlerSqlCommands": 12,
+      "responseBytes": [
+        3413,
+        3413,
+        3413,
+        3413,
+        3413,
+        3413
+      ],
+      "firstEndpointCallMs": 384.65,
+      "warmEndpointCallsMs": [
+        38.31,
+        42.82,
+        34.26,
+        16.09,
+        16.67
+      ]
+    }
+  ]
+}
