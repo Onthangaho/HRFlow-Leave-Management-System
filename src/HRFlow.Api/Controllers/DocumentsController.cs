@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using HRFlow.Application.Services;
+using HRFlow.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -22,6 +23,14 @@ public sealed class DocumentsController(SupportingDocumentService documents) : C
     /// <summary>Lists owned drafts or role-filtered request evidence without exposing storage identifiers.</summary>
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] Guid? requestId, CancellationToken token) => Ok(await documents.ListAsync(Actor, requestId, token));
+    /// <summary>Scope-filtered supplemental history and captured eligibility never accept an owner identity.</summary>
+    [HttpGet("requests/{requestId:guid}/additions")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Additions(Guid requestId, CancellationToken token) => Ok(await documents.AdditionsAsync(Actor, requestId, token));
+    /// <summary>Explicit non-replayable binding uses a durable owner/request key for authorised recovery.</summary>
+    [HttpPost("requests/{requestId:guid}/additions"), EnableRateLimiting("document-upload"), RequestSizeLimit(4096)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Add(Guid requestId, AddEvidenceRequest input, CancellationToken token) => Ok(await documents.AddAsync(Actor, requestId, input, token));
     /// <summary>Explicit rescanning is bounded and never performed by authentication replay.</summary>
     [HttpPost("{id:guid}/scan"), EnableRateLimiting("document-upload")]
     public async Task<IActionResult> Scan(Guid id, CancellationToken token) => Ok(await documents.ScanAsync(Actor, id, token));

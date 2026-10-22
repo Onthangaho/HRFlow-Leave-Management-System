@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HRFlow.Application.Services;
 
 /// <summary>Own draft lifecycle and current document scope share the existing account and SQLite safeguards.</summary>
-public sealed class SupportingDocumentService(IApplicationDocumentContext db, CurrentAccountAuthorization authorization,
+public sealed partial class SupportingDocumentService(IApplicationDocumentContext db, CurrentAccountAuthorization authorization,
     IEmployeeRoleLookupService roles, IEmployeeManagementTransaction writes, ILeaveReportingReadTransaction reads,
     IPrivateDocumentStorage storage, IDocumentScanner scanner)
 {

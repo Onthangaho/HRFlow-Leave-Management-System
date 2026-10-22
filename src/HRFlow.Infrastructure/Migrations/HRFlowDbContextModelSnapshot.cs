@@ -316,6 +316,39 @@ namespace HRFlow.Infrastructure.Migrations
                     b.ToTable("Employees");
                 });
 
+            modelBuilder.Entity("HRFlow.Domain.Entities.EvidenceAddition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DocumentIds")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("Key")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("TimestampUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("ActorId", "RequestId", "Key")
+                        .IsUnique();
+
+                    b.ToTable("EvidenceAdditions");
+                });
+
             modelBuilder.Entity("HRFlow.Domain.Entities.LeaveNotification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -982,6 +1015,21 @@ namespace HRFlow.Infrastructure.Migrations
                     b.Navigation("Department");
 
                     b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("HRFlow.Domain.Entities.EvidenceAddition", b =>
+                {
+                    b.HasOne("HRFlow.Domain.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HRFlow.Domain.Entities.LeaveRequest", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("HRFlow.Domain.Entities.LeaveNotification", b =>
