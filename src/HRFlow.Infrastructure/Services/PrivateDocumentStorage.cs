@@ -34,11 +34,12 @@ public sealed class PrivateDocumentStorage : IPrivateDocumentStorage
         if (initialized) return;
         if (!Path.IsPathFullyQualified(root) || !Directory.Exists(root)) throw new IOException("Provision private document storage first.");
         PrivateOperationsPaths.Check(root, Directory.GetCurrentDirectory());
-        foreach (var area in new[] { "staging", "quarantine", "clean", "locks", "removed" })
+        foreach (var area in new[] { "", "staging", "quarantine", "clean", "locks", "removed" })
         {
             var directory = Path.Combine(root, "documents", area);
             Validate(directory); // Check existing ancestors before creating anything through a substituted directory.
-            Directory.CreateDirectory(directory);
+            if (OperatingSystem.IsWindows()) Directory.CreateDirectory(directory);
+            else Directory.CreateDirectory(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             Validate(directory);
         }
@@ -58,7 +59,7 @@ public sealed class PrivateDocumentStorage : IPrivateDocumentStorage
         {
             using var publication = AcquirePublication(id);
             RequireNotRemoved(id);
-            await using (var file = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
+            await using (var file = RestrictedFile(temporary, FileMode.CreateNew, FileAccess.Write, true))
             { await file.WriteAsync(bytes, token); await file.FlushAsync(token); }
             File.Move(temporary, Location(id, "quarantine"), false);
             return new(bytes.Length, Convert.ToHexString(SHA256.HashData(bytes)), mediaType.ToLowerInvariant());
@@ -73,7 +74,7 @@ public sealed class PrivateDocumentStorage : IPrivateDocumentStorage
         using var publication = AcquirePublication(id);
         RequireNotRemoved(id);
         verifiedContent.Position = 0;
-        using var destination = new FileStream(Location(id, "clean"), FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        using var destination = RestrictedFile(Location(id, "clean"), FileMode.CreateNew, FileAccess.Write);
         verifiedContent.CopyTo(destination);
         destination.Flush(true);
     }
@@ -96,7 +97,7 @@ public sealed class PrivateDocumentStorage : IPrivateDocumentStorage
         using var publication = AcquirePublication(id);
         // This persistent tombstone and every publication share an OS lock, including across API/worker processes.
         // Never delete the lock file or tombstone: a delayed publisher must observe the same exclusion identity.
-        using (var marker = new FileStream(Location(id, "removed"), FileMode.OpenOrCreate, FileAccess.Write, FileShare.None)) marker.Flush(true);
+        using (var marker = RestrictedFile(Location(id, "removed"), FileMode.OpenOrCreate, FileAccess.Write)) marker.Flush(true);
         foreach (var area in new[] { "staging", "quarantine", "clean" })
         { var path = Location(id, area); if (File.Exists(path)) File.Delete(path); }
     }
@@ -105,9 +106,17 @@ public sealed class PrivateDocumentStorage : IPrivateDocumentStorage
         var started = System.Diagnostics.Stopwatch.StartNew();
         while (true)
         {
-            try { return new FileStream(Location(id, "locks"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
+            try { return RestrictedFile(Location(id, "locks"), FileMode.OpenOrCreate, FileAccess.ReadWrite); }
             catch (IOException) when (started.Elapsed < PublicationLockTimeout) { Thread.Sleep(PublicationLockRetryMilliseconds); }
         }
+    }
+    // Explicit creation modes keep document blobs and publication markers compatible with strict recovery validation.
+    private static FileStream RestrictedFile(string path, FileMode mode, FileAccess access, bool asynchronous = false)
+    {
+        var options = new FileStreamOptions { Mode = mode, Access = access, Share = FileShare.None, BufferSize = 81920,
+            Options = asynchronous ? FileOptions.Asynchronous : FileOptions.None };
+        if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+        return new FileStream(path, options);
     }
     private void RequireNotRemoved(Guid id)
     {

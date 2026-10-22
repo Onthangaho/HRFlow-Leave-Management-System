@@ -135,9 +135,38 @@ Rollback drops later-addition provenance/idempotency; downgrade execution is not
 ## Finalisation review ? 22 October 2026
 
 Fetched main remains the recorded base. Issues #83/#84 were read and remain open. Complete source,
-migration, tests and documentation were reviewed; no further executable changes were needed.
+migration, tests and documentation were reviewed before initial publication. Hosted recovery then
+exposed the creation-mode correction described below.
 Staged whitespace, UTF-8/encoding, relative documentation links, sensitive-pattern inspection and
 byte-identical instruction checks passed over the 25 intended files. Private fixtures and generated
 output are excluded. Product suites above are earlier implementation executions, not finalisation
 reruns. Hosted results are reported separately on the PR; local results do not establish Linux or
 positive real-ClamAV coverage. Downgrade execution remains unperformed.
+
+## First hosted execution and scoped correction
+
+PR #135 [run 39734973984](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39734973984)
+completed **153 backend passed / 1 failed**, **8.4801 minutes**. Browser gates were skipped, not passed.
+`EncryptedRecoveryPreservesAdditionAndBoundBytes` failed at the backup command (exit 1, not timeout).
+Safe diagnostics identify the test and source location; child output did not expose the exact refusal.
+Inspection found document storage omitted explicit private creation modes for the `documents` parent
+and blob/lock/tombstone files. Unlike the image pipeline, these depended on Unix defaults; strict
+backup validation rejects broader modes. This concrete omission is corrected using the existing
+private-image creation convention: owner-only directories and new files, unchanged Windows private
+parent ACL inheritance. Existing file permissions are not silently repaired; validators remain strict.
+Retained checks now inspect exact Unix modes and restricted Windows ACLs before backup and after
+restore, plus private removal markers and denial of publication after removal.
+
+The correction built with zero warnings/errors. A mistakenly restricted-context focused execution
+then completed **1 passed / 39 failed / 0 skipped**, **12m56s**, with premature HTTP responses at
+the fixture send method. The directly exercised storage assertion passed. This failure is retained;
+restricted execution is a suspected environment cause, not proof explaining every failed call.
+Cleanup left zero fixture API processes before a separate authorised-network invocation.
+
+Separate authorised-network focused invocation against the same corrected build: **40 passed / 0 failed /
+0 skipped**, **13m50s**. This includes actual encrypted recovery, explicit private-path assertions and
+publication/removal checks. No assertion, timeout or retry changed between these two invocations.
+The result supports environment dependence but does not reconstruct every premature-response cause.
+The earlier complete local 154 pass remains earlier evidence; the corrected complete hosted gate is
+reported separately. No frontend file changed for this correction, so local browser/build/lint were
+not rerun. Positive real-ClamAV evidence remains unavailable.

@@ -294,6 +294,28 @@ public sealed class EvidenceAdditionTests
         Assert.False(await db.EvidenceAdditions.AnyAsync());Assert.False(await db.DocumentAccessEntries.AnyAsync());
     }
 
+    /// <summary>Checks explicit private permissions for every document publication area and retained removal marker.</summary>
+    [Fact]
+    public async Task DocumentPublicationAndRemovalStayOwnerOnly()
+    {
+        await using var f = await ApiFixture.StartAsync();
+        var draft = await DraftAsync(f);
+        void AssertStorage()
+        {
+            ApiFixture.AssertPrivatePath(f.PrivateRoot);
+            foreach (var path in Directory.EnumerateFileSystemEntries(f.PrivateRoot, "*", SearchOption.AllDirectories)) ApiFixture.AssertPrivatePath(path);
+        }
+        AssertStorage();
+        var storage = new PrivateDocumentStorage(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Storage:PrivateFilesRoot"] = f.PrivateRoot }).Build());
+        storage.Remove(draft.Id);
+        AssertStorage();
+        using var bytes = new MemoryStream(ProfileImageTests.Raster());
+        await Assert.ThrowsAsync<IOException>(() => storage.StageAsync(draft.Id, bytes, ".png", "image/png", default));
+        using var verified = new MemoryStream(ProfileImageTests.Raster());
+        Assert.Throws<IOException>(() => storage.Promote(draft.Id, verified));
+        AssertStorage();
+    }
+
     /// <summary>Uses actual stopped-writer encrypted tools and verifies restored metadata, blobs and security invalidation.</summary>
     [Fact]
     public async Task EncryptedRecoveryPreservesAdditionAndBoundBytes()
@@ -301,6 +323,9 @@ public sealed class EvidenceAdditionTests
         await using var f=await ApiFixture.StartAsync();var request=await RequestAsync(f);var draft=await DraftAsync(f);
         using(var added=await f.SendAsync(await f.LoginAsync("employee"),PathFor(request),HttpMethod.Post,Input(draft)))Assert.Equal(HttpStatusCode.OK,added.StatusCode);
         var authentication=f.AuthenticationEnvironment();await f.StopAsync();
+        ApiFixture.AssertPrivatePath(f.DatabasePath);
+        ApiFixture.AssertPrivatePath(f.PrivateRoot);
+        foreach (var path in Directory.EnumerateFileSystemEntries(f.PrivateRoot, "*", SearchOption.AllDirectories)) ApiFixture.AssertPrivatePath(path);
         await using var drill=await ActivationRecoveryFixture.CreateAsync(authentication);
         await drill.ToolAsync("keygen","--output",drill.Key);
         await drill.ToolAsync("backup","--database",f.DatabasePath,"--private-root",f.PrivateRoot,"--output",drill.Package,"--key-file",drill.Key);
@@ -312,6 +337,7 @@ public sealed class EvidenceAdditionTests
         using var bytes=await storage.OpenVerifiedAsync(document.Id,true,document.Size,document.Checksum,default);Assert.Equal(document.Size,bytes.Length);
         Assert.Single(await restored.AuditEntries.ToArrayAsync());Assert.Single(await restored.DocumentAccessEntries.ToArrayAsync());
         Assert.All(await restored.Users.ToArrayAsync(),u=>Assert.Null(u.PasswordHash));
+        drill.AssertPermissions();
     }
 
     /// <summary>Checks additive schema consistency and immutable requirements despite a later incompatible type edit.</summary>

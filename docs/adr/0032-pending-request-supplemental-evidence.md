@@ -80,3 +80,8 @@ work; this slice does not delete bound evidence or implement a retention period.
 
 See [verification](../verification/pending-request-evidence.md). Positive ClamAV scanning, controlled
 clean fixtures, real HTTP/browser bindings and target-host recovery must be reported separately.
+
+Hosted recovery exposed missing explicit Unix creation modes in the reused document store. New
+publication directories/blobs/locks/tombstones now follow the owner-only image-store convention;
+backup validators and publication exclusion remain unchanged. Existing broad file permissions still
+require operator remediation. See the dated execution report for the failed run and correction.
