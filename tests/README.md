@@ -1,5 +1,20 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Pending supplemental evidence (#83/#84)
+
+After a Debug solution build, run `dotnet test tests/HRFlow.RegressionTests --no-build --filter
+FullyQualifiedName~EvidenceAdditionTests`, then the complete backend gate with browser/API fixture
+writers stopped. `EvidenceAdditionTests` uses migrated SQLite, actual HTTP and explicitly coordinated
+separate API processes; generated private PNGs have controlled clean metadata, not claimed ClamAV
+results. It also invokes actual encrypted backup/restore with stopped original writers.
+
+`npm --prefix tests/browser test -- evidence.spec.ts` retains real HTTP binding/download over those
+controlled clean blobs, a real scanner-unavailable upload and controlled lost/delayed response cases.
+No scanner substitute is installed. Browser setup generates five fixture drafts through real storage;
+no production permission seam or endpoint exists. Run the full default browser gate separately.
+See [design](../docs/adr/0032-pending-request-supplemental-evidence.md) and
+[separate executions/limitations](../docs/verification/pending-request-evidence.md).
+
 ## Deferred client-feature gates
 
 `loading.spec.ts` adds all seven nonempty role compositions plus real direct-route/history checks and labelled controlled

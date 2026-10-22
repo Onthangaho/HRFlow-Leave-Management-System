@@ -44,6 +44,14 @@ namespace HRFlow.Api.Filters
 
             switch (context.Exception)
             {
+                case BadHttpRequestException e when (e.StatusCode == StatusCodes.Status413PayloadTooLarge):
+                    // Admission limits are an expected transport denial, never a reason to log an input body.
+                    LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status413PayloadTooLarge);
+                    problemDetails.Title = "Request too large";
+                    problemDetails.Detail = "The request exceeds the permitted input size.";
+                    problemDetails.Status = StatusCodes.Status413PayloadTooLarge;
+                    problemDetails.Type = ProblemDetailsType;
+                    break;
                 case WriteConflictException e:
                     LogExpectedFailure(logger, e.GetType().Name, request, correlationId, userId, StatusCodes.Status409Conflict);
                     problemDetails.Title = "Update conflict";
