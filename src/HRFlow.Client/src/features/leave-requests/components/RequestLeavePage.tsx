@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/hooks/useAuth';
@@ -7,6 +7,7 @@ import { problemMessage } from '../../leave-configuration/problems';
 import type { TypeSelection } from '../../leave-configuration/types';
 import { isConflict } from '../../leave-configuration/problems';
 import { SupportingDocuments } from './SupportingDocuments';
+import { LeaveRequestPreview } from './LeaveRequestPreview';
 
 /** Minimal personal submission connects HR-created types to real requests without duplicating policy calculations. */
 export function RequestLeavePage() {
@@ -15,10 +16,14 @@ export function RequestLeavePage() {
   const client = useQueryClient();
   const submitting = useRef(false);
   const [typeId, setTypeId] = useState('');
+  const selectedId = useRef(typeId); selectedId.current = typeId;
   const [reviewedType, setReviewedType] = useState<TypeSelection | null>(null);
   const [description, setDescription] = useState('');
   const [reviewError, setReviewError] = useState('');
   const [reviewNotice, setReviewNotice] = useState('');
+  const reviewMessage = useRef<HTMLParagraphElement>(null);
+  // Explicit review removes its triggering conflict/preview control; keep keyboard focus in the retained form.
+  useEffect(() => { if (reviewNotice) reviewMessage.current?.focus(); }, [reviewNotice]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [validation, setValidation] = useState('');
@@ -57,6 +62,14 @@ export function RequestLeavePage() {
     if (!startDate || !endDate || endDate < startDate) { setValidation('Choose an end date on or after the start date.'); return; }
     setValidation(''); submitting.current = true; submit.mutate({ accountId: user.id, leaveTypeId: typeId, startDate, endDate });
   };
+  const reviewRequirements = async () => {
+    setReviewNotice('');
+    const result = await types.refetch();
+    if (getSessionVersion() !== sessionVersion || selectedId.current !== typeId) return;
+    const current = result.data?.find(type => type.id === typeId);
+    if (result.error || !current) { setReviewError('Unable to reload this type. Your draft is retained.'); return; }
+    setReviewedType(current); submit.reset(); setReviewError(''); setValidation(''); setReviewNotice('Current requirements loaded. Review them and your retained description and documents before submitting again.');
+  };
   return <div className="workspace-page space-y-6">
     <section className="page-intro ui-panel"><p className="mt-3 text-sm leading-6 text-slate-600">Choose your leave type and dates. Calendar days include both the start and end date, including weekends. Pending requests do not reserve balance.</p></section>
     {success ? <section className="ui-panel" role="status"><h2 className="text-xl font-bold text-emerald-800">Request submitted</h2><p className="mt-2 text-slate-600">Your request is Pending and ready for your manager to review.</p><Link to="/leave-requests/history" className="mt-5 inline-flex ui-primary">View request and balances</Link><button className="mt-5 ml-3 ui-secondary" onClick={() => { setSuccess(false); setDocuments([]); setDocumentsBusy(false); setTypeId(''); setReviewedType(null); setDescription(''); setStartDate(''); setEndDate(''); submit.reset(); void types.refetch(); }}>Request more leave</button></section>
@@ -75,18 +88,14 @@ export function RequestLeavePage() {
             <p id="description-help" className="text-sm">{description.trim().length}/1000 trimmed characters. Use plain text. Do not include diagnoses or sensitive medical details. Dates, descriptions and uploaded drafts are retained when changing types; review selections before submitting.</p>
           </div>}
         </fieldset>
+        <LeaveRequestPreview type={reviewedType} startDate={startDate} endDate={endDate} disabled={submit.isPending || types.isFetching || !!types.error} onReviewRequirements={reviewRequirements} />
         <SupportingDocuments disabled={submit.isPending || !reviewedType} configuredClass={reviewedType?.evidenceClass} selectionDisabled={reviewedType?.evidenceMode === 'NotRequested'} onSelection={(ids, busy) => { setDocuments(ids); setDocumentsBusy(busy); }} />
         {reviewedType?.evidenceMode === 'NotRequested' && <p role="status">Evidence is not requested. Deselect any retained attachments explicitly. Drafts are not deleted.</p>}
         {documentsBusy && <p role="status">Finish document processing before submitting.</p>}
         {validation && <p role="alert" className="ui-error">{validation}</p>}
-        {submit.error && <div role="alert" className="ui-error">{problemMessage(submit.error)}<button type="button" className="mt-2 block underline" disabled={types.isFetching} onClick={async () => {
-          const result = await types.refetch(); if (getSessionVersion() !== sessionVersion) return;
-          const current = result.data?.find(type => type.id === typeId);
-          if (result.error || !current) { setReviewError('Unable to reload this type. Your draft is retained.'); return; }
-          setReviewedType(current); submit.reset(); setReviewError(''); setValidation(''); setReviewNotice('Current requirements loaded. Review them and your retained description and documents before submitting again.');
-        }}>{isConflict(submit.error) ? 'Reload and review changed requirements' : 'Refresh and review requirements'}</button></div>}
+        {submit.error && <div role="alert" className="ui-error">{problemMessage(submit.error)}<button type="button" className="mt-2 block underline" disabled={types.isFetching} onClick={() => void reviewRequirements()}>{isConflict(submit.error) ? 'Reload and review changed requirements' : 'Refresh and review requirements'}</button></div>}
         {reviewError && <p role="alert" className="ui-error">{reviewError}</p>}
-        {reviewNotice && <p role="status" className="ui-warning">{reviewNotice}</p>}
+        {reviewNotice && <p ref={reviewMessage} tabIndex={-1} role="status" className="ui-warning outline-offset-4 focus:outline focus:outline-3 focus:outline-[color:var(--focus)]">{reviewNotice}</p>}
         <div className="flex flex-wrap gap-3"><button type="submit" className="ui-primary" disabled={submit.isPending || documentsBusy || types.isFetching || !!types.error || !types.data?.length}>{submit.isPending ? 'Submitting…' : 'Submit request'}</button><Link to="/leave-requests/history" className="ui-secondary">My leave</Link></div>
       </form>}
   </div>;

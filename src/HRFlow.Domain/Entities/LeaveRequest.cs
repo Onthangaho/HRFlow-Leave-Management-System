@@ -78,22 +78,25 @@ public class LeaveRequest : BaseEntity
 
     public void ValidateAgainstPolicy(int remainingBalance, IEnumerable<LeaveRequest> approvedRequests, LeavePolicy policy)
     {
-        if (GetRequestedDays() > remainingBalance)
-        {
-            throw new DomainException("Requested leave exceeds available balance.");
-        }
-
-        if (!policy.AllowOverlap && approvedRequests.Where(ar => ar.LeaveTypeId == LeaveTypeId).Any(ar => DatesOverlap(ar.StartDate, ar.EndDate)))
-        {
-            throw new DomainException("Requested leave overlaps with another approved request of the same type.");
-        }
+        var problem = PolicyProblems(LeaveTypeId, StartDate, EndDate, remainingBalance, approvedRequests, policy).FirstOrDefault();
+        if (problem != null) throw new DomainException(problem.Message);
     }
 
-    public int GetRequestedDays() => (EndDate - StartDate).Days + 1;
+    /// <summary>Shares inclusive calendar units across persisted requests and read-only previews.</summary>
+    public static int CalendarDays(DateTime start, DateTime end) => (end.Date - start.Date).Days + 1;
 
-    private bool DatesOverlap(DateTime otherStart, DateTime otherEnd)
+    public int GetRequestedDays() => CalendarDays(StartDate, EndDate);
+
+    /// <summary>Evaluates current approved-history rules without creating a request or a submission audit. Pending history is deliberately not an input.</summary>
+    public static IReadOnlyList<LeavePolicyProblem> PolicyProblems(Guid typeId, DateTime start, DateTime end,
+        int remainingBalance, IEnumerable<LeaveRequest> approvedRequests, LeavePolicy policy)
     {
-        return StartDate <= otherEnd && otherStart <= EndDate;
+        var problems = new List<LeavePolicyProblem>();
+        if (CalendarDays(start, end) > remainingBalance)
+            problems.Add(new("InsufficientBalance", "Requested leave exceeds available balance."));
+        if (!policy.AllowOverlap && approvedRequests.Any(ar => ar.LeaveTypeId == typeId && start.Date <= ar.EndDate && ar.StartDate <= end.Date))
+            problems.Add(new("ApprovedOverlap", "Requested leave overlaps with another approved request of the same type."));
+        return problems;
     }
 
     /// <summary>Appends the manager decision to the same aggregate for atomic status/audit persistence.</summary>
@@ -148,3 +151,6 @@ public class LeaveRequest : BaseEntity
     }
 
 }
+
+/// <summary>Stable, owner-safe findings shared by policy enforcement and non-binding preview.</summary>
+public sealed record LeavePolicyProblem(string Code, string Message);
