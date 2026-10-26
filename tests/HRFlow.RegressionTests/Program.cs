@@ -64,6 +64,9 @@ if (directoryRows is > 0 and <= 1000)
 if (!realEvidence)
     for (var index = 0; index < 5; index++) await EvidenceAdditionTests.DraftAsync(fixture);
 var browserState = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(fixture.BrowserState))!;
+// Private browser descriptor only: no signing material or public diagnostic endpoint.
+browserState["authRegression"] = JsonSerializer.SerializeToNode(new {
+    expiredAccessToken = TokenTestTokens.Create(fixture, "employee", expires: DateTime.UtcNow.AddMinutes(-5)), database = fixture.DatabasePath });
 if (realEvidence)
 {
     if (scannerPort <= 0) throw new InvalidOperationException("Real-scanner verification requires an explicit loopback port.");

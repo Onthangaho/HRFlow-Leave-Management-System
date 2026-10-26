@@ -12,6 +12,10 @@ export default class SafeReporter implements Reporter {
     console.log(`${result.status}: ${test.title} (${result.duration}ms)`);
     for (const location of safeEvidenceLocations(result.errors)) console.log(location);
     for (const location of safeWorkflowLocations(result.errors)) console.log(location);
+    for (const output of result.stdout) for (const line of output.toString().split('\n'))
+      if (/^token-refresh-stage (expired-rejected|refresh-entered|request-opened|request-failed)$/.test(line)) console.log(line);
+    for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]token-refresh\.spec\.ts:(\d{1,5}):(\d{1,5})/g))
+      console.log(`token-refresh-source token-refresh.spec.ts:${Number(match[1])}:${Number(match[2])}`);
     // Opt-in scanner failures expose fixed source coordinates only, never their payload-bearing call logs.
     for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]evidence\.real-scanner\.ts:(\d{1,5}):(\d{1,5})/g))
       console.log(`real-scanner-source evidence.real-scanner.ts:${Number(match[1])}:${Number(match[2])}`);
