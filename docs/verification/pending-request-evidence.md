@@ -368,3 +368,23 @@ Separate subsequent complete local Chrome invocation after the layout correction
 0 failed**, **220304.934 ms**, process exit zero. Owned fixture cleanup left zero API processes.
 This is not combined with the 8-case invocation or any earlier complete run. The new hosted head
 must run both complete suites; its result is linked from PR #135. No production source changed.
+
+### Complete hosted verification of the layout correction
+
+[Run 40320297041](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/40320297041)
+on **c0fd0047b490141049f7ff385569639ed093a5f9** completed **155 backend passed / 0 failed**
+(**7.7115 minutes**) and **59 Chromium passed / 0 failed** (**143172.461 ms**). Both complete jobs
+and the required `regression` aggregate passed; no test retry or skip. Backend job **8m39s**,
+browser **15m12s**, overall **15m19s**. Browser fixture build **29s**, client install/build/lint/audit
+**13s**, browser clean install/audit/typecheck **2s**, Chromium/system installation
+**12:09:54-12:21:39 UTC** (**11m45s**), complete browser gate **2m24s** including fixture teardown.
+All audits and fresh-runner prerequisites remained enabled; no private cache/upload or shared store.
+
+This is separate from the prior 58-case complete successes and the later 57/1 run that pinpointed
+the width assertion. It verifies the corrected test condition and explicit CSS barrier alongside
+all existing HTTP/session workflows. It does not imply a test stall in the original cancelled run,
+reconstruct its unavailable assertion details, or prove successful real-ClamAV scanning.
+
+The following report-only commit leaves source, tests, dependencies and workflow byte-for-byte
+unchanged from this tested head. Its own required hosted result is inspected and reported on PR #135.
+No previous successful result substitutes for that check. Both instruction files remain byte-identical.
