@@ -312,3 +312,12 @@ caller failure before/after startup. FixtureProcessDiagnostics retains only fixe
 boolean exit/EOF/resource observations. Run the combined RecoveryLifecycleTests|ActivationRecoveryTests
 filter before the complete backend gate, sequentially with unrelated fixture writers stopped. The
 historical complete-run timeout is not explained merely by later passes; see the follow-up evidence.
+
+## Opt-in real ClamAV supplemental evidence
+
+`evidence.real-scanner.ts` is excluded from normal CI/default browser selection. With an official
+private ClamAV installation and FreshClam-updated databases, it owns a loopback foreground daemon,
+fresh migrated synthetic store, real uploads/UI binding/downloads, outage/retry and an embedded
+harmless EICAR PDF. It seeds no controlled Clean documents. Node 24 is required for its read-only
+SQLite inspection. [Exact commands and cleanup](../docs/operations/supporting-documents.md#opt-in-real-scanner-supplemental-evidence-drill),
+[separate executions, failures and limits](../docs/verification/real-scanner-supplemental-evidence.md).
