@@ -20,15 +20,11 @@ public class SubmitLeaveRequestCommandValidator : AbstractValidator<SubmitLeaveR
         RuleFor(v => v.EmployeeId)
             .NotEmpty();
 
-        RuleFor(v => v.StartDate)
-            .NotEmpty()
-            .GreaterThanOrEqualTo(DateTime.UtcNow.Date)
-            .WithMessage("Start date must be in the future.");
-
-        RuleFor(v => v.EndDate)
-            .NotEmpty()
-            .GreaterThanOrEqualTo(v => v.StartDate)
-            .WithMessage("End date must be on or after the start date.");
+        RuleFor(v => v).Custom((request, validation) =>
+        {
+            foreach (var problem in LeaveSubmissionDateRules.Problems(request.StartDate, request.EndDate, DateTime.UtcNow.Date))
+                validation.AddFailure(problem.Code, problem.Message);
+        });
     }
 
 }

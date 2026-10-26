@@ -1,5 +1,16 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Explicit owner leave preview
+
+After a stopped-fixture solution build, run `dotnet test tests/HRFlow.RegressionTests --no-build
+--filter FullyQualifiedName~LeavePreviewTests -v minimal`, then (sequentially, from `tests/browser`)
+`npm.cmd test -- leave-preview.spec.ts`. Both are enabled in their existing complete gates.
+Actual HTTP and controlled response/error barriers are distinguished. Document-selection retention
+uses controlled metadata only, without a blob or Submit; separate evidence gates exercise actual
+binding over controlled-clean bytes, not claimed real scanning. See [execution evidence](../docs/verification/leave-request-preview.md)
+and [contract](../docs/adr/0033-owner-leave-request-preview.md). Do not rebuild the test assembly while
+the browser fixture host is using it on Windows.
+
 ## Real bearer expiry and refresh (#76 focused extension)
 
 After `dotnet build HRFlow.sln --no-restore`, run:

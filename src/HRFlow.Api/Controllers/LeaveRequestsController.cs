@@ -22,6 +22,19 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/leave-requests")]
 public class LeaveRequestsController : ControllerBase
 {
+    /// <summary>Assesses only the authenticated owner's dates and current policy; never creates or binds anything.</summary>
+    [HttpPost("preview"), Authorize(Roles = PersonalLeaveRoles)]
+    [RequestSizeLimit(2048)]
+    public async Task<IActionResult> Preview(
+        HRFlow.Application.Features.LeaveRequests.Queries.PreviewLeaveRequest.LeavePreviewInput input,
+        CancellationToken token)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor))
+            throw new ForbiddenException("A valid authenticated account is required.");
+        Response.Headers.CacheControl = "no-store";
+        return Ok(await _mediator.Send(new HRFlow.Application.Features.LeaveRequests.Queries.PreviewLeaveRequest.PreviewLeaveRequestQuery(actor, input), token));
+    }
+
     /// <summary>Returns read-only facts under live owner/manager/HR authorization in one snapshot.</summary>
     [HttpGet("{id:guid}/timeline")]
     public async Task<ActionResult<LeaveRequestTimelineDto>> GetTimeline(Guid id, CancellationToken cancellationToken)

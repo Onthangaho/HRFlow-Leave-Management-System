@@ -10,6 +10,10 @@ export default class SafeReporter implements Reporter {
   onBegin(config: FullConfig) { this.output = path.resolve(config.projects[0].outputDir) + path.sep; }
   onTestEnd(test: TestCase, result: TestResult) {
     console.log(`${result.status}: ${test.title} (${result.duration}ms)`);
+    for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]leave-preview\.spec\.ts:(\d{1,5}):(\d{1,5})/g))
+      console.log(`leave-preview-source leave-preview.spec.ts:${Number(match[1])}:${Number(match[2])}`);
+    for (const output of result.stdout) for (const line of output.toString().split('\n'))
+      if (/^preview-review-field count=\d{1,3} valueMatches=(true|false) labelCount=\d{1,3} roleCount=\d{1,3}$/.test(line)) console.log(line);
     for (const location of safeEvidenceLocations(result.errors)) console.log(location);
     for (const location of safeWorkflowLocations(result.errors)) console.log(location);
     for (const output of result.stdout) for (const line of output.toString().split('\n'))
