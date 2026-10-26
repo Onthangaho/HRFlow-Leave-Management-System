@@ -1,5 +1,24 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Real bearer expiry and refresh (#76 focused extension)
+
+After `dotnet build HRFlow.sln --no-restore`, run:
+
+```powershell
+dotnet test tests/HRFlow.RegressionTests --no-build --filter FullyQualifiedName~TokenRefreshTests -v minimal
+# With that fixture run stopped, from tests/browser:
+npm.cmd run typecheck
+npm.cmd test -- token-refresh.spec.ts
+```
+
+Then run complete backend and default browser gates separately, sequentially. Both include these
+enabled cases without new CI jobs, dependencies or scanner prerequisites. Backend tests use actual
+bearer validation and real rotating refresh credentials; browser tests use real form/navigation,
+server 401/403 responses and explicit barriers around refresh. Signed synthetic expired tokens are
+not naturally aged login-issued tokens. Current issuer/audience/signature/lifetime checks, 30-second
+skew, role/lifecycle/version enforcement and non-replayable writes remain unchanged. See
+[provenance, exact executions, earlier failures and remaining boundaries](../docs/verification/real-token-expiry-refresh.md).
+
 ## Pending supplemental evidence (#83/#84)
 
 After a Debug solution build, run `dotnet test tests/HRFlow.RegressionTests --no-build --filter
@@ -219,7 +238,9 @@ node_modules are ignored. Do not override tracing or upload private fixture dire
 - Controlled transport/session gates: old dashboard completion across different/same account; stale refresh success/failure with actual fresh-login Authorization comparison; non-replayable 401; delayed mutation failure cannot clear replacement HR session.
 
 Controlled route barriers/fault responses are labelled separately from real HTTP workflow tests.
-They are not claims of real access-token expiry, packet-loss, browser refresh persistence or all JWT boundaries.
+Those controlled-transport cases are not claims of real access-token expiry, packet-loss, browser refresh persistence or all JWT boundaries.
+The separate [real bearer/refresh slice](../docs/verification/real-token-expiry-refresh.md) documents
+actual middleware rejection and endpoint rotation with signed synthetic lifetime probes.
 SQL row/audit assertions supplement HTTP results. The browser workflow also reads the persisted authorised
 timeline and checks status, one Submit/Approve event and decision actor.
 
