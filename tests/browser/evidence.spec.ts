@@ -1,8 +1,17 @@
 import fs from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
+import { safeEvidenceLocations } from './evidence-diagnostics.js';
 
 interface Fixture { password: string; api: string; client: string; typeId: string; employees: Record<string, { email: string }> }
 const fixture = () => JSON.parse(fs.readFileSync(process.env.HRFLOW_TEST_STATE!, 'utf8')) as Fixture;
+
+test('evidence diagnostic contract: source coordinates exclude raw error contents', () => {
+  const result = safeEvidenceLocations([{ stack: 'private canary payload\n at /unreported/evidence.spec.ts:42:7\n at /unreported/other.ts:9:2' },
+    { stack: ' at /unreported/evidence.spec.ts:0:9\n at /unreported/evidence.spec.ts:100001:3' }, {}]);
+  expect(result).toEqual(['evidence-diagnostic {"source":{"file":"evidence.spec.ts","line":42,"column":7}}']);
+  expect(result.join('')).not.toContain('canary');
+  expect(result.join('')).not.toContain('unreported');
+});
 async function login(page: Page, actor = 'employee') {
   const f = fixture(); await page.goto(f.client + '/login');
   await page.getByLabel('Email', { exact: true }).fill(f.employees[actor].email);

@@ -249,3 +249,21 @@ audit each report **zero vulnerabilities**. Installed and locked Zod both equal 
 build, lint and browser typecheck passed; existing Fast Refresh warning remains. No local product
 suite was rerun for the workflow-only split; complete suites will execute against the patched final
 head in hosted CI. No private fixture artifacts were cached or uploaded.
+
+### Complete browser result after the budget correction
+
+[Run 40312586376](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/40312586376)
+on **fa8e01b64b035fca1793a73c349407dce47df448** completed **155/155 backend passed**
+(**6.3970 minutes**) and **56 browser passed / 1 failed** (**142884.173 ms**). The audit and real
+Chromium/system installation passed. This is a complete failed browser invocation, not a budget
+cancellation: the first real HTTP evidence case failed after **2816 ms**, not a timeout. The other
+five evidence cases passed. Original raw assertion details were withheld by the privacy-safe reporter.
+
+To identify that assertion without raw errors, the reporter now extracts only bounded line/column
+coordinates for the fixed relative filename `evidence.spec.ts`; no stack text, page contents, payloads
+or private paths are emitted. A retained pure contract test checks that canary text/paths and invalid
+coordinates cannot enter output. Existing tests/assertions/timeouts remain intact. A first typecheck
+reported TS2835 for the helper's extensionless import; adding the required `.js` extension corrected
+it, and typecheck passed. Separate local Chrome diagnostic-contract plus affected workflow invocation:
+**2 passed / 0 failed**, **57678.29 ms** (affected workflow **37057 ms**). That isolated local pass
+does not reproduce or explain the hosted assertion failure. No retry was configured.
