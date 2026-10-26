@@ -12,7 +12,12 @@ export default class SafeReporter implements Reporter {
     console.log(`${result.status}: ${test.title} (${result.duration}ms)`);
     for (const location of safeEvidenceLocations(result.errors)) console.log(location);
     for (const location of safeWorkflowLocations(result.errors)) console.log(location);
+    // Opt-in scanner failures expose fixed source coordinates only, never their payload-bearing call logs.
+    for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]evidence\.real-scanner\.ts:(\d{1,5}):(\d{1,5})/g))
+      console.log(`real-scanner-source evidence.real-scanner.ts:${Number(match[1])}:${Number(match[2])}`);
     for (const output of result.stdout) for (const diagnostic of safeDirectoryDiagnostics(output)) console.log(diagnostic);
+    for (const output of result.stdout) for (const line of output.toString().split('\n'))
+      if (/^real-scanner-sqlite-code \d{1,5}$/.test(line)) console.log(line);
     // Playwright may create error-context even with tracing off; never retain or publish those payload-bearing attachments.
     for (const attachment of result.attachments) if (attachment.path && path.resolve(attachment.path).startsWith(this.output) && fs.existsSync(attachment.path)) fs.unlinkSync(attachment.path);
     result.attachments.length = 0;

@@ -43,6 +43,16 @@ if (Path.GetDirectoryName(directory) != Path.GetFullPath(Path.GetTempPath()).Tri
     || !Path.GetFileName(directory).StartsWith("hrflow-browser-", StringComparison.Ordinal)
     || (File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0) return 2;
 ApiFixture.RestrictDirectory(directory);
+var realEvidence = Environment.GetEnvironmentVariable("HRFLOW_EVIDENCE_REAL_SCANNER") == "1";
+if (realEvidence)
+{
+    // Parent processes must provision private temp before any browser profile, multipart buffer or API fixture exists.
+    var expectedTemp = Environment.GetEnvironmentVariable("HRFLOW_EVIDENCE_PRIVATE_TEMP");
+    if (string.IsNullOrEmpty(expectedTemp) || !Path.IsPathFullyQualified(expectedTemp)
+        || Path.GetFullPath(expectedTemp).TrimEnd(Path.DirectorySeparatorChar) != Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar))
+        throw new InvalidOperationException("Explicit private fixture temporary storage is required.");
+    ApiFixture.AssertPrivatePath(expectedTemp);
+}
 using var stopped = new CancellationTokenSource();
 var input = Task.Run(() => { Console.ReadLine(); stopped.Cancel(); });
 await using var fixture = await ApiFixture.StartAsync(args[2], stopped.Token,
@@ -50,10 +60,27 @@ await using var fixture = await ApiFixture.StartAsync(args[2], stopped.Token,
 var directoryRows = int.TryParse(Environment.GetEnvironmentVariable("HRFLOW_DIRECTORY_FIXTURE_ROWS"), out var configuredRows) ? configuredRows : 75;
 if (directoryRows is > 0 and <= 1000)
     await DirectoryFixtureData.SeedAsync(fixture, directoryRows);
-// Controlled clean evidence exercises real HTTP binding, not a simulated malware-detection claim.
-for (var index = 0; index < 5; index++) await EvidenceAdditionTests.DraftAsync(fixture);
+// Real-scanner opt-in must never inherit controlled Clean rows from the default regression fixture.
+if (!realEvidence)
+    for (var index = 0; index < 5; index++) await EvidenceAdditionTests.DraftAsync(fixture);
+var browserState = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(fixture.BrowserState))!;
+if (realEvidence)
+{
+    if (scannerPort <= 0) throw new InvalidOperationException("Real-scanner verification requires an explicit loopback port.");
+    browserState["ordinaryRequest"] = (await fixture.SubmitAsync("employee", 20)).ToString();
+    await using (var db = fixture.Context())
+    {
+        var configuredType = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.LeaveTypes);
+        configuredType.ConfigureRequirements("NotRequested", "Optional", "Medical", "Synthetic optional evidence; no diagnoses.");
+        await db.SaveChangesAsync();
+    }
+    browserState["medicalRequest"] = (await fixture.SubmitAsync("employee", 23)).ToString();
+    // Private local descriptor only; no API diagnostics or production authorization seam.
+    browserState["database"] = fixture.DatabasePath;
+    browserState["privateRoot"] = fixture.PrivateRoot;
+}
 var pending = Path.Combine(directory, "private-state-" + Guid.NewGuid().ToString("N") + ".partial");
-await File.WriteAllTextAsync(pending, JsonSerializer.Serialize(fixture.BrowserState));
+await File.WriteAllTextAsync(pending, browserState.ToJsonString());
 ApiFixture.RestrictFile(pending);
 File.Move(pending, args[1], overwrite: false);
 Console.WriteLine("Disposable fixture ready.");
