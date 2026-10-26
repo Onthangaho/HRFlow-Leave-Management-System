@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
-import { safeEvidenceLocations } from './evidence-diagnostics.js';
+import { safeEvidenceLocations, safeWorkflowLocations } from './evidence-diagnostics.js';
 
 interface Fixture { password: string; api: string; client: string; typeId: string; employees: Record<string, { email: string }> }
 const fixture = () => JSON.parse(fs.readFileSync(process.env.HRFLOW_TEST_STATE!, 'utf8')) as Fixture;
@@ -11,6 +11,8 @@ test('evidence diagnostic contract: source coordinates exclude raw error content
   expect(result).toEqual(['evidence-diagnostic {"source":{"file":"evidence.spec.ts","line":42,"column":7}}']);
   expect(result.join('')).not.toContain('canary');
   expect(result.join('')).not.toContain('unreported');
+  expect(safeWorkflowLocations([{ stack: 'private canary at /unreported/workflows.spec.ts:12:4' }]))
+    .toEqual(['workflow-diagnostic {"source":{"file":"workflows.spec.ts","line":12,"column":4}}']);
 });
 async function login(page: Page, actor = 'employee') {
   const f = fixture(); await page.goto(f.client + '/login');
@@ -112,7 +114,13 @@ for (const actor of ['employee', 'hr']) test(`controlled evidence response canno
   });
   try {
     const area = await editor(page, id); await area.getByRole('button', { name: 'Attach selected evidence', exact: true }).click(); await started;
-    await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await login(page, actor); resume(); await ended;
+    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/); await login(page, actor);
+    // Login may return to a legitimately authorised history route; choose the replacement destination before releasing old work.
+    await page.getByRole('navigation', { name: 'Primary', exact: true }).getByRole('link', { name: 'Overview', exact: true }).click();
+    await expect(page).toHaveURL(fixture().client + '/');
+    await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible();
+    resume(); await ended;
     await expect(page.getByText(/Evidence addition confirmed/)).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Later evidence additions', exact: true })).toHaveCount(0);
   } finally { resume(); }

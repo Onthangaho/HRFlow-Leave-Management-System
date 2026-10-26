@@ -267,3 +267,46 @@ reported TS2835 for the helper's extensionless import; adding the required `.js`
 it, and typecheck passed. Separate local Chrome diagnostic-contract plus affected workflow invocation:
 **2 passed / 0 failed**, **57678.29 ms** (affected workflow **37057 ms**). That isolated local pass
 does not reproduce or explain the hosted assertion failure. No retry was configured.
+
+### Separate diagnostic executions and replacement-destination correction
+
+Complete local Chrome execution with the source-only diagnostics: **55 passed / 3 failed**,
+**347577.063 ms**. Failures were the HR replacement evidence case and the existing Employee-to-Manager
+workflow and HR monitoring cases. The safe evidence coordinate was `evidence.spec.ts:117:95`: the
+absence-of-evidence-panel assertion, not a leaked success notice. The original two workflow source
+coordinates were not retained; they must not be reconstructed from later passes.
+
+Source inspection shows login can restore an authorised return route. The evidence session test now
+waits for logout's login route, explicitly navigates the replacement account to Overview and asserts
+that destination before releasing the held old response. Both original absence assertions remain
+unchanged. This establishes the tested destination instead of treating legitimate fresh HR history
+as proof of stale content. It does not change production session handling or claim that return-route
+behaviour explains every earlier failure. Workflow source coordinates are now allowlisted too;
+only the two fixed relative test filenames and bounded numbers can be printed.
+
+Separate local focused invocation after that correction: **5 passed / 0 failed**, **38230.229 ms**,
+covering the privacy contract, both replacement cases and both earlier failing existing workflows.
+No retries, skips or timeout increases. The two existing workflow failures did not reproduce in that
+focused execution; a later pass alone does not establish their cause.
+
+The browser job in [run 40314124265](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/40314124265)
+on **0e460d88b61b3589ebc3f17c3c4d5702b80760c6** completed **58 passed / 0 failed**,
+**142530.797 ms**, with no retry. This preceded the explicit-destination correction above; it is
+separate hosted evidence, not a local aggregate or proof of a root cause for the original failed case.
+Fresh Ubuntu browser job **11:18:49-11:26:36 UTC**, **7m47s**:
+
+- API fixture restore/build **45s**; client install/build/lint/audit **14s**.
+- Browser clean install/audit/typecheck **3s**.
+- Actual Chromium/system installation **11:20:03-11:24:09**, **4m06s**.
+- Complete browser gate **11:24:09-11:26:32**, **2m23s**, including owned fixture teardown.
+
+The same run completed **155/155 backend passed**, **10.0829 minutes** test time, backend job
+**10m49s**. Both suite jobs and the final `regression` aggregate passed; overall **10m55s**.
+This is one actual complete hosted workflow, distinct from every local and earlier failed execution.
+The subsequent follow-up changes only the explicit test destination, workflow-source diagnostics and
+this report. Its own head must independently pass hosted gates before review is concluded.
+
+The browser setup variation reinforces separate bounded budgets; no test stall was established.
+The diagnostic contract adds one pure case (57 -> 58), not a replaced or omitted workflow. No
+private artifact was cached/uploaded. Positive real-ClamAV remains unexecuted, independent of these
+controlled clean fixtures and fail-closed outage checks. Final-head hosted status is reported on PR #135.
