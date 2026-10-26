@@ -4,6 +4,7 @@ import { useAuth } from '../auth/hooks/useAuth';
 import { useRequestTimeline } from './api';
 import type { RequestTimeline } from './api';
 import { SupportingDocuments } from '../leave-requests/components/SupportingDocuments';
+import { SupplementalEvidence } from '../leave-requests/components/SupplementalEvidence';
 
 const dateFormat = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' });
 const timestampFormat = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'UTC' });
@@ -29,7 +30,7 @@ function TimelineWorkspace({ requestId }: { requestId: string }) {
     <div className="mx-auto max-w-3xl space-y-6">
       <section className="page-intro ui-panel">
 
-        <p className="pt-3 text-xs font-bold uppercase tracking-widest text-slate-500">Read-only history</p>
+        <p className="pt-3 text-xs font-bold uppercase tracking-widest text-slate-500">History and evidence</p>
 
         <nav aria-label="Leave workspaces" className="flex flex-wrap gap-4 text-sm font-semibold text-indigo-700">
           {user?.roles.some(role => ['Employee', 'Manager'].includes(role)) && <Link className="underline" to="/leave-requests/history">My leave</Link>}
@@ -37,7 +38,7 @@ function TimelineWorkspace({ requestId }: { requestId: string }) {
           {user?.roles.includes('HR Administrator') && <Link className="underline" to="/admin/leave-monitoring">Pending monitoring</Link>}
         </nav>
       </section>
-      {history.data && <SupportingDocuments requestId={requestId} />}
+      {history.data && <div className="space-y-6" hidden={history.isError}><SupportingDocuments requestId={requestId} /><SupplementalEvidence requestId={requestId} /></div>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p role="status" aria-live="polite" className="text-sm text-slate-600">{history.isFetching ? (history.data ? 'Refreshing previously loaded history…' : 'Loading request history…') : history.isSuccess ? 'Request history loaded.' : ''}</p>
         <button className="ui-secondary" disabled={history.isFetching} onClick={() => void history.refetch()}>Refresh history</button>

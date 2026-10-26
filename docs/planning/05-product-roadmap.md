@@ -1,4 +1,6 @@
-﻿# HRFlow current roadmap — after merged PR #133
+> **22 October 2026 local implementation update:** PR #134 is merged. Its owner supplemental-evidence slice is authorised and implemented locally for review on feat/pending-request-evidence. [Design/API/migration](../adr/0032-pending-request-supplemental-evidence.md), [executed checks and limits](../verification/pending-request-evidence.md). Pending-only captured requirements, atomic five-file binding/idempotency and separate addition trace; no retention, statutory/payment or delivery expansion. Historical reconciliation and unpublished tracker proposals below remain dated evidence, not an issue update.
+
+# HRFlow current roadmap — after merged PR #133
 
 **21 October 2026**, fetched main 59d20de0deb34ae20abf5b00fd43090edb2813a3.
 Umbrella [#98](https://github.com/Onthangaho/HRFlow-Leave-Management-System/issues/98) is still open.
@@ -52,7 +54,8 @@ Only the owner can approve transferring it explicitly to #22/#85 or correcting t
 
 The first recommended implementation is a **bounded owner supplemental-evidence workflow for an
 existing Pending request**, within #83 and consistent with #84 snapshots. There is no such binding
-endpoint/UI today: only initial submission can bind drafts. Reuse the current scanner, publication,
+endpoint/UI at the PR #133 baseline: only initial submission could bind drafts. The local
+implementation update above now supersedes that gap for review. Reuse the current scanner, publication,
 medical privacy and request protection. Do not add pay eligibility, retrospective demands, bound
 removal or retention rules. [Acceptance and a complete prompt](10-proposed-tracker-updates.md).
 

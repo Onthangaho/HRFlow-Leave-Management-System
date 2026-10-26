@@ -1,4 +1,6 @@
-﻿# Current feature inventory — after merged PR #133
+> **22 October 2026 local implementation update:** PR #134 is merged. Its owner supplemental-evidence slice is authorised and implemented locally for review on feat/pending-request-evidence. [Design/API/migration](../adr/0032-pending-request-supplemental-evidence.md), [executed checks and limits](../verification/pending-request-evidence.md). Pending-only captured requirements, atomic five-file binding/idempotency and separate addition trace; no retention, statutory/payment or delivery expansion. Historical reconciliation and unpublished tracker proposals below remain dated evidence, not an issue update.
+
+# Current feature inventory — after merged PR #133
 
 **21 October 2026.** Fetched main 59d20de0deb34ae20abf5b00fd43090edb2813a3.
 This updates the living inventory; dated verification reports are unchanged.
@@ -16,7 +18,7 @@ No product tests, benchmarks, legal-source checks or scanner runs were executed 
 | Employment/directory | Confirmed unique numbers/start dates, Unknown legacy facts, weekly revisions, versioned HR changes; paged search and independent Manager lookup | [Employment](../verification/employment-data-foundation.md), [directory](../verification/bounded-employee-directory.md); future start does not defer activated access; no holiday-source engine |
 | Activation/import | Passwordless create, hash-only invitation, explicit resend, per-row CSV idempotency and shared creation core, server-held preview and preview PII cleanup | [Coordination](../verification/activation-delivery-coordination.md), [CSV](../verification/hr-csv-onboarding.md); production transport disabled; nonblank Gender rejected explicitly |
 | Password/profile/preferences | Own Identity password change revokes old credentials; allowlisted preferred name/private phone, separate versions, theme and delivery-time optional preferences | [Password](../verification/password-change-session-revocation.md), [preferences](../verification/profile-and-preferences.md); no HR password editing or mandatory security-notification channel |
-| Supporting evidence | Private PDF/JPEG/PNG, real fail-closed ClamAV adapter, quarantine, clean-byte binding and publication fences, scoped content/access audit | [Documents](../verification/private-supporting-documents.md); bind only on initial submission; draft-only removal, no approved bound retention/holds |
+| Supporting evidence | Private PDF/JPEG/PNG, real fail-closed ClamAV adapter, quarantine, clean-byte binding and publication fences, scoped content/access audit | [Documents](../verification/private-supporting-documents.md); initial submission plus local Pending owner additions for review; draft-only removal, no approved bound retention/holds |
 | Requirements | Leave type modes/class/instructions authoritative, bounded plain text, immutable submission snapshot, version-conflict recovery | [Requirements](../verification/request-evidence-requirements.md); legacy Unknown, Required Medical rejected; no statutory conditions/pay review |
 | Images | Private processed/scanned 256px image, own mutations/current HR reads, versions, removal markers/reconciliation | [Images](../verification/private-profile-images.md); no originals/public URLs; [removed rows omit thumbnail hints](../verification/removed-profile-image-hints.md) |
 | Notifications | Atomic minimal outbox and idempotent worker, recipient inbox/count/read, scoped deep links, future delivery suppression | [In-app](../verification/in-app-leave-notifications.md); no email/SMS or automatic retention cleanup |
@@ -37,7 +39,7 @@ No product tests, benchmarks, legal-source checks or scanner runs were executed 
 - Closed #78 still lacks the holiday-source criterion. Only confirmed facts/fixed schedules shipped.
 - #79: approved production provider/authentication/sender/processing/operational ownership absent.
   Shipped coordination does not supply transport. Test SMTP and Development pickup are not fallbacks.
-- #83/#84: later Pending evidence attachment is absent; retention/holds and reviewed conditional
+- #83/#84: later Pending evidence attachment is locally implemented for review; retention/holds and reviewed conditional
   evidence/payment-versus-absence workflows remain separate gaps. No bound-evidence auto-deletion.
 - #89: production onboarding depends on #79; optional nonblank Gender support is not implemented.
   Existing explicit rejection must be accepted in the tracker or separately scoped, not hidden.

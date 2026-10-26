@@ -5,6 +5,7 @@ public interface IApplicationDocumentContext : HRFlow.Domain.Interfaces.IApplica
 {
     Microsoft.EntityFrameworkCore.DbSet<HRFlow.Domain.Entities.SupportingDocument> SupportingDocuments { get; }
     Microsoft.EntityFrameworkCore.DbSet<HRFlow.Domain.Entities.DocumentAccessEntry> DocumentAccessEntries { get; }
+    Microsoft.EntityFrameworkCore.DbSet<HRFlow.Domain.Entities.EvidenceAddition> EvidenceAdditions { get; }
 }
 
 /// <summary>Private object operations never accept caller-controlled filesystem paths.</summary>
@@ -33,3 +34,12 @@ public sealed record StoredDocument(long Size, string Checksum, string MediaType
 public sealed record DocumentDto(Guid Id, string Class, string Status, Guid Version, long? Size, string? MediaType, bool CanDownload);
 /// <summary>Authorized bytes are transferred after database protection has ended.</summary>
 public sealed record DocumentDownload(Stream Content, string MediaType);
+
+/// <summary>Client versions are checked against verified bytes and fresh metadata, never trusted as authority.</summary>
+public sealed record EvidenceSelection(Guid Id, Guid Version);
+/// <summary>The key is retained for explicit identical-payload recovery, never automatic authentication replay.</summary>
+public sealed record AddEvidenceRequest(Guid Key, IReadOnlyList<EvidenceSelection> Documents);
+/// <summary>Safe immutable addition trace contains identifiers only, not filenames or medical contents.</summary>
+public sealed record EvidenceAdditionDto(Guid Id, Guid ActorId, Guid RequestId, DateTime TimestampUtc, IReadOnlyList<Guid> DocumentIds);
+/// <summary>Eligibility is derived from captured requirements and current scope, not current type configuration.</summary>
+public sealed record RequestEvidenceDto(bool CanAdd, string Explanation, string? EvidenceClass, int BoundCount, IReadOnlyList<EvidenceAdditionDto> Additions);

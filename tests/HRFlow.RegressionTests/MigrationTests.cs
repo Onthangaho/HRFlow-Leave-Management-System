@@ -44,6 +44,7 @@ public sealed class MigrationTests
             var entry = await db.AuditEntries.SingleAsync(); Assert.Equal(audit, entry.Id); Assert.Equal(employee, entry.ActorId); Assert.Equal("Approve", entry.Action);
             Assert.Equal(new DateTime(2026, 1, 3, 12, 0, 0), entry.Timestamp); Assert.Null(entry.CorrelationId); Assert.Null(entry.DecisionNote);
             Assert.Empty(await db.AuditEntries.Where(a => a.OldStatus == null).ToListAsync());
+            Assert.Empty(await db.EvidenceAdditions.ToListAsync());
         }
         finally
         {

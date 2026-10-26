@@ -1,4 +1,6 @@
-﻿# Proposed tracker updates — not published
+> **22 October 2026 local implementation update:** PR #134 is merged. Its owner supplemental-evidence slice is authorised and implemented locally for review on feat/pending-request-evidence. [Design/API/migration](../adr/0032-pending-request-supplemental-evidence.md), [executed checks and limits](../verification/pending-request-evidence.md). Pending-only captured requirements, atomic five-file binding/idempotency and separate addition trace; no retention, statutory/payment or delivery expansion. Historical reconciliation and unpublished tracker proposals below remain dated evidence, not an issue update.
+
+# Proposed tracker updates — not published
 
 Prepared **21 October 2026**, fetched main after merged PR #133.
 No GitHub issue was edited/closed, no project-board item moved and no reviewer/provider contacted.

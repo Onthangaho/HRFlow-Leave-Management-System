@@ -4,19 +4,21 @@ import { authHttpClient } from '../../auth/api';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { problemMessage } from '../../leave-configuration/problems';
 
-interface Evidence { id: string; class: string; status: string; version: string; canDownload: boolean; mediaType: string | null }
+/** Redacted server metadata; selected versions stay fixed until the user explicitly reviews another selection. */
+export interface Evidence { id: string; class: string; status: string; version: string; canDownload: boolean; mediaType: string | null }
 /** Private evidence uses generated identifiers, guarded callbacks and explicit non-replayable operations. */
-export function SupportingDocuments({ requestId, onSelection, disabled = false, configuredClass, selectionDisabled = false }: { requestId?: string; onSelection?: (ids: string[], busy: boolean) => void; disabled?: boolean; configuredClass?: string; selectionDisabled?: boolean }) {
+export function SupportingDocuments({ requestId, onSelection, disabled = false, configuredClass, selectionDisabled = false }: { requestId?: string; onSelection?: (ids: string[], busy: boolean, rows?: Evidence[]) => void; disabled?: boolean; configuredClass?: string; selectionDisabled?: boolean }) {
   const { user, sessionVersion } = useAuth();
   return <DocumentWorkspace key={`${user?.id}:${sessionVersion}:${requestId ?? 'drafts'}`} requestId={requestId} onSelection={onSelection} disabled={disabled} configuredClass={configuredClass} selectionDisabled={selectionDisabled} />;
 }
-function DocumentWorkspace({ requestId, onSelection, disabled, configuredClass, selectionDisabled }: { requestId?: string; onSelection?: (ids: string[], busy: boolean) => void; disabled: boolean; configuredClass?: string; selectionDisabled?: boolean }) {
+function DocumentWorkspace({ requestId, onSelection, disabled, configuredClass, selectionDisabled }: { requestId?: string; onSelection?: (ids: string[], busy: boolean, rows?: Evidence[]) => void; disabled: boolean; configuredClass?: string; selectionDisabled?: boolean }) {
   const { user, sessionVersion, getSessionVersion } = useAuth();
   const [classification, setClassification] = useState('Medical');
   const uploadClass = configuredClass === 'Medical' ? 'Medical' : classification;
   const [error, setError] = useState(''); const [progress, setProgress] = useState<number | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const selection = useRef<string[]>([]); const [busy, setBusy] = useState(false);
+  const selectedRows = useRef(new Map<string, Evidence>());
   const working = useRef(false); const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const active = () => getSessionVersion() === sessionVersion;
@@ -33,7 +35,8 @@ function DocumentWorkspace({ requestId, onSelection, disabled, configuredClass, 
   function choose(row: Evidence, checked: boolean) {
     const next = checked ? [...selected, row.id] : selected.filter(id => id !== row.id);
     if (next.length > 5) { setError('Choose at most five documents.'); return; }
-    selection.current = next; setSelected(next); onSelection?.(next, working.current);
+    if (checked) selectedRows.current.set(row.id, row); else selectedRows.current.delete(row.id);
+    selection.current = next; setSelected(next); onSelection?.(next, working.current, next.map(id => selectedRows.current.get(id)!));
   }
   async function download(row: Evidence) {
     await action(async () => {
