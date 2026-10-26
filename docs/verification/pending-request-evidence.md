@@ -132,7 +132,7 @@ physical-device review, exhaustive disk faults and retention/legal review are no
 No production delivery, statutory/payment work, bound-document removal or request-date edits.
 Rollback drops later-addition provenance/idempotency; downgrade execution is not claimed.
 
-## Finalisation review ? 22 October 2026
+## Finalisation review - 22 October 2026
 
 Fetched main remains the recorded base. Issues #83/#84 were read and remain open. Complete source,
 migration, tests and documentation were reviewed before initial publication. Hosted recovery then
@@ -170,3 +170,51 @@ The result supports environment dependence but does not reconstruct every premat
 The earlier complete local 154 pass remains earlier evidence; the corrected complete hosted gate is
 reported separately. No frontend file changed for this correction, so local browser/build/lint were
 not rerun. Positive real-ClamAV evidence remains unavailable.
+
+## Hosted budget investigation - 26 October 2026
+
+The cancelled [run 39739778872](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/39739778872)
+is preserved: **155/155 backend passed**, **10.3311 minutes**; **13 browser passed**, no reported
+browser failure, no complete browser result. The job exhausted its shared 20-minute budget.
+The earlier PR description/summary's suggestion of a browser stall was unsupported. The next test's
+position does not implicate the directory mutation test or establish a hang; the new evidence cases
+were not reached. No original failure or cancelled run has been removed or counted as a pass.
+
+Inspection on 26 October used the original timestamped installation output from 22 October, not a
+new execution. All times below are UTC, not South African business dates:
+
+- Job began **07:20:15**; backend step **07:21:15-07:31:37**.
+- Combined browser setup/test step began **07:31:37**. Its npm clean-install completion output was
+  at **07:36:37.468**, about **5m00s** into the step.
+- Explicit npm audit's zero-vulnerability output appeared at **07:38:33.476**, about **1m56s** later.
+  These output intervals identify where the budget went; they do not establish a registry/network cause.
+- Browser typecheck script began **07:38:33.585**. Playwright OS dependency installation began
+  **07:38:35.931**; apt progress spans **07:38:36.028-07:39:36.488** (about one minute).
+- Chromium download began **07:39:39.037**; the last browser asset download completed
+  **07:39:48.347**. All actual OS/browser prerequisites were installed, not assumed cached.
+- **playwright test** began **07:39:48.505**, roughly **8m11.5s** after the combined step began.
+  Passing results span **07:40:02.257-07:40:27.464**. The step was cancelled **07:40:29** and the job
+  finished **07:40:33**. Only about **40.5 seconds** were available after test command startup.
+
+### Focused CI correction
+
+The existing [workflow](../../.github/workflows/critical-regressions.yml) now runs independent backend
+and browser jobs, each bounded at **20 minutes** on a fresh Ubuntu 24.04 runner. Each builds its own
+API/fixture executable from locked restore with vulnerability warnings treated as errors. Only the
+backend job runs the entire xUnit gate; only the browser job runs the entire default Chromium gate.
+The browser job retains client clean install/build/lint/audit, browser clean install/audit/typecheck
+and real Playwright Chromium/system installation, with separate timed steps for setup and execution.
+No test filter, assertion, per-test timeout, retry, skip, dependency or product source changed.
+
+A bounded two-minute final **regression** job preserves the existing check name and requires both
+suite jobs to succeed; failed, cancelled or skipped suites cannot yield a green aggregate. Branch
+protection, workflow triggers, read-only permissions and pinned actions are unchanged. There is no
+cache, artifact upload or fixture transfer between jobs: private SQLite stores, credentials, documents,
+messages and runtime descriptors remain confined to their own runner. Existing fixture shutdown,
+owned-process-tree cleanup, exact private path validation and fail-closed scanning remain unchanged.
+
+Based on the observed roughly 10m backend and 8m browser setup plus earlier complete browser timing,
+independent budgets provide headroom without increasing a test timeout or assuming cached packages.
+This is a justified execution-budget change, not a proven product or browser-stall correction.
+Final hosted execution is recorded separately below once inspected. Positive real-ClamAV scanning
+remains outstanding; controlled clean fixtures and scanner-unavailable refusal cannot substitute.

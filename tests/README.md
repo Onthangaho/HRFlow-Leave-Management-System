@@ -15,6 +15,17 @@ no production permission seam or endpoint exists. Run the full default browser g
 See [design](../docs/adr/0032-pending-request-supplemental-evidence.md) and
 [separate executions/limitations](../docs/verification/pending-request-evidence.md).
 
+## Independent hosted gates
+
+The workflow runs complete backend and default Chromium suites on separate fresh Ubuntu runners,
+each with a bounded 20-minute budget and isolated private fixtures. Each builds its own API fixture;
+browser clean installs/audits/typecheck and actual Chromium/system installation have distinct steps.
+The final `regression` check requires both jobs to pass, including neither being skipped/cancelled.
+No private fixture artifacts are cached, uploaded or shared. Per-test limits, zero retries, scanner
+fail-closed behaviour and owned-process cleanup are unchanged. Production-built and positive real-
+ClamAV browser suites remain separate evidence. See [the timestamped budget investigation and actual
+results](../docs/verification/pending-request-evidence.md#hosted-budget-investigation---26-october-2026).
+
 ## Deferred client-feature gates
 
 `loading.spec.ts` adds all seven nonempty role compositions plus real direct-route/history checks and labelled controlled
