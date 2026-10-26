@@ -310,3 +310,31 @@ The browser setup variation reinforces separate bounded budgets; no test stall w
 The diagnostic contract adds one pure case (57 -> 58), not a replaced or omitted workflow. No
 private artifact was cached/uploaded. Positive real-ClamAV remains unexecuted, independent of these
 controlled clean fixtures and fail-closed outage checks. Final-head hosted status is reported on PR #135.
+
+### Completed corrected-code hosted verification - 26 October 2026
+
+[Run 40315812145](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/40315812145)
+on **9ebec54846ae824c6e535007ea6f7249d7872ba6** passed both complete suites and the required aggregate:
+
+- Backend **155 passed / 0 failed**, **9.9232 minutes** test time; job **10m39s**.
+- Chromium **58 passed / 0 failed**, **133035.99 ms**; browser job **15m17s**.
+- Overall workflow **15m21s**; aggregate success. No retry, skip, timeout increase or assertion removal.
+- Browser fixture build **33s**, client install/build/lint/audit **11s**, browser install/audit/typecheck
+  **2s**. Real OS/Chromium installation **11:33:23-11:45:24 UTC**, **12m01s**.
+- Within installation, apt progress spans **11:33:24.296-11:45:16.030**; browser downloads begin
+  **11:45:17.652** and finish **11:45:24.572**. The long interval is OS prerequisite work, not a
+  browser test or the Chromium asset transfer. No specific mirror/network cause is established.
+- Complete browser gate **11:45:24-11:47:38**, including normal private fixture teardown.
+  No fixture artifact was cached/uploaded; all builds/audits/typecheck and permissions remained enabled.
+
+The original budget cancellation, high-audit refusal, 56/1 hosted run and 55/3 local run remain above.
+The first hosted assertion failure was not reproduced in the later complete invocations; neither
+green execution establishes its original cause. The explicit destination correction addresses the
+demonstrated local test assumption without changing product authorization/session behaviour.
+
+This records the tested source/test/CI head before the report-only commit. That subsequent head's
+required workflow is inspected separately and linked from PR #135; no prior result substitutes for
+it. The report-only update does not alter executable inputs. Positive real-ClamAV remains outstanding;
+controlled clean fixtures and scanner-unavailable denial do not prove successful real scanning.
+Production-built browser, physical device/screen-reader, target-host, downgrade, retention/legal and
+provider checks are not implied. Production delivery remains disabled. No merge or deployment.
