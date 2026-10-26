@@ -204,7 +204,8 @@ API/fixture executable from locked restore with vulnerability warnings treated a
 backend job runs the entire xUnit gate; only the browser job runs the entire default Chromium gate.
 The browser job retains client clean install/build/lint/audit, browser clean install/audit/typecheck
 and real Playwright Chromium/system installation, with separate timed steps for setup and execution.
-No test filter, assertion, per-test timeout, retry, skip, dependency or product source changed.
+No test filter, assertion, per-test timeout, retry, skip or product source changed for the budget split.
+The separately necessary audit correction below changes only one lockfile resolution.
 
 A bounded two-minute final **regression** job preserves the existing check name and requires both
 suite jobs to succeed; failed, cancelled or skipped suites cannot yield a green aggregate. Branch
@@ -218,3 +219,33 @@ independent budgets provide headroom without increasing a test timeout or assumi
 This is a justified execution-budget change, not a proven product or browser-stall correction.
 Final hosted execution is recorded separately below once inspected. Positive real-ClamAV scanning
 remains outstanding; controlled clean fixtures and scanner-unavailable refusal cannot substitute.
+
+### First independent-jobs run and retained audit refusal
+
+[Run 40310846750](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/40310846750)
+on **54a9d03608e57d548e198d69a9ada57e98c93cf5** completed with **155/155 backend passed**,
+**9.5655 minutes** test time (job **10m20s**). The browser job failed after one minute at the retained
+client audit; browser installation/tests were not run. The aggregate correctly failed. This is a
+separate failed run, not a browser assertion failure, stall or budget cancellation.
+
+The audit reported one high finding for direct client `zod@4.4.3`,
+[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)
+(CVE-2023-54404; affected below 4.6.6, patched 4.6.6). The official advisory, updated 23 October,
+and [maintainer 4.6.6 release](https://github.com/colinhacks/zod/releases/tag/v4.6.6) were retrieved
+26 October; the release lists checking collection size bounds before parsing elements. Registry
+metadata independently confirms the version, public tarball URL and SHA-512 integrity.
+
+Dependency path: client root -> zod, also satisfying @hookform/resolvers' Zod peer. There is one
+resolved copy. It supports browser employee/login form validation; this is client runtime exposure,
+not a .NET server dependency. No claim is made that the current UI reproduces the advisory's resource
+exhaustion. The focused compatible fix changes only the Zod lock entry's version/tarball/integrity
+**4.4.3 -> 4.6.6**, within unchanged `^4.4.3`; no override, suppression, forced upgrade, new package
+or unrelated resolution. The browser project's lockfile and all manifests remain unchanged.
+
+A guarded edit first refused the lockfile's line endings; the following unpatched clean install/audit
+reproduced **one high** finding and is not counted as patched verification. After the focused edit,
+separate fresh client/browser `npm ci` passed. Client full and production-only audits and browser full
+audit each report **zero vulnerabilities**. Installed and locked Zod both equal **4.6.6**. Local client
+build, lint and browser typecheck passed; existing Fast Refresh warning remains. No local product
+suite was rerun for the workflow-only split; complete suites will execute against the patched final
+head in hosted CI. No private fixture artifacts were cached or uploaded.
