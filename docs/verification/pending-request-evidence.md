@@ -338,3 +338,33 @@ it. The report-only update does not alter executable inputs. Positive real-ClamA
 controlled clean fixtures and scanner-unavailable denial do not prove successful real scanning.
 Production-built browser, physical device/screen-reader, target-host, downgrade, retention/legal and
 provider checks are not implied. Production delivery remains disabled. No merge or deployment.
+
+### Later complete run identifies a layout-readiness assertion
+
+The report-only [run 40318093850](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/40318093850)
+on **720057154bbeb17124da34c986949cd25bbf22e4** completed **155 backend passed**
+(**10.1891 minutes**) and **57 browser passed / 1 failed** (**142494.97 ms**). The safe diagnostic
+now identifies **evidence.spec.ts:58:89**: the immediate `scrollWidth <= innerWidth` assertion after
+changing the viewport/theme. That case failed in **2826 ms**, not a timeout or stalled test. The
+original 56/1 run did not retain its source coordinate, so this later result must not be presented
+as reconstructed original call details.
+
+The corrected test waits with bounded `expect.poll` for the identical width condition, using the
+existing configured 10-second assertion budget and unchanged 60-second test limit. Test retries remain
+zero; no product CSS, overflow threshold or mutation replay changes. A controlled case explicitly
+holds the document at 640px with a 390px viewport, asserts
+that it is too wide and the waiting check has not completed, then releases only that owned CSS
+barrier. Persistent overflow still fails. This separates responsive layout readiness from the
+theme attribute becoming visible and uses the existing directory-test readiness pattern.
+
+New barrier cleanup initially failed typecheck (TS2339: Node has no remove); using the owned node's
+parent removal corrected it, then typecheck passed. Separate complete evidence-file local Chrome
+invocation: **8 passed / 0 failed**, **53519.882 ms**, including the actual workflow, scanner-unavailable
+denial, both replacement sessions, recoverable refresh, lost acknowledgement and privacy contract.
+The explicit barrier is an additional case (58 -> 59 complete default cases), not removed coverage.
+The earlier complete successes, later failure and unknown original details remain recorded.
+
+Separate subsequent complete local Chrome invocation after the layout correction: **59 passed /
+0 failed**, **220304.934 ms**, process exit zero. Owned fixture cleanup left zero API processes.
+This is not combined with the 8-case invocation or any earlier complete run. The new hosted head
+must run both complete suites; its result is linked from PR #135. No production source changed.

@@ -5,6 +5,31 @@ import { safeEvidenceLocations, safeWorkflowLocations } from './evidence-diagnos
 interface Fixture { password: string; api: string; client: string; typeId: string; employees: Record<string, { email: string }> }
 const fixture = () => JSON.parse(fs.readFileSync(process.env.HRFLOW_TEST_STATE!, 'utf8')) as Fixture;
 
+/** Theme state can commit before responsive layout; persistent overflow must still fail the unchanged fit condition. */
+async function expectViewportFit(page: Page, observed?: () => void) {
+  await expect.poll(async () => {
+    const fits = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+    observed?.();
+    return fits;
+  }).toBe(true);
+}
+
+test('controlled evidence layout: viewport assertion waits for actual fit', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setContent('<main>Ordinary synthetic layout</main>');
+  const barrier = await page.addStyleTag({ content: 'html { min-width: 640px !important; }' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(false);
+  let observed!: () => void; const measured = new Promise<void>(resolve => { observed = resolve; });
+  let completed = false;
+  const fitted = expectViewportFit(page, observed).then(() => { completed = true; });
+  try {
+    await measured;
+    expect(completed).toBe(false);
+    await barrier.evaluate(element => { element.parentNode?.removeChild(element); });
+    await fitted;
+  } finally { await barrier.evaluate(element => { element.parentNode?.removeChild(element); }); await fitted; }
+});
+
 test('evidence diagnostic contract: source coordinates exclude raw error contents', () => {
   const result = safeEvidenceLocations([{ stack: 'private canary payload\n at /unreported/evidence.spec.ts:42:7\n at /unreported/other.ts:9:2' },
     { stack: ' at /unreported/evidence.spec.ts:0:9\n at /unreported/evidence.spec.ts:100001:3' }, {}]);
@@ -55,7 +80,7 @@ test('HTTP evidence with controlled clean fixture: bind, separate history, downl
   const downloaded = await download; expect(downloaded.suggestedFilename()).toBe('supporting-document.png'); await downloaded.delete();
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expectViewportFit(page);
   await expect(page.getByRole('heading', { name: 'Recorded lifecycle', exact: true })).toBeVisible();
 });
 
