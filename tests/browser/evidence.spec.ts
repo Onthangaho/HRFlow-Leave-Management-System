@@ -61,10 +61,42 @@ async function editor(page: Page, id: string) {
   await page.locator(`a[href="/leave-requests/${id}/history"]`).click();
   await expect(page).toHaveURL(new RegExp(`/leave-requests/${id}/history$`));
   const area = page.getByRole('region', { name: 'Later evidence additions', exact: true });
+  // Eligibility can render before the newly mounted draft query; select only from its completed rendered list.
+  const drafts = page.waitForResponse(r => {
+    const url = new URL(r.url());
+    return url.pathname === '/api/v1/documents' && !url.searchParams.has('requestId') && r.request().method() === 'GET' && r.status() === 200;
+  });
   await area.getByRole('button', { name: 'Add evidence', exact: true }).click();
-  await area.getByRole('checkbox', { name: 'Attach to request', exact: true }).first().check();
+  const cleanCount = (await (await drafts).json()).filter((row: { status: string }) => row.status === 'Clean').length;
+  expect(cleanCount).toBeGreaterThan(0);
+  const choices = area.getByRole('checkbox', { name: 'Attach to request', exact: true });
+  await expect(choices).toHaveCount(cleanCount);
+  await expect(area.getByText('Loading evidence…', { exact: true })).toHaveCount(0);
+  await expect(choices.first()).toBeEnabled();
+  await choices.first().check();
+  await expect(choices.first()).toBeChecked();
   return area;
 }
+
+test('controlled evidence transport: draft selection waits for triggered response and rendered choices', async ({ page }) => {
+  const id = await request(page); await login(page);
+  let entered!: () => void, release!: () => void;
+  const intercepted = new Promise<void>(resolve => { entered = resolve; });
+  const resume = new Promise<void>(resolve => { release = resolve; });
+  await page.route(fixture().api + '/api/v1/documents*', async route => {
+    if (route.request().method() !== 'GET' || new URL(route.request().url()).searchParams.has('requestId')) { await route.continue(); return; }
+    entered(); await resume;
+    // StrictMode may cancel the first mount query while the controlled barrier is held.
+    if (!route.request().failure()) await route.continue();
+  });
+  let completed = false;
+  const selection = editor(page, id).then(area => { completed = true; return area; });
+  try {
+    await intercepted; expect(completed).toBe(false); release();
+    const area = await selection;
+    await expect(area.getByRole('checkbox', { name: 'Attach to request', exact: true }).first()).toBeChecked();
+  } finally { release(); await selection; }
+});
 
 test('HTTP evidence with controlled clean fixture: bind, separate history, download and mobile keyboard', async ({ page }) => {
   const id = await request(page); await login(page); const area = await editor(page, id);

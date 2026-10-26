@@ -150,7 +150,7 @@ Node 24 emits its experimental `node:sqlite` warning; browser runs are not descr
 as warning-free. Product frontend build/lint, model checks and dependency audits were not rerun for
 this test/documentation-only change: production, schema and all dependency files are unchanged.
 
-## Final review and cleanup checks
+## Implementation-handoff review and cleanup checks
 
 After the complete browser suite, `npm.cmd run typecheck` passed again. Independent process-name-
 filtered inspection found **zero fixture/API/browser process references**. The initial unrestricted
@@ -164,6 +164,41 @@ relative-link/anchor and targeted JWT/private-key/activation-URL/private-path ch
 Both instruction files are byte-identical and unchanged. No production, schema, dependency or CI
 diff. These implementation-handoff checks preceded staging, commit and publication. An ignored complete patch includes the new files for local
 review, not private runtime descriptors, databases, credentials, logs or generated output.
+
+## Finalisation: first hosted run and draft-selection synchronization
+
+Published head `9cf828ae5395d87658a20c7bbd8ddbcb1d9592d4`,
+[run 40388926109](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/40388926109):
+hosted Ubuntu backend **164/164 passed**, test execution **10.7227 minutes**. Default Chromium
+**68 passed / 1 failed**, **147.776831 s**; all ten new token/refresh cases passed. Restore/build,
+frontend build/lint, audits (zero-vulnerability summaries) and browser typecheck passed. The browser
+setup spent over ten minutes installing prerequisites before tests started; this was a completed
+test failure, not a job-budget cancellation or an inferred stall.
+
+The failure was the existing **HTTP upload without scanner: inaccessible draft cannot be selected
+or bound** test, before its upload: safe diagnostics identified `evidence.spec.ts:61:65` (the shared
+editor's first draft-checkbox `.check()`) and caller `103:67`. Raw Playwright errors/call logs were
+withheld, so the original detailed assertion/action error is unavailable. No scanner or production
+authentication defect is established by those coordinates.
+
+Source review found the [shared editor](../../tests/browser/evidence.spec.ts) opened the draft UI
+and checked a locator without explicitly pairing it with the triggered draft response/render. The
+focused correction registers the GET wait before clicking Add evidence, reads its clean-row count,
+waits for the rendered checkbox count/loading completion/enabled state, retains `.check()` and adds
+an explicit checked assertion. All scanner-unavailable, inaccessible/nonselectable and download
+assertions remain intact. No force-click, retry, skip, timeout increase or production change.
+
+Separate local affected command, `npm.cmd test -- evidence.spec.ts token-refresh.spec.ts`, with
+installed Edge: **18/18 passed**, **56.124176 s**. That pass does not reconstruct the original hosted
+failure or prove its root cause. A further retained controlled transport case holds the actual draft
+request, asserts the helper has not completed selection, then releases it and checks the selection.
+After adding that barrier case, a separate affected invocation passed **19/19**, **55.617311 s**.
+Then a separate complete default-browser invocation passed **70/70**, **181.334725 s**, retries zero.
+The extra case explains the count change; the earlier 69-browser/164-backend executions above remain
+unchanged historical executions. Browser typecheck and staged privacy/encoding/link/whitespace
+checks were repeated for this follow-up. No backend files changed in the follow-up, so the backend
+was not redundantly rerun locally; the actual first-head hosted 164/164 remains separately recorded.
+The next hosted result is recorded in the PR, not inferred from these Windows runs.
 
 ## Remaining limitations
 
