@@ -1,5 +1,14 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Durable own-account submission recovery
+
+After a stopped-fixture solution build, run `dotnet test tests/HRFlow.RegressionTests --no-build
+--filter FullyQualifiedName~LeaveSubmissionRecoveryTests -v minimal`; then, sequentially from
+`tests/browser`, run `npm.cmd test -- submission-recovery.spec.ts`. Both files participate in the
+existing complete gates. Real HTTP commits, controlled lost responses and metadata-only UI fixtures
+are explicitly distinguished. See [contract](../docs/adr/0034-owner-leave-submission-recovery.md)
+and [separate execution evidence](../docs/verification/leave-submission-recovery.md).
+
 ## Explicit owner leave preview
 
 After a stopped-fixture solution build, run `dotnet test tests/HRFlow.RegressionTests --no-build

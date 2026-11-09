@@ -7,6 +7,8 @@ namespace HRFlow.Application.Features.LeaveRequests.Commands.SubmitLeaveRequest;
 /// </summary>
 public class SubmitLeaveRequestCommand : IRequest<Guid>
 {
+    /// <summary>Optional for legacy callers; keyed clients retain this exact attempt for explicit recovery.</summary>
+    public Guid? SubmissionKey { get; set; }
     public Guid ExpectedTypeVersion { get; set; }
     public Guid ExpectedPolicyVersion { get; set; }
     public string? Description { get; set; }
