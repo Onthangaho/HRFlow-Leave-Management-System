@@ -170,3 +170,22 @@ privacy are unchanged. Unkeyed legacy callers are intentionally not idempotent. 
 are not persisted across route exit/refresh/logout; history review is required before starting anew.
 A restored snapshot cannot recover or deduplicate missing post-cutoff lineage history. No executed
 downgrade is claimed; losing the new table would lose key guarantees and must be operationally gated.
+
+## Main integration and fresh hosted verification — 10 November 2026
+
+The original [PR #139 run 42660224388](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/42660224388)
+passed **196/196 backend** tests in **14.0291 minutes**, but its browser job failed the client audit
+for inherited follow-redirects 1.16.1 / GHSA-mrwp-f3q8-3g9p. Browser setup and tests **did not execute**;
+the aggregate remained failed. This result is preserved, not superseded retroactively.
+
+Merged [PR #140](https://github.com/Onthangaho/HRFlow-Leave-Management-System/pull/140), main commit
+`1bccecfd8b56f6921a979ba40f3ecf5cf43d9c09`, supplies the narrowly scoped compatible 1.16.2 lockfile
+correction. Main was merged into this existing recovery branch without conflicts. Submission source,
+assertions, audit gates and permissions were not changed. Both instruction files remain byte-identical.
+See [the dependency report](follow-redirects-security.md) for exposure, local audits and historical
+resolution attempts. PR #140's own results are **not** verification of submission recovery.
+
+The updated PR #139 commit will receive its own complete hosted backend/browser execution; its actual
+run URL, counts and outcome will be recorded in the PR after completion. No local product tests were
+rerun for this main integration. Historical local executions and unresolved limitations above remain
+separate. No merge of PR #139, calculation change or external service enablement is authorised.
