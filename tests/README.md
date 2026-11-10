@@ -1,5 +1,9 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Filtered personal history
+
+From root, after a solution build with fixture writers stopped: `dotnet test tests/HRFlow.RegressionTests --no-build --filter FullyQualifiedName~PersonalHistory`. Then sequentially `npm.cmd --prefix tests/browser test -- personal-history.spec.ts`. Complete gates include these enabled cases; no new framework or scanner dependency. The measurement fixture prints only synthetic sizes/bytes/timings. [API contract](../docs/adr/0035-paginated-personal-leave-history.md), [all runs and limitations](../docs/verification/personal-leave-history.md). Six handler SELECTs are counted inside a real deferred transaction; HTTP bearer validation is excluded from that count.
+
 ## Durable own-account submission recovery
 
 After a stopped-fixture solution build, run `dotnet test tests/HRFlow.RegressionTests --no-build
