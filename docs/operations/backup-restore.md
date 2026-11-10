@@ -179,3 +179,14 @@ hook and synthetic SMTP sink must not be used as a production adapter. This Wind
 replace target-host storage/TLS/proxy/restore exercises, post-cutoff eligibility reconciliation or
 provider approval. Key custody, retention/legal holds and secure operator access remain operational
 responsibilities. Historical recovery measurements above remain dated evidence.
+
+## Keyed leave-submission outcomes (27 October 2026)
+
+The additive [submission-recovery contract](../adr/0034-owner-leave-submission-recovery.md) retains
+successful owner/key/request associations in the database backup. Preserve them with their requests;
+deleting outcomes or downgrading away their table loses duplicate-execution protection. They carry
+no credential/session authority and do not trigger startup delivery/submission. Restore still requires
+mandatory security invalidation and authorised access recovery. Reconcile post-cutoff history before
+any resubmission: missing lineage records cannot be reconstructed from a pre-cutoff receipt table.
+[Actual recovery evidence and limits](../verification/leave-submission-recovery.md) remain separate
+from target-host deployment readiness.

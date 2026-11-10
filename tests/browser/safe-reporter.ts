@@ -10,6 +10,10 @@ export default class SafeReporter implements Reporter {
   onBegin(config: FullConfig) { this.output = path.resolve(config.projects[0].outputDir) + path.sep; }
   onTestEnd(test: TestCase, result: TestResult) {
     console.log(`${result.status}: ${test.title} (${result.duration}ms)`);
+    for (const output of result.stdout) for (const line of output.toString().split('\n'))
+      if (/^submission-recovery-stage (check-entered|signed-out|signed-in|released|settled)$/.test(line)) console.log(line);
+    for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]submission-recovery\.spec\.ts:(\d{1,5}):(\d{1,5})/g))
+      console.log(`submission-recovery-source submission-recovery.spec.ts:${Number(match[1])}:${Number(match[2])}`);
     for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]leave-preview\.spec\.ts:(\d{1,5}):(\d{1,5})/g))
       console.log(`leave-preview-source leave-preview.spec.ts:${Number(match[1])}:${Number(match[2])}`);
     for (const output of result.stdout) for (const line of output.toString().split('\n'))

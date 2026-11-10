@@ -22,6 +22,18 @@ namespace HRFlow.Api.Controllers;
 [Route("api/v1/leave-requests")]
 public class LeaveRequestsController : ControllerBase
 {
+    /// <summary>Checks only a previously keyed own-account attempt; missing outcomes never create requests.</summary>
+    [HttpPost("submission-outcome"), Authorize(Roles = PersonalLeaveRoles)]
+    [RequestSizeLimit(16384)]
+    public async Task<IActionResult> SubmissionOutcome(SubmitLeaveRequestCommand command, CancellationToken cancellationToken)
+    {
+        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
+        if (employee == null) return Unauthorized();
+        command.EmployeeId = employee.Id;
+        Response.Headers.CacheControl = "no-store";
+        return Ok(new { RequestId = await _mediator.Send(new CheckLeaveSubmissionOutcomeQuery(command), cancellationToken) });
+    }
+
     /// <summary>Assesses only the authenticated owner's dates and current policy; never creates or binds anything.</summary>
     [HttpPost("preview"), Authorize(Roles = PersonalLeaveRoles)]
     [RequestSizeLimit(2048)]
@@ -140,12 +152,9 @@ public class LeaveRequestsController : ControllerBase
         command.EmployeeId = employee.Id;
         var leaveRequestId = await _mediator.Send(command, cancellationToken);
         _logger.LogInformation(
-            "Leave request submitted. LeaveRequestId: {LeaveRequestId}; EmployeeId: {EmployeeId}; LeaveTypeId: {LeaveTypeId}; StartDate: {StartDate}; EndDate: {EndDate}",
+            "Leave submission outcome resolved. LeaveRequestId: {LeaveRequestId}; EmployeeId: {EmployeeId}",
             leaveRequestId,
-            employee.Id,
-            command.LeaveTypeId,
-            command.StartDate,
-            command.EndDate);
+            employee.Id);
         return Ok(leaveRequestId);
     }
 

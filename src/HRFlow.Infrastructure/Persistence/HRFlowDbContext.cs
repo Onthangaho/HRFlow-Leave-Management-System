@@ -38,6 +38,7 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
         public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<LeavePolicy> LeavePolicies => Set<LeavePolicy>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+    public DbSet<LeaveSubmissionOutcome> LeaveSubmissionOutcomes => Set<LeaveSubmissionOutcome>();
 
     /// <summary>
     /// Gets refresh token records used for server-side token rotation and invalidation.
@@ -48,6 +49,10 @@ public sealed class HRFlowDbContext : IdentityDbContext<ApplicationUser, Identit
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<LeaveSubmissionOutcome>().HasIndex(s => new { s.OwnerId, s.Key }).IsUnique();
+        modelBuilder.Entity<LeaveSubmissionOutcome>().Property(s => s.PayloadHash).HasMaxLength(64).IsRequired();
+        modelBuilder.Entity<LeaveSubmissionOutcome>().HasOne<Employee>().WithMany().HasForeignKey(s => s.OwnerId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<LeaveSubmissionOutcome>().HasOne<LeaveRequest>().WithMany().HasForeignKey(s => s.RequestId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<ProfileImage>().HasOne<Employee>().WithMany().HasForeignKey(i => i.OwnerId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<ProfileImage>().Property(i => i.Version).IsConcurrencyToken();
         modelBuilder.Entity<ProfileImage>().HasIndex(i => i.OwnerId).IsUnique().HasFilter("Status = 'Current'");

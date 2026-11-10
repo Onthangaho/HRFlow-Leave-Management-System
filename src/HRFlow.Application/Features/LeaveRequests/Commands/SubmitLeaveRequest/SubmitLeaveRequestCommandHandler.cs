@@ -22,6 +22,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
     private readonly ILeaveApprovalAuthorizationService _leaveApprovalAuthorizationService;
     private readonly ILeaveConfigurationTransaction _transaction;
     private readonly SupportingDocumentService _documents;
+    private readonly ILeaveReportingReadTransaction _reads;
 
     /// <summary>Shares the context and database reservation used by policy management and approvals.</summary>
     public SubmitLeaveRequestCommandHandler(
@@ -30,7 +31,7 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
         CurrentAccountAuthorization authorization,
         IRequestCorrelationContext correlation,
         ILeaveApprovalAuthorizationService leaveApprovalAuthorizationService,
-        ILeaveConfigurationTransaction transaction, SupportingDocumentService documents)
+        ILeaveConfigurationTransaction transaction, SupportingDocumentService documents, ILeaveReportingReadTransaction reads)
     {
         _context = context;
         _notifications = notifications;
@@ -39,14 +40,37 @@ public class SubmitLeaveRequestCommandHandler : IRequestHandler<SubmitLeaveReque
         _leaveApprovalAuthorizationService = leaveApprovalAuthorizationService;
         _transaction = transaction;
         _documents = documents;
+        _reads = reads;
     }
 
     /// <summary>Acquires writer protection before authoritative policy and relationship reads.</summary>
     public async Task<Guid> Handle(SubmitLeaveRequestCommand request, CancellationToken cancellationToken)
     {
         Guid id = Guid.Empty;
-        var verified = await _documents.VerifyBindingAsync(request.EmployeeId, request.DocumentIds, cancellationToken);
-        await _transaction.ExecuteAsync(async token => id = await SubmitAsync(request, verified, token), cancellationToken);
+        var hash = LeaveSubmissionIdentity.Hash(request);
+        var previous = request.SubmissionKey == null ? null : await _reads.ExecuteAsync(
+            ct => LeaveSubmissionIdentity.FindAsync(_context, _authorization, request, hash, ct), cancellationToken);
+        var verified = new Dictionary<Guid, Guid>();
+        WriteConflictException? verificationFailure = null;
+        if (previous == null)
+        {
+            try { verified = await _documents.VerifyBindingAsync(request.EmployeeId, request.DocumentIds, cancellationToken); }
+            // A concurrent identical submission may bind the drafts after our read. Its committed outcome wins below.
+            catch (WriteConflictException failure) { verificationFailure = failure; }
+        }
+        await _transaction.ExecuteAsync(async token =>
+        {
+            var recovered = await LeaveSubmissionIdentity.FindAsync(_context, _authorization, request, hash, token);
+            if (recovered.HasValue) { id = recovered.Value; return; }
+            if (verificationFailure != null) throw verificationFailure;
+            var dateProblems = LeaveSubmissionDateRules.Problems(request.StartDate, request.EndDate, DateTime.UtcNow.Date);
+            if (dateProblems.Count != 0)
+                throw new FluentValidation.ValidationException(dateProblems.Select(problem =>
+                    new FluentValidation.Results.ValidationFailure(problem.Code, problem.Message)));
+            id = await SubmitAsync(request, verified, token);
+            if (request.SubmissionKey is { } key)
+                _context.LeaveSubmissionOutcomes.Add(new LeaveSubmissionOutcome { OwnerId = request.EmployeeId, Key = key, RequestId = id, PayloadHash = hash });
+        }, cancellationToken);
         return id;
     }
 
