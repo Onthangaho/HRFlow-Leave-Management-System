@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CancelledError, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authHttpClient } from '../auth/api';
 import { useAuth } from '../auth/hooks/useAuth';
 import type { EmployeeLeaveRequest, LeaveBalance, PendingLeaveRequest, LeaveDecision } from './types';
@@ -35,18 +35,26 @@ async function rejectLeaveRequest({ requestId, decisionNote }: LeaveDecision): P
   await authHttpClient.post(`/leave-requests/${requestId}/reject`, { decisionNote });
 }
 
-async function getLeaveBalances(): Promise<LeaveBalance[]> {
-  const response = await authHttpClient.get<LeaveBalance[]>('/leave-requests/balances');
+async function getLeaveBalances(signal: AbortSignal): Promise<LeaveBalance[]> {
+  const response = await authHttpClient.get<LeaveBalance[]>('/leave-requests/balances', { signal });
   return response.data;
 }
 
-async function getEmployeeLeaveHistory(): Promise<EmployeeLeaveRequest[]> {
-  const response = await authHttpClient.get<EmployeeLeaveRequest[]>('/leave-requests/history');
+/** Applied values form part of the account/session cache identity. Empty strings mean no filter. */
+export interface HistoryFilters { status: string; leaveTypeId: string; start: string; end: string; page: number; pageSize: number }
+/** The server clamps unavailable pages and captures count/rows in the same snapshot. */
+export interface HistoryPage { items: EmployeeLeaveRequest[]; totalCount: number; page: number; pageSize: number; totalPages: number; capturedAtUtc: string }
+/** Fresh filter defaults are never inferred from a previous account's history. */
+export const historyDefaults: HistoryFilters = { status: '', leaveTypeId: '', start: '', end: '', page: 1, pageSize: 25 };
+async function getEmployeeLeaveHistory(filters: HistoryFilters, signal: AbortSignal): Promise<HistoryPage> {
+  const response = await authHttpClient.get<HistoryPage>('/leave-requests/history', {
+    params: Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '')), signal,
+  });
   return response.data;
 }
 
 async function cancelLeaveRequest(leaveRequestId: string): Promise<void> {
-  await authHttpClient.post(`/leave-requests/${leaveRequestId}/cancel`);
+  await authHttpClient.post(`/leave-requests/${leaveRequestId}/cancel`, undefined, { skipAuthReplay: true });
 }
 
 /**
@@ -127,23 +135,27 @@ export function useRejectLeaveRequest() {
 
 /** Retrieves server-derived balances so the client never replicates leave-policy calculations. */
 export function useLeaveBalances() {
-  const { user } = useAuth();
+  const { user, sessionVersion, getSessionVersion } = useAuth();
 
   return useQuery<LeaveBalance[], Error>({
-    queryKey: leaveBalancesQueryKey(user?.id ?? ''),
-    queryFn: getLeaveBalances,
+    queryKey: [...leaveBalancesQueryKey(user?.id ?? ''), sessionVersion],
+    queryFn: async ({ signal }) => {
+      const result = await getLeaveBalances(signal);
+      if (getSessionVersion() !== sessionVersion) throw new CancelledError();
+      return result;
+    },
     enabled: Boolean(user?.id),
   });
 }
 
 /** Retrieves the signed-in employee's personal request timeline and recorded decisions. */
-export function useEmployeeLeaveHistory() {
-  const { user } = useAuth();
-
-  return useQuery<EmployeeLeaveRequest[], Error>({
-    queryKey: employeeLeaveHistoryQueryKey(user?.id ?? ''),
-    queryFn: getEmployeeLeaveHistory,
-    enabled: Boolean(user?.id),
+export function useEmployeeLeaveHistory(filters: HistoryFilters) {
+  const { user, sessionVersion, getSessionVersion } = useAuth();
+  return useQuery<HistoryPage, Error>({
+    queryKey: [...employeeLeaveHistoryQueryKey(user?.id ?? ''), sessionVersion, filters],
+    queryFn: async ({ signal }) => { const result = await getEmployeeLeaveHistory(filters, signal); if (getSessionVersion() !== sessionVersion) throw new CancelledError(); return result; },
+    enabled: Boolean(user?.roles.some(role => role === 'Employee' || role === 'Manager')),
+    refetchOnMount: 'always', retry: false,
   });
 }
 
@@ -153,7 +165,7 @@ export function useCancelLeaveRequest() {
   const { user, sessionVersion, getSessionVersion } = useAuth();
 
   return useMutation<void, Error, string>({
-    mutationFn: cancelLeaveRequest,
+    mutationFn: cancelLeaveRequest, retry: false,
     onSuccess: async () => {
       if (!user?.id || getSessionVersion() !== sessionVersion) {
         return;
@@ -163,8 +175,8 @@ export function useCancelLeaveRequest() {
         queryClient.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['personal-leave-dashboard', user.id, sessionVersion] }),
-        queryClient.invalidateQueries({ queryKey: employeeLeaveHistoryQueryKey(user.id) }),
-        queryClient.invalidateQueries({ queryKey: leaveBalancesQueryKey(user.id) }),
+        queryClient.invalidateQueries({ queryKey: [...employeeLeaveHistoryQueryKey(user.id), sessionVersion] }),
+        queryClient.invalidateQueries({ queryKey: [...leaveBalancesQueryKey(user.id), sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
         queryClient.invalidateQueries({ queryKey: ['leave-request-timeline', user.id] }),
       ]);

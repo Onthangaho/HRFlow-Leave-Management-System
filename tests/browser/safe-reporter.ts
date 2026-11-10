@@ -18,6 +18,15 @@ export default class SafeReporter implements Reporter {
       console.log(`leave-preview-source leave-preview.spec.ts:${Number(match[1])}:${Number(match[2])}`);
     for (const output of result.stdout) for (const line of output.toString().split('\n'))
       if (/^preview-review-field count=\d{1,3} valueMatches=(true|false) labelCount=\d{1,3} roleCount=\d{1,3}$/.test(line)) console.log(line);
+    for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]personal-history\.spec\.ts:(\d{1,5}):(\d{1,5})/g))
+      console.log(`personal-history-source personal-history.spec.ts:${Number(match[1])}:${Number(match[2])}`);
+    for (const output of result.stdout) for (const line of output.toString().split('\n'))
+      if (/^history-controls exact=\d{1,3} selects=\d{1,3}$/.test(line)) console.log(line);
+    for (const output of result.stdout) for (const line of output.toString().split('\n'))
+      if (/^history-link matches=\d{1,3} headings=\d{1,3}$/.test(line)) console.log(line);
+    for (const error of result.errors)
+      if ((error.stack ?? '').includes('evidence.spec.ts:') && (error.message ?? '').includes('strict mode violation'))
+        console.log('history-navigation ambiguous-target');
     for (const location of safeEvidenceLocations(result.errors)) console.log(location);
     for (const location of safeWorkflowLocations(result.errors)) console.log(location);
     for (const output of result.stdout) for (const line of output.toString().split('\n'))

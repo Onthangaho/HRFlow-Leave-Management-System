@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import type { EmployeeLeaveRequest } from '../types';
 
 interface LeaveRequestHistoryItemProps {
   leaveRequest: EmployeeLeaveRequest;
   isCancelling: boolean;
   onCancel: (leaveRequestId: string) => void;
+  isConfirmingCancellation: boolean;
+  setIsConfirmingCancellation: (value: boolean) => void;
 }
 
 const statusStyles: Record<EmployeeLeaveRequest['status'], string> = {
@@ -42,9 +43,9 @@ function formatDateTime(date: string): string {
 export function LeaveRequestHistoryItem({
   leaveRequest,
   isCancelling,
-  onCancel,
+  onCancel, isConfirmingCancellation, setIsConfirmingCancellation,
 }: LeaveRequestHistoryItemProps) {
-  const [isConfirmingCancellation, setIsConfirmingCancellation] = useState(false);
+
   const isPending = leaveRequest.status === 'Pending';
 
   const confirmCancellation = () => {
@@ -80,7 +81,7 @@ export function LeaveRequestHistoryItem({
         )}
       </div>
 
-      {isConfirmingCancellation && (
+      {isPending && isConfirmingCancellation && (
         <div className="mt-5 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-medium text-amber-900">
             Cancel this pending {leaveRequest.leaveTypeName.toLowerCase()} leave request?

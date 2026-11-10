@@ -194,29 +194,15 @@ public class LeaveRequestsController : ControllerBase
     /// </summary>
     [HttpGet("history")]
     [Authorize(Roles = PersonalLeaveRoles)]
-    public async Task<IActionResult> GetLeaveRequestHistory(CancellationToken cancellationToken)
+    public async Task<ActionResult<LeaveHistoryPage>> GetLeaveRequestHistory([FromQuery] LeaveHistoryFilter filter, CancellationToken cancellationToken)
     {
-        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
-        if (employee == null)
-        {
-            _logger.LogWarning("Leave request history access was denied because the caller has no employee record.");
-            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
-            {
-                Title = "Forbidden",
-                Detail = "Authenticated user is not a registered employee.",
-                Status = StatusCodes.Status403Forbidden,
-                Type = "https://www.rfc-editor.org/rfc/rfc7807"
-            });
-        }
-
-        var leaveRequests = await _mediator.Send(
-            new GetEmployeeLeaveHistoryQuery { EmployeeId = employee.Id },
-            cancellationToken);
-        _logger.LogInformation(
-            "Leave request history returned for EmployeeId: {EmployeeId}; RequestCount: {RequestCount}",
-            employee.Id,
-            leaveRequests.Count);
-        return Ok(leaveRequests);
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var actor))
+            throw new ForbiddenException("A valid authenticated account is required.");
+        Response.Headers.CacheControl = "no-store";
+        var result = await _mediator.Send(new GetEmployeeLeaveHistoryQuery { ActorIdentityId = actor, Filter = filter }, cancellationToken);
+        _logger.LogInformation("Personal history returned; ActorId: {ActorId}; MatchingCount: {MatchingCount}; Page: {Page}; RowCount: {RowCount}",
+            actor, result.TotalCount, result.Page, result.Items.Count);
+        return Ok(result);
     }
 
     [HttpPost("{id}/approve")]

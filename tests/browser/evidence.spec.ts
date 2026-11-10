@@ -57,7 +57,20 @@ async function request(page: Page) {
 }
 async function editor(page: Page, id: string) {
   // Auth is deliberately memory-only: use the real SPA links rather than a session-destroying reload.
+  const historyResponse = page.waitForResponse(r => new URL(r.url()).pathname.endsWith('/api/v1/leave-requests/history') && r.request().method() === 'GET' && r.status() === 200);
   await page.getByRole('navigation', { name: 'Primary', exact: true }).getByRole('link', { name: 'My leave and balances', exact: true }).click();
+  await historyResponse;
+  await expect(page.getByRole('heading', { name: 'Leave request history', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Refresh history', exact: true })).toBeEnabled();
+  // The collection is now paged: use the request fixture's bounded date period rather than assuming every ID is on page one.
+  const start = new Date(); start.setUTCDate(start.getUTCDate() + 15);
+  const end = new Date(); end.setUTCDate(end.getUTCDate() + 17);
+  await page.getByLabel('Period start', { exact: true }).fill(start.toISOString().slice(0, 10));
+  await page.getByLabel('Period end', { exact: true }).fill(end.toISOString().slice(0, 10));
+  const filtered = page.waitForResponse(r => new URL(r.url()).pathname.endsWith('/api/v1/leave-requests/history') && r.request().method() === 'GET' && r.status() === 200);
+  await page.getByRole('button', { name: 'Apply history filters', exact: true }).click(); await filtered;
+  await expect(page.getByRole('button', { name: 'Refresh history', exact: true })).toBeEnabled();
+  console.log(`history-link matches=${await page.locator(`a[href="/leave-requests/${id}/history"]`).count()} headings=${await page.getByRole('heading', { name: 'Leave request history', exact: true }).count()}`);
   await page.locator(`a[href="/leave-requests/${id}/history"]`).click();
   await expect(page).toHaveURL(new RegExp(`/leave-requests/${id}/history$`));
   const area = page.getByRole('region', { name: 'Later evidence additions', exact: true });
@@ -96,6 +109,25 @@ test('controlled evidence transport: draft selection waits for triggered respons
     const area = await selection;
     await expect(area.getByRole('checkbox', { name: 'Attach to request', exact: true }).first()).toBeChecked();
   } finally { release(); await selection; }
+});
+
+test('controlled history module: evidence helper waits for My Leave rather than duplicate Overview links', async ({ page }) => {
+  const id = await request(page); await login(page);
+  await expect(page.getByRole('heading', { name: 'Current configured balances', exact: true })).toBeVisible();
+  await expect.poll(() => page.locator(`a[href="/leave-requests/${id}/history"]`).count()).toBeGreaterThan(1);
+  let entered!: () => void; const started = new Promise<void>(r => { entered = r; });
+  let release!: () => void; const barrier = new Promise<void>(r => { release = r; });
+  await page.route('**/*EmployeeLeaveHistoryPage*', async route => {
+    const response = await route.fetch({ timeout: 15_000 }); entered(); await barrier; await route.fulfill({ response });
+  });
+  let settled = false; const opening = editor(page, id);
+  void opening.then(() => { settled = true; }, () => { settled = true; });
+  try {
+    await started;
+    await expect(page.getByRole('status').filter({ hasText: 'Loading my leave' })).toBeVisible();
+    expect(settled).toBe(false); release();
+    await expect(await opening).toBeVisible();
+  } finally { release(); await opening; await page.unrouteAll({ behavior: 'wait' }); }
 });
 
 test('HTTP evidence with controlled clean fixture: bind, separate history, download and mobile keyboard', async ({ page }) => {
