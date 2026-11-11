@@ -11,16 +11,36 @@ const leaveBalancesQueryKey = (userId: string) => ['leave-balances', userId] as 
 const employeeLeaveHistoryQueryKey = (userId: string) =>
   ['employee-leave-history', userId] as const;
 
-async function getPendingLeaveRequests(signal: AbortSignal): Promise<PendingLeaveRequest[]> {
-  const response = await authHttpClient.get<PendingLeaveRequest[]>('/leave-requests', {
-    params: { status: 'Pending' }, signal,
-  });
-
-  return response.data;
+/** Applied queue values never derive authorization from selected IDs. */
+export interface QueueFilters { employeeId: string; employeeName: string; leaveTypeId: string; start: string; end: string; page: number; pageSize: number }
+/** Count and rows share a current authorized snapshot. */
+export interface QueuePage { items: PendingLeaveRequest[]; totalCount: number; page: number; pageSize: number; totalPages: number; capturedAtUtc: string }
+/** No previous account's filters or rows seed a new workspace. */
+export const queueDefaults: QueueFilters = { employeeId: '', employeeName: '', leaveTypeId: '', start: '', end: '', page: 1, pageSize: 25 };
+async function getPendingLeaveRequests(filters: QueueFilters, signal: AbortSignal): Promise<QueuePage> {
+  const { employeeName: _label, ...params } = filters; void _label;
+  return (await authHttpClient.get<QueuePage>('/leave-requests', { params: { status: 'Pending', ...Object.fromEntries(Object.entries(params).filter(([, value]) => value !== '')) }, signal })).data;
+}
+/** Rechecks the original dialog ID independently of whichever page/filter is now displayed. */
+export async function checkQueueDecision(requestId: string, signal: AbortSignal): Promise<boolean> {
+  const result = await authHttpClient.get<QueuePage>('/leave-requests', { params: { requestId, pageSize: 1 }, signal });
+  return result.data.items.some(item => item.id === requestId);
+}
+/** Explicit search returns at most 25 eligible Pending owners across the entire queue. */
+export function useQueuePeople(search: string) {
+  const { user, sessionVersion, getSessionVersion } = useAuth();
+  return useQuery({ queryKey: ['queue-people', user?.id, sessionVersion, search], enabled: !!user?.roles.includes('Manager'), retry: false,
+    queryFn: async ({ signal }) => { const data = (await authHttpClient.get<{ id: string; name: string }[]>('/leave-requests/queue-people', { params: { search }, signal })).data; if (getSessionVersion() !== sessionVersion) throw new CancelledError(); return data; } });
+}
+/** Uses the existing type selector contract, not type values from only the displayed queue page. */
+export function useQueueTypes() {
+  const { user, sessionVersion } = useAuth();
+  return useQuery({ queryKey: ['leave-types', user?.id ?? '', sessionVersion], enabled: !!user?.roles.includes('Manager'), retry: false,
+    queryFn: async ({ signal }) => (await authHttpClient.get<import('../leave-configuration/types').TypeSelection[]>('/leave-types', { signal })).data });
 }
 
 async function approveLeaveRequest({ requestId, decisionNote }: LeaveDecision): Promise<void> {
-  await authHttpClient.post(`/leave-requests/${requestId}/approve`, { decisionNote });
+  await authHttpClient.post(`/leave-requests/${requestId}/approve`, { decisionNote }, { skipAuthReplay: true });
 }
 
 async function getOrganisationPendingLeaveRequests(): Promise<PendingLeaveRequest[]> {
@@ -32,7 +52,7 @@ async function getOrganisationPendingLeaveRequests(): Promise<PendingLeaveReques
 }
 
 async function rejectLeaveRequest({ requestId, decisionNote }: LeaveDecision): Promise<void> {
-  await authHttpClient.post(`/leave-requests/${requestId}/reject`, { decisionNote });
+  await authHttpClient.post(`/leave-requests/${requestId}/reject`, { decisionNote }, { skipAuthReplay: true });
 }
 
 async function getLeaveBalances(signal: AbortSignal): Promise<LeaveBalance[]> {
@@ -61,12 +81,12 @@ async function cancelLeaveRequest(leaveRequestId: string): Promise<void> {
  * Retrieves the review queue from the server because its role-scoped contents can change outside
  * this page as other reviewers process requests.
  */
-export function usePendingLeaveRequests() {
-  const { user, sessionVersion } = useAuth();
+export function usePendingLeaveRequests(filters: QueueFilters) {
+  const { user, sessionVersion, getSessionVersion } = useAuth();
 
-  return useQuery<PendingLeaveRequest[], Error>({
-    queryKey: [...pendingLeaveRequestsQueryKey(user?.id ?? ''), sessionVersion],
-    queryFn: ({ signal }) => getPendingLeaveRequests(signal),
+  return useQuery<QueuePage, Error>({
+    queryKey: [...pendingLeaveRequestsQueryKey(user?.id ?? ''), sessionVersion, filters],
+    queryFn: async ({ signal }) => { const data = await getPendingLeaveRequests(filters, signal); if (getSessionVersion() !== sessionVersion) throw new CancelledError(); return data; },
     enabled: Boolean(user?.roles.includes('Manager')),
     refetchOnMount: 'always', retry: false,
   });
@@ -99,7 +119,8 @@ export function useApproveLeaveRequest() {
         queryClient.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['personal-leave-dashboard', user.id, sessionVersion] }),
-        queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
+        queryClient.invalidateQueries({ queryKey: [...pendingLeaveRequestsQueryKey(user.id), sessionVersion] }),
+        queryClient.invalidateQueries({ queryKey: ['queue-people', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['team-leave-summary', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
         queryClient.invalidateQueries({ queryKey: ['leave-request-timeline', user.id] }),
@@ -124,7 +145,8 @@ export function useRejectLeaveRequest() {
         queryClient.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['personal-leave-dashboard', user.id, sessionVersion] }),
-        queryClient.invalidateQueries({ queryKey: pendingLeaveRequestsQueryKey(user.id) }),
+        queryClient.invalidateQueries({ queryKey: [...pendingLeaveRequestsQueryKey(user.id), sessionVersion] }),
+        queryClient.invalidateQueries({ queryKey: ['queue-people', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['team-leave-summary', user.id, sessionVersion] }),
         queryClient.invalidateQueries({ queryKey: ['department-leave-report', user.id] }),
         queryClient.invalidateQueries({ queryKey: ['leave-request-timeline', user.id] }),

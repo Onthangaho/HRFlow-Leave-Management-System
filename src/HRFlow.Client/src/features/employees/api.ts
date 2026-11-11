@@ -81,6 +81,7 @@ function useRefreshManagementQueries() {
     await Promise.all([
       client.invalidateQueries({ queryKey: [...employeesQueryKey(user.id), sessionVersion] }),
       client.invalidateQueries({ queryKey: ['pending-leave-requests', user.id] }),
+      client.invalidateQueries({ queryKey: ['queue-people', user.id, sessionVersion] }),
       client.invalidateQueries({ queryKey: ['organisation-pending-leave-requests', user.id] }),
       client.invalidateQueries({ queryKey: ['hr-workspace', user.id, sessionVersion] }),
       client.invalidateQueries({ queryKey: ['manager-attention', user.id, sessionVersion] }),

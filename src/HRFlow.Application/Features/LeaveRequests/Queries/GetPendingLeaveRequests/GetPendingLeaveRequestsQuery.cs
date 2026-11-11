@@ -9,14 +9,11 @@ using Microsoft.EntityFrameworkCore;
 namespace HRFlow.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
 
 /// <summary>
-/// Retrieves pending requests for either a manager's actionable direct-report queue or HR's read-only
-/// organisation-wide monitoring view.
+/// Retrieves HR's read-only organisation-wide Pending monitoring view. Manager reads use the bounded queue.
 /// </summary>
 public class GetPendingLeaveRequestsQuery : IRequest<IReadOnlyList<PendingLeaveRequestDto>>
 {
     public string Status { get; set; } = string.Empty;
-    public Guid CurrentEmployeeId { get; set; }
-    public bool IsOrganisationMonitoring { get; set; }
     /// <summary>Supplied by authentication for HR monitoring, never a client-selected scope.</summary>
     public Guid ActorIdentityId { get; set; }
 }
@@ -41,29 +38,18 @@ public class GetPendingLeaveRequestsQueryHandler : IRequestHandler<GetPendingLea
     }
 
     /// <summary>
-    /// Returns all pending requests for HR monitoring, or only same-department direct-report requests
-    /// for a manager queue. Decision commands recheck the shared reporting rule before mutating state.
+    /// Returns organization-wide HR monitoring only; this is not a Manager pagination fallback.
     /// </summary>
     public async Task<IReadOnlyList<PendingLeaveRequestDto>> Handle(GetPendingLeaveRequestsQuery request, CancellationToken cancellationToken)
     {
         return await _readTransaction.ExecuteAsync<IReadOnlyList<PendingLeaveRequestDto>>(async token =>
         {
             cancellationToken = token;
-            var actor = request.IsOrganisationMonitoring
-                ? await _authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.HrAdministrator], cancellationToken)
-                : await _authorization.RequireEmployeeAsync(request.CurrentEmployeeId, [EmployeeRoles.Manager], cancellationToken);
+            await _authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.HrAdministrator], cancellationToken);
 
             var query = _context.LeaveRequests
                 .AsNoTracking()
                 .Where(lr => lr.Status == LeaveRequestStatus.Pending);
-
-            if (!request.IsOrganisationMonitoring)
-            {
-                query = query.Where(lr =>
-                    lr.Employee.ManagerId == actor.Id
-                    && lr.EmployeeId != actor.Id
-                    && lr.Employee.DepartmentId == actor.DepartmentId);
-            }
 
             return await query
                 .OrderBy(lr => lr.StartDate)

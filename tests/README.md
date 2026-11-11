@@ -1,5 +1,18 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Employee editor follow-up
+
+`npm.cmd --prefix tests/browser test -- employee-editor.spec.ts` retains the below-fold focus/scroll
+reproduction, real mobile create/edit/save/cancel with read-only SQLite inspection, own-image absence
+requests and controlled choice/reload/error branches. Ordinary full browser runs include these cases.
+`dotnet test tests/HRFlow.RegressionTests --no-build --filter FullyQualifiedName~RequestCancellationLoggingTests`
+checks the actual HTTP logging boundary without a new package or alternative application startup.
+[Separate failures, results and limitations](../docs/verification/employee-editor-investigation.md).
+
+## Bounded Manager queue
+
+With other fixture writers stopped, `dotnet test tests/HRFlow.RegressionTests --no-restore --filter FullyQualifiedName~ManagerQueue --logger "console;verbosity=normal"`; then sequentially `npm.cmd --prefix tests/browser test -- manager-queue.spec.ts`. Complete gates retain all enabled cases. [API/caller contract](../docs/adr/0036-bounded-manager-approval-queue.md), [exact runs and limitations](../docs/verification/manager-approval-queue.md). Six SELECTs share one deferred transaction; HTTP bearer validation is excluded from the interceptor count. No scanner installation is needed.
+
 ## Filtered personal history
 
 From root, after a solution build with fixture writers stopped: `dotnet test tests/HRFlow.RegressionTests --no-build --filter FullyQualifiedName~PersonalHistory`. Then sequentially `npm.cmd --prefix tests/browser test -- personal-history.spec.ts`. Complete gates include these enabled cases; no new framework or scanner dependency. The measurement fixture prints only synthetic sizes/bytes/timings. [API contract](../docs/adr/0035-paginated-personal-leave-history.md), [all runs and limitations](../docs/verification/personal-leave-history.md). Six handler SELECTs are counted inside a real deferred transaction; HTTP bearer validation is excluded from that count.

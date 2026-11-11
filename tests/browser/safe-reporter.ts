@@ -27,6 +27,14 @@ export default class SafeReporter implements Reporter {
     for (const error of result.errors)
       if ((error.stack ?? '').includes('evidence.spec.ts:') && (error.message ?? '').includes('strict mode violation'))
         console.log('history-navigation ambiguous-target');
+    for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]manager-queue\.spec\.ts:(\d{1,5}):(\d{1,5})/g))
+      console.log(`manager-queue-source manager-queue.spec.ts:${Number(match[1])}:${Number(match[2])}`);
+    for (const output of result.stdout) for (const line of output.toString().split('\n'))
+      if (/^editor-probe rendered=\d visible=\d focused=\d consoleErrors=\d+ correlations=\d+ detailReads=\d+$/.test(line)) console.log(line);
+    for (const output of result.stdout) for (const line of output.toString().split('\n'))
+      if (/^editor-read-status departments=\d{1,3} roles=\d{1,3} managers=\d{1,3} aborted=\d{1,4} updates=\d{1,4}$/.test(line)) console.log(line);
+    for (const error of result.errors) for (const match of (error.stack ?? '').matchAll(/[/\\]employee-editor\.spec\.ts:(\d{1,5}):(\d{1,5})/g))
+      console.log(`employee-editor-source employee-editor.spec.ts:${Number(match[1])}:${Number(match[2])}`);
     for (const location of safeEvidenceLocations(result.errors)) console.log(location);
     for (const location of safeWorkflowLocations(result.errors)) console.log(location);
     for (const output of result.stdout) for (const line of output.toString().split('\n'))

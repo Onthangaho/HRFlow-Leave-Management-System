@@ -84,36 +84,25 @@ public class LeaveRequestsController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>Returns a bounded current Manager queue; selected IDs only narrow authenticated reporting scope.</summary>
     [HttpGet]
     [Authorize(Roles = ManagerRoleName)]
-    public async Task<IActionResult> GetLeaveRequests([FromQuery] string status, CancellationToken cancellationToken)
+    public async Task<ActionResult<ManagerQueuePage>> GetLeaveRequests([FromQuery] ManagerQueueFilter filter, CancellationToken cancellationToken)
     {
-        var employee = await _currentEmployeeProvider.GetCurrentEmployeeAsync(cancellationToken);
-        if (employee == null)
-        {
-            _logger.LogWarning("Leave request queue access was denied because the caller has no employee record.");
-            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
-            {
-                Title = "Forbidden",
-                Detail = "Authenticated user is not a registered employee.",
-                Status = StatusCodes.Status403Forbidden,
-                Type = "https://www.rfc-editor.org/rfc/rfc7807"
-            });
-        }
+        var actor = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        Response.Headers.CacheControl = "no-store";
+        var result = await _mediator.Send(new GetManagerQueueQuery(actor, filter), cancellationToken);
+        _logger.LogInformation("Manager queue returned; ActorId: {ActorId}; MatchingCount: {MatchingCount}; RowCount: {RowCount}", actor, result.TotalCount, result.Items.Count);
+        return Ok(result);
+    }
 
-        var query = new GetPendingLeaveRequestsQuery
-        {
-            Status = status,
-            CurrentEmployeeId = employee.Id,
-            ActorIdentityId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!)
-        };
-
-        var leaveRequests = await _mediator.Send(query, cancellationToken);
-        _logger.LogInformation(
-            "Manager pending leave request queue returned {RequestCount} request(s) for EmployeeId: {EmployeeId}",
-            leaveRequests.Count,
-            employee.Id);
-        return Ok(leaveRequests);
+    /// <summary>Searches current eligible Pending owners without exposing an employee-directory endpoint.</summary>
+    [HttpGet("queue-people")]
+    [Authorize(Roles = ManagerRoleName)]
+    public async Task<ActionResult<IReadOnlyList<QueuePerson>>> GetQueuePeople([FromQuery] string? search, CancellationToken cancellationToken)
+    {
+        Response.Headers.CacheControl = "no-store";
+        return Ok(await _mediator.Send(new GetQueuePeopleQuery(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), search), cancellationToken));
     }
 
     /// <summary>
@@ -127,7 +116,6 @@ public class LeaveRequestsController : ControllerBase
             new GetPendingLeaveRequestsQuery
             {
                 Status = PendingStatus,
-                IsOrganisationMonitoring = true,
                 ActorIdentityId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!)
             },
             cancellationToken);
