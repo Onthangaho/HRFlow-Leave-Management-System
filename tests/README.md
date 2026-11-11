@@ -1,5 +1,15 @@
 # Critical workflow regression gates (#76 first slice)
 
+## Bounded HR Pending monitoring
+
+After a solution build, run `dotnet test tests/HRFlow.RegressionTests --no-build --filter FullyQualifiedName~HrMonitoring --logger "console;verbosity=normal"`.
+Then sequentially `npm.cmd --prefix tests/browser test -- hr-monitoring.spec.ts`; both participate in
+the normal complete gates. Real HTTP/SQLite assertions are distinguished from controlled response
+barriers. Measurements print only synthetic aggregate sizes/timings/SELECT counts. Optional reviewed
+screenshots require `HRFLOW_MONITORING_SCREENSHOTS=1`, never automatic failure screenshots.
+[API/privacy/compatibility](../docs/adr/0037-bounded-hr-pending-monitoring.md),
+[exact executions and limits](../docs/verification/hr-pending-monitoring.md).
+
 ## Employee editor follow-up
 
 `npm.cmd --prefix tests/browser test -- employee-editor.spec.ts` retains the below-fold focus/scroll

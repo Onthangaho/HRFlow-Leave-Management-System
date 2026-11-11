@@ -2,23 +2,19 @@ using FluentValidation;
 
 namespace HRFlow.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
 
-/// <summary>
-/// Restricts the queue endpoint to the currently supported pending-status workflow and ensures the
-/// authenticated caller has been resolved to a real domain employee before any data is queried.
-/// </summary>
-public class GetPendingLeaveRequestsQueryValidator : AbstractValidator<GetPendingLeaveRequestsQuery>
+/// <summary>Rejects unsafe bounds; malformed dates/GUIDs/Int32 values fail API model binding.</summary>
+public sealed class GetPendingLeaveRequestsQueryValidator : AbstractValidator<GetPendingLeaveRequestsQuery>
 {
-    private const string PendingStatus = "Pending";
-
+    /// <summary>Limits text and pages without silently truncating input or output.</summary>
     public GetPendingLeaveRequestsQueryValidator()
     {
-        RuleFor(query => query.ActorIdentityId)
-            .NotEmpty()
-            .WithMessage("A valid authenticated account is required.");
-
-        RuleFor(query => query.Status)
-            .NotEmpty()
-            .Must(status => string.Equals(status, PendingStatus, StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Only status=Pending is supported for this endpoint.");
+        RuleFor(q => q.ActorIdentityId).NotEmpty();
+        RuleFor(q => q.Filter.Search).MaximumLength(100);
+        RuleFor(q => q.Filter.DepartmentId).Must(id => id == null || id != Guid.Empty);
+        RuleFor(q => q.Filter.LeaveTypeId).Must(id => id == null || id != Guid.Empty);
+        RuleFor(q => q.Filter.Page).GreaterThan(0);
+        RuleFor(q => q.Filter.PageSize).InclusiveBetween(1, 100);
+        RuleFor(q => q.Filter).Must(f => f.Start == null || f.End == null || f.End >= f.Start)
+            .WithMessage("End date must be on or after start date.");
     }
 }

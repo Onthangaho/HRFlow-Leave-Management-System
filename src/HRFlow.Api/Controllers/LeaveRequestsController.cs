@@ -68,7 +68,6 @@ public class LeaveRequestsController : ControllerBase
     private const string HrAdministratorOnlyPolicy = "HrAdministratorOnly";
     private const string ManagerRoleName = "Manager";
     private const string PersonalLeaveRoles = "Employee,Manager";
-    private const string PendingStatus = "Pending";
 
     private readonly IMediator _mediator;
     private readonly ICurrentEmployeeProvider _currentEmployeeProvider;
@@ -110,19 +109,18 @@ public class LeaveRequestsController : ControllerBase
     /// </summary>
     [HttpGet("monitoring/pending")]
     [Authorize(Policy = HrAdministratorOnlyPolicy)]
-    public async Task<IActionResult> GetOrganisationPendingLeaveRequests(CancellationToken cancellationToken)
+    public async Task<ActionResult<HrPendingMonitoringPage>> GetOrganisationPendingLeaveRequests([FromQuery] HrMonitoringFilter filter, CancellationToken cancellationToken)
     {
         var leaveRequests = await _mediator.Send(
             new GetPendingLeaveRequestsQuery
             {
-                Status = PendingStatus,
+                Filter = filter,
                 ActorIdentityId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!)
             },
             cancellationToken);
 
-        _logger.LogInformation(
-            "HR pending leave monitoring returned {RequestCount} request(s).",
-            leaveRequests.Count);
+        Response.Headers.CacheControl = "no-store";
+        _logger.LogInformation("HR monitoring returned {RowCount} rows; MatchingCount: {MatchingCount}", leaveRequests.Items.Count, leaveRequests.TotalCount);
         return Ok(leaveRequests);
     }
 

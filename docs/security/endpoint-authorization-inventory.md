@@ -61,7 +61,10 @@ roles are additive. HR alone never confers personal submission or decision autho
 
 - `GET /leave-requests/monitoring/pending`: HR, organisation-wide read-only Pending
   monitoring. `GetPendingLeaveRequestsQueryHandler` + `CurrentAccountAuthorization`,
-  within the same deferred snapshot as the projection.
+  current credentials, active/activated status and Identity HR membership within the same deferred
+  snapshot as filtered count/page. Name/email, current department, type and inclusive date filters;
+  default 25/max 100, stable start/ID ordering. Envelope requires coordinated API/client deployment.
+  No medical contents/descriptions/notes or HR decisions are introduced.
 - `GET /reports/department-leave`: HR, organisation-wide or validated department filter.
   `GetDepartmentLeaveReportQueryHandler`, deferred snapshot for active status/membership
   and report data; 366-day inclusive range. No employee-sensitive payload or decisions.

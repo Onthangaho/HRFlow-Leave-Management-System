@@ -69,6 +69,11 @@ test('HTTP integration: HR monitoring is read-only and retains role separation',
     startDate: value, endDate: value, expectedTypeVersion: type.version, expectedPolicyVersion: type.policyVersion } });
   expect(response.status()).toBe(200); const requestId = await response.json();
   await login(page, 'hr'); await navigation(page).getByRole('link', { name: 'Pending leave monitoring', exact: true }).click();
+  await page.getByLabel('Employee name or email', { exact: true }).fill(fixture.employees.employee.email);
+  await page.getByLabel('Monitoring period start', { exact: true }).fill(value.slice(0, 10));
+  await page.getByLabel('Monitoring period end', { exact: true }).fill(value.slice(0, 10));
+  const monitored = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/leave-requests/monitoring/pending' && new URL(r.url()).searchParams.get('search') === fixture.employees.employee.email);
+  await page.getByRole('button', { name: 'Apply monitoring filters', exact: true }).click(); await monitored;
   await expect(page.locator(`a[href="/leave-requests/${requestId}/history"]`)).toBeVisible();
   await expect(page.getByRole('button', { name: /Approve|Reject/ })).toHaveCount(0);
   await expect(navigation(page).getByRole('link', { name: 'Request leave', exact: true })).toHaveCount(0);
