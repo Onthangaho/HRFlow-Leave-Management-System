@@ -8,65 +8,51 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRFlow.Application.Features.LeaveRequests.Queries.GetPendingLeaveRequests;
 
-/// <summary>
-/// Retrieves HR's read-only organisation-wide Pending monitoring view. Manager reads use the bounded queue.
-/// </summary>
-public class GetPendingLeaveRequestsQuery : IRequest<IReadOnlyList<PendingLeaveRequestDto>>
+/// <summary>Reads bounded HR monitoring, never a Manager decision scope or caller-selected actor.</summary>
+public sealed class GetPendingLeaveRequestsQuery : IRequest<HrPendingMonitoringPage>
 {
-    public string Status { get; set; } = string.Empty;
-    /// <summary>Supplied by authentication for HR monitoring, never a client-selected scope.</summary>
+    /// <summary>Supplied exclusively by authentication and rechecked inside the snapshot.</summary>
     public Guid ActorIdentityId { get; set; }
+    /// <summary>Validated applied filters, with no unbounded default.</summary>
+    public HrMonitoringFilter Filter { get; set; } = new();
 }
 
-/// <summary>
-/// Keeps current permissions, reporting scope and queue projection in one read snapshot.
-/// </summary>
-public class GetPendingLeaveRequestsQueryHandler : IRequestHandler<GetPendingLeaveRequestsQuery, IReadOnlyList<PendingLeaveRequestDto>>
+/// <summary>Authorizes, counts and pages before materialization in one deferred transaction without reserving a writer.</summary>
+public sealed class GetPendingLeaveRequestsQueryHandler(IApplicationDbContext context,
+    ILeaveReportingReadTransaction reads, CurrentAccountAuthorization authorization, TimeProvider clock)
+    : IRequestHandler<GetPendingLeaveRequestsQuery, HrPendingMonitoringPage>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly ILeaveReportingReadTransaction _readTransaction;
-    private readonly CurrentAccountAuthorization _authorization;
-
-    /// <summary>
-    /// Creates the handler with database access needed to filter pending requests by reporting lines.
-    /// </summary>
-    public GetPendingLeaveRequestsQueryHandler(IApplicationDbContext context, ILeaveReportingReadTransaction readTransaction, CurrentAccountAuthorization authorization)
-    {
-        _context = context;
-        _readTransaction = readTransaction;
-        _authorization = authorization;
-    }
-
-    /// <summary>
-    /// Returns organization-wide HR monitoring only; this is not a Manager pagination fallback.
-    /// </summary>
-    public async Task<IReadOnlyList<PendingLeaveRequestDto>> Handle(GetPendingLeaveRequestsQuery request, CancellationToken cancellationToken)
-    {
-        return await _readTransaction.ExecuteAsync<IReadOnlyList<PendingLeaveRequestDto>>(async token =>
+    /// <inheritdoc />
+    public Task<HrPendingMonitoringPage> Handle(GetPendingLeaveRequestsQuery request, CancellationToken cancellationToken) =>
+        reads.ExecuteAsync(async token =>
         {
-            cancellationToken = token;
-            await _authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.HrAdministrator], cancellationToken);
-
-            var query = _context.LeaveRequests
-                .AsNoTracking()
-                .Where(lr => lr.Status == LeaveRequestStatus.Pending);
-
-            return await query
-                .OrderBy(lr => lr.StartDate)
-                .ThenBy(lr => lr.Id)
-                .Select(lr => new PendingLeaveRequestDto
+            await authorization.RequireIdentityAsync(request.ActorIdentityId, [EmployeeRoles.HrAdministrator], token);
+            var captured = clock.GetUtcNow();
+            var filter = request.Filter;
+            var query = context.LeaveRequests.AsNoTracking().Where(r => r.Status == LeaveRequestStatus.Pending);
+            var search = filter.Search?.Trim() ?? "";
+            if (search.Length > 0)
+            {
+                // LIKE metacharacters are escaped so supplied text remains a literal substring.
+                var pattern = "%" + search.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
+                query = query.Where(r => EF.Functions.Like(r.Employee.FullName, pattern, "\\")
+                    || EF.Functions.Like(r.Employee.Email, pattern, "\\"));
+            }
+            if (filter.DepartmentId.HasValue) query = query.Where(r => r.Employee.DepartmentId == filter.DepartmentId.Value);
+            if (filter.LeaveTypeId.HasValue) query = query.Where(r => r.LeaveTypeId == filter.LeaveTypeId.Value);
+            if (filter.Start.HasValue) { var start = filter.Start.Value.ToDateTime(TimeOnly.MinValue); query = query.Where(r => r.EndDate >= start); }
+            if (filter.End.HasValue) { var end = filter.End.Value.ToDateTime(TimeOnly.MinValue); query = query.Where(r => r.StartDate <= end); }
+            var total = await query.CountAsync(token);
+            var pages = Math.Max(1, (int)(((long)total + filter.PageSize - 1) / filter.PageSize));
+            var page = Math.Min(filter.Page, pages);
+            var items = await query.OrderBy(r => r.StartDate).ThenBy(r => r.Id)
+                .Skip((page - 1) * filter.PageSize).Take(filter.PageSize)
+                .Select(r => new PendingLeaveRequestDto
                 {
-                    Id = lr.Id,
-                    EmployeeId = lr.EmployeeId,
-                    EmployeeFullName = lr.Employee.FullName,
-                    EmployeeEmail = lr.Employee.Email,
-                    LeaveTypeId = lr.LeaveTypeId,
-                    LeaveTypeName = lr.LeaveType.Name,
-                    StartDate = lr.StartDate,
-                    EndDate = lr.EndDate,
-                    Status = lr.Status.ToString()
-                })
-                .ToListAsync(cancellationToken);
+                    Id = r.Id, EmployeeId = r.EmployeeId, EmployeeFullName = r.Employee.FullName,
+                    EmployeeEmail = r.Employee.Email, LeaveTypeId = r.LeaveTypeId, LeaveTypeName = r.LeaveType.Name,
+                    StartDate = r.StartDate, EndDate = r.EndDate, Status = r.Status.ToString()
+                }).ToListAsync(token);
+            return new HrPendingMonitoringPage(items, total, page, filter.PageSize, pages, captured);
         }, cancellationToken);
-    }
 }

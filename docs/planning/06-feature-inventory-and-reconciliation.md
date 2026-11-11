@@ -1,3 +1,5 @@
+> 11 November 2026: merged PR #142 is the base for the local read-only HR Pending pagination slice. See [current contract](../adr/0037-bounded-hr-pending-monitoring.md) and [separate verification](../verification/hr-pending-monitoring.md). Earlier reconciliation classifications remain dated evidence; this does not complete #92 calculation-dependent work or authorise publication/tracker edits.
+
 > **22 October 2026 local implementation update:** PR #134 is merged. Its owner supplemental-evidence slice is authorised and implemented locally for review on feat/pending-request-evidence. [Design/API/migration](../adr/0032-pending-request-supplemental-evidence.md), [executed checks and limits](../verification/pending-request-evidence.md). Pending-only captured requirements, atomic five-file binding/idempotency and separate addition trace; no retention, statutory/payment or delivery expansion. Historical reconciliation and unpublished tracker proposals below remain dated evidence, not an issue update.
 
 # Current feature inventory — after merged PR #133

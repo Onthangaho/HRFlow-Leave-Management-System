@@ -1,97 +1,66 @@
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { useOrganisationPendingLeaveRequests } from '../api';
+import { isAxiosError } from 'axios';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { useDepartments } from '../../employees/api';
+import { problemMessage } from '../../leave-configuration/problems';
+import { monitoringDefaults, useMonitoringTypes, useOrganisationPendingLeaveRequests, type MonitoringFilters } from '../api';
 
-/**
- * Gives HR Administrators an organisation-wide operational view without exposing manager decision controls.
- */
+const dateLabel = (value: string) => new Intl.DateTimeFormat('en-ZA', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(value.slice(0, 10) + 'T00:00:00Z'));
+
+/** A replacement login discards protected rows and drafts, while ordinary refresh preserves applied filters. */
 export function HrPendingLeaveMonitoringPage() {
-  const { data: leaveRequests, isLoading, isFetching, error, refetch } = useOrganisationPendingLeaveRequests();
-
-  return (
-    <div className="workspace-page space-y-6">
-      <div className="mx-auto w-full max-w-5xl space-y-6">
-        <section className="page-intro ui-panel">
-
-          <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-200">HR monitoring</p>
-
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-indigo-100">
-                Monitor organisation-wide pending leave. Assigned managers make approval decisions.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-200">Pending</p>
-              <p className="mt-1 text-2xl font-bold">{isLoading ? '…' : error ? '—' : leaveRequests?.length ?? 0}</p>
-            </div>
-          </div>
-        <button type="button" className="ui-secondary self-start" disabled={isFetching} onClick={() => void refetch()}>Refresh monitoring</button>
-        </section>
-
-        {isLoading && (
-          <section role="status" aria-label="Loading pending leave monitoring" className="space-y-4">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="h-5 w-1/3 rounded bg-slate-200" />
-                <div className="mt-4 h-12 rounded-xl bg-slate-100" />
-              </div>
-            ))}
-          </section>
-        )}
-
-        {error && (
-          <section role="alert" className="rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900">Unable to load pending leave monitoring</h2>
-            <p className="mt-2 text-sm text-rose-600">{error.message}</p><button type="button" className="ui-secondary mt-4" disabled={isFetching} onClick={() => void refetch()}>Try again</button>
-          </section>
-        )}
-
-        {!isLoading && !error && leaveRequests?.length === 0 && (
-          <section className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900">No pending leave requests</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
-              New requests will appear here for monitoring while their assigned managers review them.
-            </p>
-          </section>
-        )}
-
-        {!isLoading && !error && (leaveRequests?.length ?? 0) > 0 && (
-          <section className="space-y-4" aria-label="Organisation pending leave requests">
-            {leaveRequests?.map((leaveRequest) => (
-              <article
-                key={leaveRequest.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="text-base font-bold text-slate-900">{leaveRequest.employeeFullName}</h2>
-                    <p className="mt-1 text-sm text-slate-500">{leaveRequest.employeeEmail}</p>
-                  </div>
-                  <div className="flex gap-3 text-sm">
-                    <span className="rounded-lg bg-indigo-50 px-3 py-2 font-semibold text-indigo-700">
-                      {leaveRequest.leaveTypeName}
-                    </span>
-                    <span className="rounded-lg bg-slate-100 px-3 py-2 font-semibold text-slate-700">
-                      {new Intl.DateTimeFormat('en-US', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      }).format(new Date(leaveRequest.startDate))}
-                      {' - '}
-                      {new Intl.DateTimeFormat('en-US', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      }).format(new Date(leaveRequest.endDate))}
-                    </span>
-                  </div>
-                </div>
-                <Link className="mt-4 inline-block font-semibold text-indigo-700 underline" to={`/leave-requests/${leaveRequest.id}/history`}>View history</Link>
-              </article>
-            ))}
-          </section>
-        )}
+  const { user, sessionVersion } = useAuth();
+  return <MonitoringWorkspace key={user?.id + ':' + sessionVersion} />;
+}
+function MonitoringWorkspace() {
+  const [draft, setDraft] = useState<MonitoringFilters>({ ...monitoringDefaults });
+  const [applied, setApplied] = useState<MonitoringFilters>({ ...monitoringDefaults });
+  const query = useOrganisationPendingLeaveRequests(applied);
+  const departments = useDepartments();
+  const types = useMonitoringTypes();
+  const page = query.isError ? undefined : query.data;
+  useEffect(() => {
+    if (page && !query.isFetching && applied.page !== page.page)
+      setApplied(current => current === applied ? { ...current, page: page.page } : current);
+  }, [page, query.isFetching, applied]);
+  function apply(event: FormEvent) { event.preventDefault(); setApplied({ ...draft, search: draft.search.trim(), page: 1 }); }
+  function field(name: keyof MonitoringFilters, value: string) {
+    setDraft(current => ({ ...current, [name]: name === 'pageSize' ? Number(value) : value }));
+  }
+  if (isAxiosError(query.error) && [401, 403].includes(query.error.response?.status ?? 0))
+    return <section className="ui-error" role="alert"><h2>HR monitoring access unavailable</h2><p>Protected monitoring data is hidden. Sign in with current HR access.</p></section>;
+  return <div className="workspace-page space-y-6"><div className="mx-auto w-full max-w-5xl space-y-6">
+    <section className="page-intro ui-panel">
+      <p>Monitor organisation-wide Pending leave. Assigned managers make approval decisions.</p>
+      <p>Matching Pending requests: {query.isPending ? 'Loading...' : query.error || !page ? 'Unavailable' : page.totalCount}</p>
+      <button type="button" className="ui-secondary self-start" disabled={query.isFetching} onClick={() => void query.refetch()}>Refresh monitoring</button>
+    </section>
+    <form className="ui-panel space-y-4" aria-label="Pending monitoring filters" onSubmit={apply}>
+      <p>Dates include any request intersecting either boundary. Departments reflect current employee membership. This view is read-only.</p>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <label className="ui-label">Employee name or email<input type="search" className="ui-input" maxLength={100} value={draft.search} onChange={e => field('search', e.target.value)} /></label>
+        <label className="ui-label">Monitoring department<select className="ui-input" value={draft.departmentId} onChange={e => field('departmentId', e.target.value)}><option value="">All departments</option>{departments.data?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+        <label className="ui-label">Monitoring leave type<select className="ui-input" value={draft.leaveTypeId} onChange={e => field('leaveTypeId', e.target.value)}><option value="">All leave types</option>{types.data?.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+        <label className="ui-label">Monitoring period start<input className="ui-input" type="date" value={draft.start} onChange={e => field('start', e.target.value)} /></label>
+        <label className="ui-label">Monitoring period end<input className="ui-input" type="date" min={draft.start || undefined} value={draft.end} onChange={e => field('end', e.target.value)} /></label>
+        <label className="ui-label">Monitoring requests per page<select className="ui-input" value={draft.pageSize} onChange={e => field('pageSize', e.target.value)}>{[25, 50, 100].map(size => <option key={size}>{size}</option>)}</select></label>
       </div>
-    </div>
-  );
+      {(departments.isPending || types.isPending) && <p role="status">Loading monitoring filter choices...</p>}
+      {(departments.isError || types.isError) && <p role="alert">Some filter choices are unavailable. <button type="button" className="ui-secondary" onClick={() => { void departments.refetch(); void types.refetch(); }}>Retry monitoring choices</button></p>}
+      <div className="flex flex-wrap gap-3"><button className="ui-primary">Apply monitoring filters</button><button type="button" className="ui-secondary" onClick={() => { setDraft({ ...monitoringDefaults }); setApplied({ ...monitoringDefaults }); }}>Reset monitoring filters</button></div>
+    </form>
+    <p aria-label="Applied monitoring filters">Applied: {applied.search || 'Any employee'}; {departments.data?.find(d => d.id === applied.departmentId)?.name || (applied.departmentId ? 'Selected department' : 'All departments')}; {types.data?.find(t => t.id === applied.leaveTypeId)?.name || (applied.leaveTypeId ? 'Selected type' : 'All leave types')}; {applied.start || 'Any start'} to {applied.end || 'Any end'}</p>
+    <p role="status">{query.isFetching ? (page ? 'Refreshing the previously loaded monitoring snapshot.' : 'Loading Pending monitoring.') : query.error ? 'Monitoring unavailable.' : page ? page.totalCount + ' matching requests. Page ' + page.page + ' of ' + page.totalPages + '.' : ''}</p>
+    {query.isPending && <div role="status" className="ui-panel motion-safe:animate-pulse">Loading pending leave monitoring...</div>}
+    {query.error && <section role="alert" className="ui-error"><h2>Unable to load pending leave monitoring</h2><p>{problemMessage(query.error)}</p><button className="ui-secondary" disabled={query.isFetching} onClick={() => void query.refetch()}>Try again</button></section>}
+    {page && <p>Server snapshot: {new Date(page.capturedAtUtc).toISOString()} (UTC){query.isFetching ? ' - previously loaded snapshot' : ''}</p>}
+    <div className="flex flex-wrap items-center gap-3"><button type="button" className="ui-secondary" disabled={!page || query.isFetching || page.page <= 1} onClick={() => setApplied(current => ({ ...current, page: page!.page - 1 }))}>Previous monitoring page</button><button type="button" className="ui-secondary" disabled={!page || query.isFetching || page.page >= page.totalPages} onClick={() => setApplied(current => ({ ...current, page: page!.page + 1 }))}>Next monitoring page</button></div>
+    {page?.totalCount === 0 && <section className="ui-panel"><h2>No pending leave requests</h2><p>No Pending requests match the applied filters. Reset or refresh to check for new requests.</p></section>}
+    {page && <section className="space-y-4" aria-label="Organisation pending leave requests">{page.items.map(request =>
+      <article key={request.id} className="ui-panel min-w-0 space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between"><div className="min-w-0"><h2 className="break-words font-bold">{request.employeeFullName}</h2><p className="break-all">{request.employeeEmail}</p></div><div className="min-w-0"><p className="break-words">{request.leaveTypeName}</p><p>{dateLabel(request.startDate)} - {dateLabel(request.endDate)} (inclusive calendar dates)</p><p>Pending</p></div></div>
+        <Link className="inline-block font-semibold text-indigo-700 underline" to={'/leave-requests/' + request.id + '/history'}>View history</Link>
+      </article>)}</section>}
+  </div></div>;
 }
