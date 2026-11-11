@@ -39,8 +39,10 @@ roles are additive. HR alone never confers personal submission or decision autho
   `CancelLeaveRequestCommandHandler` + `CurrentAccountAuthorization`, inside
   `ILeaveDecisionTransaction`; ownership/status checked before domain cancellation.
 - `GET /leave-requests?status=Pending`: Manager, current same-department direct reports,
-  excluding self. `GetPendingLeaveRequestsQueryHandler` reloads the actor/capability
-  and scopes data in the same deferred snapshot; no client-supplied department scope.
+  excluding self. `GetManagerQueueQueryHandler` checks current credentials/capability, filtered
+  count and bounded page in one deferred snapshot; employee/type/date/ID filters only narrow scope.
+  `GET /leave-requests/queue-people` uses the same Manager scope and returns at most 25 choices.
+  The paged envelope requires coordinated API/client deployment; no unbounded Manager fallback.
 - `POST /leave-requests/{id}/approve`: Manager, current same-department direct report,
   never self; Pending/current policy/history validation. `ApproveLeaveRequestCommandHandler`
   + `LeaveApprovalAuthorizationService.EnsureManagerCanDecideAsync`, inside

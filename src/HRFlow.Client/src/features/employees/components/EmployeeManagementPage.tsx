@@ -35,9 +35,20 @@ function EmployeeManagementWorkspace() {
   const [inviting, setInviting] = useState<Employee | null>(null);
   const [notice, setNotice] = useState('');
   const [reloadError, setReloadError] = useState('');
+  const [reloading, setReloading] = useState(false);
   const [reportsFor, setReportsFor] = useState<Employee | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const controller = useRef<AbortController | null>(null);
+  const restoreEditorFocus = useRef(false);
+  useEffect(() => {
+    if (editing !== undefined || !restoreEditorFocus.current) return;
+    restoreEditorFocus.current = false;
+    const target = [opener.current, document.querySelector<HTMLElement>('[data-focus-fallback]'),
+      document.querySelector<HTMLElement>('[data-editor-focus-fallback]')].find(element => element?.isConnected
+        && !element.matches(':disabled') && !element.closest('[inert], [aria-hidden="true"]')
+        && element.getClientRects().length > 0 && getComputedStyle(element).visibility === 'visible');
+    target?.focus();
+  }, [editing]);
   useEffect(() => () => controller.current?.abort(), [sessionVersion]);
   useEffect(() => { const next = { ...initial(attentionLink), search: searchLink }; setFilter(next); setDraft(next); setReportsFor(null); }, [attentionLink, searchLink]);
   useEffect(() => {
@@ -47,28 +58,32 @@ function EmployeeManagementWorkspace() {
     }
   }, [employees.data, employees.isError, employees.isFetching, filter.page, filter.pageSize]);
   const rememberFocus = () => { opener.current = document.activeElement as HTMLElement | null; };
-  const openForm = (employee: Employee | null) => { setEditing(employee); setNotice(''); setReloadError(''); };
+  const openForm = (employee: Employee | null) => { rememberFocus(); setEditing(employee); setNotice(''); setReloadError(''); };
+  const closeForm = () => { controller.current?.abort(); restoreEditorFocus.current = true; setEditing(undefined); };
   const reload = async () => {
-    if (!editing) return;
-    controller.current?.abort(); controller.current = new AbortController();
+    if (!editing || reloading) return false;
+    controller.current?.abort(); const request = new AbortController(); controller.current = request;
+    setReloading(true); setReloadError('');
     try {
-      const current = (await authHttpClient.get<Employee>(`/employees/${editing.id}`, { signal: controller.current.signal })).data;
-      if (!currentSession()) return;
+      const current = (await authHttpClient.get<Employee>(`/employees/${editing.id}`, { signal: request.signal })).data;
+      if (!currentSession() || request.signal.aborted) return false;
       if (current.isActive) setEditing(current); else { rememberFocus(); setEditing(undefined); setDetails(current); }
       setReloadError('');
-    } catch { if (currentSession()) setReloadError('Unable to reload this employee. Try again or cancel the edit.'); }
+      return true;
+    } catch { if (currentSession() && !request.signal.aborted) setReloadError('Unable to reload this employee. Try again or cancel the edit.'); return false; }
+    finally { if (currentSession() && controller.current === request) setReloading(false); }
   };
   const data = employees.isError ? undefined : employees.data;
   const pages = data ? Math.max(1, Math.ceil(data.totalCount / data.pageSize)) : 1;
   if (isAxiosError(employees.error) && employees.error.response?.status === 403)
     return <div className="ui-panel" role="alert">You no longer have HR directory access. Protected employee content is hidden.</div>;
   return <div className="workspace-page space-y-6">
-    <section className="page-intro ui-panel"><p className="text-sm">Manage employee profiles, access and reporting relationships.</p>
+    <section tabIndex={-1} data-editor-focus-fallback aria-label="Employee management introduction" className="page-intro ui-panel"><p className="text-sm">Manage employee profiles, access and reporting relationships.</p>
       <button type="button" data-focus-fallback disabled={editing !== undefined || employees.isPending || employees.isError} onClick={() => openForm(null)} className="ui-primary">New Employee</button></section>
     {notice && <p role="status" className="break-words text-emerald-800">{notice}</p>}
     {editing !== undefined && <EmployeeForm employee={editing}
-      onSuccess={delivery => { if (!currentSession()) return; setNotice(editing ? 'Employee updated.' : 'Employee created. ' + activationFeedback(delivery)); setEditing(undefined); }}
-      onCancel={() => setEditing(undefined)} onReload={reload} reloadError={reloadError} />}
+      onSuccess={delivery => { if (!currentSession()) return; setNotice(editing ? 'Employee updated.' : 'Employee created. ' + activationFeedback(delivery)); closeForm(); }}
+      onCancel={closeForm} onReload={reload} reloadError={reloadError} reloading={reloading} />}
     <form className="ui-panel space-y-4" aria-label="Directory filters" onSubmit={event => { event.preventDefault(); setFilter({ ...draft, page: 1 }); }}>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <label className="ui-label">Search employees<input type="search" className="ui-input block w-full" value={draft.search} maxLength={100} onChange={e => setDraft({ ...draft, search: e.target.value })} placeholder="Name, email or employee number" /></label>

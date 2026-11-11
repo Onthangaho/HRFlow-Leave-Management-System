@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace HRFlow.Api.Middleware;
 
@@ -43,11 +45,29 @@ public sealed class ApiRequestLoggingMiddleware
         context.Response.Headers[CorrelationIdHeaderName] = correlationId;
 
         var stopwatch = Stopwatch.StartNew();
-        await _next(context);
+        try
+        {
+            await _next(context);
+        }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // Authentication executes before MVC's exception filter. Only a disconnected request is expected here;
+            // unrelated cancellation and unexpected failures must still propagate to the host diagnostics.
+            if (!context.Response.HasStarted)
+                context.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+            LogCancellation(context, correlationId);
+            return;
+        }
         stopwatch.Stop();
 
         var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
         var statusCode = context.Response.StatusCode;
+
+        if (statusCode == StatusCodes.Status499ClientClosedRequest && context.RequestAborted.IsCancellationRequested)
+        {
+            LogCancellation(context, correlationId);
+            return;
+        }
 
         if (statusCode >= StatusCodes.Status500InternalServerError)
         {
@@ -97,6 +117,10 @@ public sealed class ApiRequestLoggingMiddleware
             correlationId,
             userId);
     }
+
+    private void LogCancellation(HttpContext context, string correlationId) =>
+        _logger.LogInformation("API request cancelled by client. {Method} {Path}; CorrelationId: {CorrelationId}; UserId: {UserId}",
+            context.Request.Method, context.Request.Path, correlationId, context.User.FindFirstValue(ClaimTypes.NameIdentifier));
 
     private static string GetCorrelationId(HttpContext context)
     {

@@ -1,6 +1,6 @@
 import { ScheduleWorkspace } from './ScheduleWorkspace';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,15 +22,22 @@ interface EmployeeFormProps {
   employee: Employee | null;
   onSuccess: (deliveryState?: string | null) => void;
   onCancel: () => void;
-  onReload: () => Promise<void>;
+  onReload: () => Promise<boolean>;
   reloadError: string;
+  reloading: boolean;
 }
 
 const inputClass = 'ui-input';
 const errorClass = 'mt-1 text-sm text-rose-700';
 
 /** Preserves the original version, roles, and reporting intent until the user explicitly reloads or saves. */
-export function EmployeeForm({ employee, onSuccess, onCancel, onReload, reloadError }: EmployeeFormProps) {
+export function EmployeeForm({ employee, onSuccess, onCancel, onReload, reloadError, reloading }: EmployeeFormProps) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    // The editor precedes the directory; a below-fold row action must reveal it without resetting its draft on refetch.
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }, []);
   const { sessionVersion, getSessionVersion } = useAuth();
   const isEditing = Boolean(employee);
   const departments = useDepartments();
@@ -102,7 +109,7 @@ export function EmployeeForm({ employee, onSuccess, onCancel, onReload, reloadEr
 
   return (
     <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-6" aria-labelledby="employee-form-title">
-      <h2 id="employee-form-title" className="text-xl font-bold">{employee ? 'Edit Employee' : 'New Employee'}</h2>
+      <h2 ref={heading} tabIndex={-1} id="employee-form-title" className="scroll-mt-24 text-xl font-bold focus-visible:outline-2 focus-visible:outline-indigo-600">{employee ? 'Edit Employee' : 'New Employee'}</h2>
       {departments.isPending || availableRoles.isPending ? <p role="status" className="mt-4">Loading choices...</p> : null}
       {(departments.error || availableRoles.error) && <div role="alert" className={errorClass}>
         Unable to load department or role choices. <button type="button" className="underline"
@@ -113,12 +120,13 @@ export function EmployeeForm({ employee, onSuccess, onCancel, onReload, reloadEr
       {failure && <div role="alert" className="mt-4 whitespace-pre-line rounded-lg bg-rose-50 p-3 text-sm text-rose-800">
         {failure}
         {!employee && <p className="mt-2">If the response was interrupted, an account may already be committed. Keep this draft while refreshing the directory; do not automatically create it again.</p>}
-        {conflict && employee && <button type="button" disabled={busy} className="ml-2 underline"
-          onClick={() => { void onReload().then(() => update.reset()); }}>Reload latest values</button>}
+        {conflict && employee && <button type="button" disabled={busy || reloading} className="ml-2 underline"
+          onClick={() => { void onReload().then(loaded => { if (loaded) update.reset(); }); }}>Reload latest values</button>}
       </div>}
       {reloadError && <p role="alert" className={errorClass}>{reloadError}</p>}
+      {reloading && <p role="status">Reloading employee details...</p>}
       <form onSubmit={submit} className="mt-6">
-        <fieldset disabled={busy} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <fieldset disabled={busy || reloading} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <legend className="sr-only">Employee details</legend>
           <div className="sm:col-span-2 space-y-3">
             <h3 className="font-semibold">Confirmed employment facts</h3>
