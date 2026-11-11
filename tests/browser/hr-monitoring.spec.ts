@@ -6,6 +6,14 @@ const nav = (page: Page) => page.getByRole('navigation', { name: 'Primary', exac
 const path = (url: string) => new URL(url).pathname === '/api/v1/leave-requests/monitoring/pending';
 const rows = (page: Page) => page.getByRole('region', { name: 'Organisation pending leave requests', exact: true }).locator('article');
 const deferred = () => { let resolve!: () => void; const promise = new Promise<void>(done => { resolve = done; }); return { promise, resolve }; };
+/** Viewport changes and responsive rendering can settle separately; retain the actual no-overflow assertion. */
+async function mobileFit(page: Page, observed?: (fits: boolean) => void) {
+  await expect.poll(async () => {
+    const state = await page.evaluate(() => ({ width: innerWidth, fits: document.documentElement.scrollWidth <= innerWidth }));
+    observed?.(state.fits);
+    return state;
+  }).toEqual({ width: 390, fits: true });
+}
 async function login(page: Page, actor = 'hr', inPlace = false) {
   const f = fixture(); if (!inPlace) await page.goto(f.client + '/login');
   await page.getByLabel('Email', { exact: true }).fill(f.employees[actor].email);
@@ -58,7 +66,7 @@ test('HTTP HR monitoring: filters, stable pages, dashboard totals, themes and fi
   if (process.env.HRFLOW_MONITORING_SCREENSHOTS === '1') await page.screenshot({ path: '../../docs/verification/screenshots/hr-monitoring/desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   await page.evaluate(() => document.documentElement.classList.add('dark'));
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await mobileFit(page);
   await page.getByLabel('Employee name or email', { exact: true }).focus(); await page.keyboard.press('Tab');
   await expect(page.getByRole('combobox', { name: 'Monitoring department', exact: true })).toBeFocused();
   if (process.env.HRFLOW_MONITORING_SCREENSHOTS === '1') await page.screenshot({ path: '../../docs/verification/screenshots/hr-monitoring/mobile-dark.png', fullPage: true });
@@ -71,6 +79,20 @@ test('HTTP HR monitoring: filters, stable pages, dashboard totals, themes and fi
   await page.getByRole('button', { name: 'Reset monitoring filters', exact: true }).click(); await reset;
   await expect(page.getByLabel('Employee name or email', { exact: true })).toHaveValue('');
   await expect(page.getByLabel('Applied monitoring filters')).toContainText('Any employee');
+});
+
+test('controlled HR monitoring layout: mobile readiness waits for rendered fit', async ({ page }) => {
+  await login(page); await monitoring(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const entered = deferred(); let completed = false;
+  await page.evaluate(() => { document.documentElement.style.minWidth = '700px'; });
+  const ready = mobileFit(page, fits => { if (!fits) entered.resolve(); }).then(() => { completed = true; });
+  try {
+    await entered.promise;
+    expect(completed).toBe(false);
+  } finally { await page.evaluate(() => { document.documentElement.style.minWidth = ''; }); }
+  await ready;
+  expect(completed).toBe(true);
 });
 
 test('controlled HR monitoring: superseded responses, retry, retained drafts and permission denial', async ({ page }) => {

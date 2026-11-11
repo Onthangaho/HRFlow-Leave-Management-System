@@ -166,3 +166,27 @@ store or credential is included. Source/test behaviour is unchanged since the se
 local gates above; product tests were not rerun merely for publication. Staged whitespace, sensitive
 content, instruction equality and documentation checks are rerun before commit. Hosted execution
 is pending publication and must be reported separately from local evidence.
+
+## First hosted publication and responsive-readiness follow-up
+
+PR #143, initial commit `5872d5f7b9fcd4eff02cf917509b00f4ea2bbfcd`, hosted Ubuntu
+[run 43025894555](https://github.com/Onthangaho/HRFlow-Leave-Management-System/actions/runs/43025894555):
+browser **107 passed / 1 failed**, 212.327186 seconds. Setup/build/audit/typecheck/Chromium installation
+passed; the failure was in Browser regression gates, at `hr-monitoring.spec.ts:61:89`, the immediate
+no-horizontal-overflow assertion after switching from desktop to mobile. The safe reporter retained
+the source coordinate, not raw Playwright call logs or page contents. No actual width values were
+recorded, so that first failure alone does not prove whether transient settling or persistent overflow
+caused the false result. The independent hosted backend gate passed **228/228**, **15.5822 minutes**. The first workflow therefore failed because of its browser job, not its backend gate. It was allowed to complete before pushing the correction; it was not cancelled to replace the evidence.
+
+The test previously sampled layout once immediately after viewport/media changes. It now uses the
+existing bounded Playwright polling assertion to require both the requested 390px viewport and actual
+rendered fit. The final no-overflow condition, timeout, permissions and product source are unchanged.
+A new controlled test holds an explicit 700px minimum-width barrier, observes a failing fit sample,
+asserts readiness has not completed, releases the barrier and requires successful rendered fit. No
+sleep, retry, skip or blanket timeout increase was added. This proves the readiness helper waits for
+layout, not that the original hosted failure's exact browser timing has been reconstructed.
+
+Separate post-correction local focused browser execution: **6/6**, exit 0, **34.266061 seconds**,
+including the actual HTTP workflow and controlled layout/session/error tests. Browser typecheck was
+rerun separately. This is not a new local complete-browser or backend pass; the earlier 108/108 and
+228/228 executions above remain distinct. The complete hosted suites must run on the correction head.
